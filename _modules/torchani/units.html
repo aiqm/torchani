@@ -1,192 +1,379 @@
 
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>torchani.units &mdash; TorchANI 2.1.1 documentation</title>
-  
 
-  
-  
-  
-  
 
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+<html lang="en" data-content_root="../../" >
 
-    
-
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.units &#8212; TorchANI v2.6 (dev) Manual</title>
   
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-dataframe.css" type="text/css" />
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/units';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav">
-
-   
-  <div class="wy-grid-for-nav">
-    
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="../../index.html" class="icon icon-home"> TorchANI
-          
-
-          
-          </a>
-
-          
-            
-            
-              <div class="version">
-                2.1.1
-              </div>
-            
-          
-
-          
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-</ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
-</ul>
-
-            
-          
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">TorchANI</a>
-        
-      </nav>
-
-
-      <div class="wy-nav-content">
-        
-        <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
-  <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>torchani.units</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-      </li>
-    
-  </ul>
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
   
-  <hr/>
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-            
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.units</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
   <h1>Source code for torchani.units</h1><div class="highlight"><pre>
-<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Unit conversion factors used in torchani</span>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Unit conversion factors used in TorchANI</span>
 
-<span class="sd">The torchani networks themselves works internally entirely in Hartrees</span>
-<span class="sd">(energy), Angstroms (distance) and AMU (mass). In some example code and scripts</span>
-<span class="sd">we convert to other more commonly used units. Our conversion factors are</span>
-<span class="sd">consistent with `CODATA 2014 recommendations`_, which is also consistent with</span>
-<span class="sd">the `units used in ASE`_. (However, take into account that ASE uses</span>
-<span class="sd">electronvolt as its base energy unit, so the appropriate conversion factors</span>
-<span class="sd">should always be applied when converting from ASE to torchani) Joule-to-kcal</span>
-<span class="sd">conversion taken from the `IUPAC Goldbook`_.  All the conversion factors we use</span>
-<span class="sd">are defined in this module, and convenience functions to convert between</span>
-<span class="sd">different units are provided.</span>
+<span class="sd">The ANI models work internally in Hartrees (energy), Angstroms (distance), and AMU</span>
+<span class="sd">(mass).</span>
 
+<span class="sd">In some example code and scripts we convert to other more commonly used units.</span>
+<span class="sd">Conversion factors are consistent with `CODATA 2014 recommendations`_, which is also</span>
+<span class="sd">consistent with the `units used in ASE`_ by default. (However, take into account that</span>
+<span class="sd">ASE uses electronvolt as its base energy unit, so the appropriate conversion factors</span>
+<span class="sd">should always be applied when converting from ASE to TorchANI) Joule-to-kcal conversion</span>
+<span class="sd">is taken from the `IUPAC Goldbook`_.  All the conversion factors we use are defined in</span>
+<span class="sd">this module, and convenience functions to convert between different units are provided.</span>
 
 <span class="sd">.. _units used in ASE:</span>
 <span class="sd">    https://wiki.fysik.dtu.dk/ase/ase/units.html#units</span>
@@ -196,9 +383,9 @@
 
 <span class="sd">.. _IUPAC Goldbook:</span>
 <span class="sd">    https://goldbook.iupac.org/terms/view/C00784</span>
-
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 
 <span class="c1"># Comments on ASE:</span>
@@ -215,19 +402,21 @@
 
 <span class="c1"># the codata value for hartree in units of eV can be obtained from</span>
 <span class="c1"># m_e * e^3 / ( 16 * pi^2 * eps_0^2 hbar^2 )</span>
+<span class="n">ANGSTROM_TO_BOHR</span> <span class="o">=</span> <span class="mf">1.8897261258369282</span>
 <span class="n">HARTREE_TO_EV</span> <span class="o">=</span> <span class="mf">27.211386024367243</span>  <span class="c1"># equal to ase.units.Hartree</span>
 <span class="n">EV_TO_JOULE</span> <span class="o">=</span> <span class="mf">1.6021766208e-19</span>  <span class="c1"># equal to ase.units._e (electron charge)</span>
-<span class="n">JOULE_TO_KCAL</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">4184.</span>  <span class="c1"># exact</span>
+<span class="n">JOULE_TO_KCAL</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">4184.0</span>  <span class="c1"># exact</span>
 <span class="n">HARTREE_TO_JOULE</span> <span class="o">=</span> <span class="n">HARTREE_TO_EV</span> <span class="o">*</span> <span class="n">EV_TO_JOULE</span>
-<span class="n">AVOGADROS_NUMBER</span> <span class="o">=</span> <span class="mf">6.022140857e+23</span>  <span class="c1"># equal to ase.units._Nav</span>
+<span class="n">AVOGADROS_NUMBER</span> <span class="o">=</span> <span class="mf">6.022140857e23</span>  <span class="c1"># equal to ase.units._Nav</span>
 <span class="n">SPEED_OF_LIGHT</span> <span class="o">=</span> <span class="mf">299792458.0</span>  <span class="c1"># equal to ase.units._c</span>
 <span class="n">AMU_TO_KG</span> <span class="o">=</span> <span class="mf">1.660539040e-27</span>  <span class="c1"># equal to ase.units._amu</span>
 <span class="n">ANGSTROM_TO_METER</span> <span class="o">=</span> <span class="mf">1e-10</span>
 <span class="n">NEWTON_TO_MILLIDYNE</span> <span class="o">=</span> <span class="mf">1e8</span>  <span class="c1"># exact relation</span>
-<span class="n">HARTREE_TO_KCALMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_JOULE</span> <span class="o">*</span> <span class="n">JOULE_TO_KCAL</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span>
-<span class="n">HARTREE_TO_KJOULEMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_JOULE</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span> <span class="o">/</span> <span class="mi">1000</span>
-<span class="n">EV_TO_KCALMOL</span> <span class="o">=</span> <span class="n">EV_TO_JOULE</span> <span class="o">*</span> <span class="n">JOULE_TO_KCAL</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span>
-<span class="n">EV_TO_KJOULEMOL</span> <span class="o">=</span> <span class="n">EV_TO_JOULE</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span> <span class="o">/</span> <span class="mi">1000</span>
+<span class="n">HARTREE_TO_KCALPERMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_JOULE</span> <span class="o">*</span> <span class="n">JOULE_TO_KCAL</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span>
+<span class="n">HARTREE_TO_KJOULEPERMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_JOULE</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span> <span class="o">/</span> <span class="mi">1000</span>
+<span class="n">EV_TO_KCALPERMOL</span> <span class="o">=</span> <span class="n">EV_TO_JOULE</span> <span class="o">*</span> <span class="n">JOULE_TO_KCAL</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span>
+<span class="n">EV_TO_KJOULEPERMOL</span> <span class="o">=</span> <span class="n">EV_TO_JOULE</span> <span class="o">*</span> <span class="n">AVOGADROS_NUMBER</span> <span class="o">/</span> <span class="mi">1000</span>
+<span class="n">DEBYE_TO_ELECTRON_ANGSTROM</span> <span class="o">=</span> <span class="mf">0.2081943</span>
 
 <span class="c1"># For vibrational analysis:</span>
 
@@ -238,7 +427,9 @@
 <span class="c1"># then we convert angstroms to meters and divide by 1/ speed_of_light (to</span>
 <span class="c1"># convert seconds into meters). Finally divide by 100 to get inverse cm</span>
 <span class="c1"># The resulting value should be close to 17092</span>
-<span class="n">SQRT_MHESSIAN_TO_INVCM</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">HARTREE_TO_JOULE</span> <span class="o">/</span> <span class="n">AMU_TO_KG</span><span class="p">)</span> <span class="o">/</span> <span class="n">ANGSTROM_TO_METER</span> <span class="o">/</span> <span class="n">SPEED_OF_LIGHT</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+<span class="n">SQRT_MHESSIAN_TO_INVCM</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">HARTREE_TO_JOULE</span> <span class="o">/</span> <span class="n">AMU_TO_KG</span><span class="p">)</span> <span class="o">/</span> <span class="n">ANGSTROM_TO_METER</span> <span class="o">/</span> <span class="n">SPEED_OF_LIGHT</span>
+<span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
 <span class="c1"># meV is other common unit used to present vibrational transition energies</span>
 <span class="n">SQRT_MHESSIAN_TO_MILLIEV</span> <span class="o">=</span> <span class="n">SQRT_MHESSIAN_TO_INVCM</span> <span class="o">*</span> <span class="n">INVCM_TO_EV</span> <span class="o">*</span> <span class="mi">1000</span>
 <span class="c1"># To convert units form mass-scaled hessian units into mDyne / Angstrom (force</span>
@@ -246,8 +437,26 @@
 <span class="n">MHESSIAN_TO_FCONST</span> <span class="o">=</span> <span class="n">HARTREE_TO_JOULE</span> <span class="o">*</span> <span class="n">NEWTON_TO_MILLIDYNE</span> <span class="o">/</span> <span class="n">ANGSTROM_TO_METER</span>
 
 
-<div class="viewcode-block" id="sqrt_mhessian2invcm"><a class="viewcode-back" href="../../api.html#torchani.units.sqrt_mhessian2invcm">[docs]</a><span class="k">def</span> <span class="nf">sqrt_mhessian2invcm</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts sqrt(mass-scaled hessian units) into cm^-1</span>
+<div class="viewcode-block" id="angstrom2bohr">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.angstrom2bohr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">angstrom2bohr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Angstrom to Bohr conversion factor from 2014 CODATA&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span></div>
+
+
+
+<div class="viewcode-block" id="bohr2angstrom">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.bohr2angstrom">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bohr2angstrom</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Bohr to Angstrom conversion factor from 2014 CODATA&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="n">ANGSTROM_TO_BOHR</span></div>
+
+
+
+<div class="viewcode-block" id="sqrt_mhessian2invcm">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.sqrt_mhessian2invcm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sqrt_mhessian2invcm</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts sqrt(mass-scaled hessian units) into cm^-1</span>
 
 <span class="sd">    Converts form units of sqrt(Hartree / (amu * Angstrom^2))</span>
 <span class="sd">    which are sqrt(units of the mass-scaled hessian matrix)</span>
@@ -259,8 +468,11 @@
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">SQRT_MHESSIAN_TO_INVCM</span></div>
 
 
-<div class="viewcode-block" id="sqrt_mhessian2milliev"><a class="viewcode-back" href="../../api.html#torchani.units.sqrt_mhessian2milliev">[docs]</a><span class="k">def</span> <span class="nf">sqrt_mhessian2milliev</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts sqrt(mass-scaled hessian units) into meV</span>
+
+<div class="viewcode-block" id="sqrt_mhessian2milliev">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.sqrt_mhessian2milliev">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sqrt_mhessian2milliev</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts sqrt(mass-scaled hessian units) into meV</span>
 
 <span class="sd">    Converts form units of sqrt(Hartree / (amu * Angstrom^2))</span>
 <span class="sd">    which are sqrt(units of the mass-scaled hessian matrix)</span>
@@ -272,87 +484,185 @@
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">SQRT_MHESSIAN_TO_MILLIEV</span></div>
 
 
-<div class="viewcode-block" id="mhessian2fconst"><a class="viewcode-back" href="../../api.html#torchani.units.mhessian2fconst">[docs]</a><span class="k">def</span> <span class="nf">mhessian2fconst</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts mass-scaled hessian units into mDyne/Angstrom</span>
+
+<div class="viewcode-block" id="mhessian2fconst">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.mhessian2fconst">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mhessian2fconst</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts mass-scaled hessian units into mDyne/Angstrom</span>
 
 <span class="sd">    Converts from units of mass-scaled hessian (Hartree / (amu * Angstrom^2)</span>
 <span class="sd">    into force constant units (mDyne/Angstom), where 1 N = 1 * 10^8 mDyne&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">MHESSIAN_TO_FCONST</span></div>
 
 
-<div class="viewcode-block" id="hartree2ev"><a class="viewcode-back" href="../../api.html#torchani.units.hartree2ev">[docs]</a><span class="k">def</span> <span class="nf">hartree2ev</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to eV conversion factor from 2014 CODATA&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="hartree2ev">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.hartree2ev">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hartree2ev</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to eV conversion factor from 2014 CODATA&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">HARTREE_TO_EV</span></div>
 
 
-<div class="viewcode-block" id="ev2kjoulemol"><a class="viewcode-back" href="../../api.html#torchani.units.ev2kjoulemol">[docs]</a><span class="k">def</span> <span class="nf">ev2kjoulemol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Electronvolt to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">EV_TO_KJOULEMOL</span></div>
+
+<div class="viewcode-block" id="ev2kjoulepermol">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.ev2kjoulepermol">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ev2kjoulepermol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Electronvolt to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">EV_TO_KJOULEPERMOL</span></div>
 
 
-<div class="viewcode-block" id="ev2kcalmol"><a class="viewcode-back" href="../../api.html#torchani.units.ev2kcalmol">[docs]</a><span class="k">def</span> <span class="nf">ev2kcalmol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Electronvolt to kcal/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">EV_TO_KCALMOL</span></div>
+
+<div class="viewcode-block" id="ev2kcalpermol">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.ev2kcalpermol">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ev2kcalpermol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Electronvolt to kcal/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">EV_TO_KCALPERMOL</span></div>
 
 
-<div class="viewcode-block" id="hartree2kjoulemol"><a class="viewcode-back" href="../../api.html#torchani.units.hartree2kjoulemol">[docs]</a><span class="k">def</span> <span class="nf">hartree2kjoulemol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">HARTREE_TO_KJOULEMOL</span></div>
+
+<div class="viewcode-block" id="hartree2kjoulepermol">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.hartree2kjoulepermol">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hartree2kjoulepermol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">HARTREE_TO_KJOULEPERMOL</span></div>
 
 
-<div class="viewcode-block" id="hartree2kcalmol"><a class="viewcode-back" href="../../api.html#torchani.units.hartree2kcalmol">[docs]</a><span class="k">def</span> <span class="nf">hartree2kcalmol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">HARTREE_TO_KCALMOL</span></div>
+
+<div class="viewcode-block" id="hartree2kcalpermol">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.hartree2kcalpermol">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hartree2kcalpermol</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hartree to kJ/mol conversion factor from CODATA 2014&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">HARTREE_TO_KCALPERMOL</span></div>
+
+
+
+<div class="viewcode-block" id="ea2debye">
+<a class="viewcode-back" href="../../api_autogen/torchani.units.html#torchani.units.ea2debye">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ea2debye</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dipole conversion, eA to Debye from NIST CCCBDB&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="n">DEBYE_TO_ELECTRON_ANGSTROM</span></div>
+
 
 
 <span class="c1"># Add actual values to docstrings on import</span>
-<span class="n">hartree2ev</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hartree2ev</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 Hartree = </span><span class="si">{</span><span class="n">hartree2ev</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> eV&#39;</span>
-<span class="n">hartree2kcalmol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hartree2kcalmol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 Hartree = </span><span class="si">{</span><span class="n">hartree2kcalmol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> kcal/mol&#39;</span>
-<span class="n">hartree2kjoulemol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hartree2kjoulemol</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 Hartree = </span><span class="si">{</span><span class="n">hartree2kjoulemol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> kJ/mol&#39;</span>
-<span class="n">ev2kjoulemol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ev2kjoulemol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 eV = </span><span class="si">{</span><span class="n">ev2kjoulemol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> kJ/mol&#39;</span>
-<span class="n">ev2kcalmol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ev2kcalmol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 eV = </span><span class="si">{</span><span class="n">ev2kcalmol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> kcal/mol&#39;</span>
-<span class="n">mhessian2fconst</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">mhessian2fconst</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 Hartree / (AMU * Angstrom^2) = </span><span class="si">{</span><span class="n">ev2kcalmol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> mDyne/Angstrom&#39;</span>
-<span class="n">sqrt_mhessian2milliev</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sqrt_mhessian2milliev</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 sqrt(Hartree / (AMU * Angstrom^2)) = </span><span class="si">{</span><span class="n">sqrt_mhessian2milliev</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> meV&#39;</span>
-<span class="n">sqrt_mhessian2invcm</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sqrt_mhessian2invcm</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">1 sqrt(Hartree / (AMU * Angstrom^2)) = </span><span class="si">{</span><span class="n">sqrt_mhessian2invcm</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> cm^-1&#39;</span>
+<span class="n">angstrom2bohr</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">angstrom2bohr</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Angstrom = </span><span class="si">{</span><span class="n">angstrom2bohr</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> Bohr&quot;</span>
+<span class="p">)</span>
+<span class="n">bohr2angstrom</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">bohr2angstrom</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Bohr = </span><span class="si">{</span><span class="n">bohr2angstrom</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> Angstrom&quot;</span>
+<span class="p">)</span>
+<span class="n">hartree2ev</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hartree2ev</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Hartree = </span><span class="si">{</span><span class="n">hartree2ev</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> eV&quot;</span>
+<span class="n">hartree2kcalpermol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">hartree2kcalpermol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Hartree = </span><span class="si">{</span><span class="n">hartree2kcalpermol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> kcal/mol&quot;</span>
+<span class="p">)</span>
+<span class="n">hartree2kjoulepermol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">hartree2kjoulepermol</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Hartree = </span><span class="si">{</span><span class="n">hartree2kjoulepermol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> kJ/mol&quot;</span>
+<span class="p">)</span>
+<span class="n">ev2kjoulepermol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">ev2kjoulepermol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 eV = </span><span class="si">{</span><span class="n">ev2kjoulepermol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> kJ/mol&quot;</span>
+<span class="p">)</span>
+<span class="n">ev2kcalpermol</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">ev2kcalpermol</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 eV = </span><span class="si">{</span><span class="n">ev2kcalpermol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> kcal/mol&quot;</span>
+<span class="p">)</span>
+<span class="n">mhessian2fconst</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">mhessian2fconst</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Hartree / (AMU * Angstrom^2) = </span><span class="si">{</span><span class="n">ev2kcalpermol</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> mDyne/Angstrom&quot;</span>
+<span class="p">)</span>
+<span class="n">sqrt_mhessian2milliev</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">sqrt_mhessian2milliev</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 sqrt(Hartree / (AMU * Angstrom^2)) = </span><span class="si">{</span><span class="n">sqrt_mhessian2milliev</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> meV&quot;</span>
+<span class="p">)</span>
+<span class="n">sqrt_mhessian2invcm</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">sqrt_mhessian2invcm</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 sqrt(Hartree / (AMU * Angstrom^2)) = </span><span class="si">{</span><span class="n">sqrt_mhessian2invcm</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> cm^-1&quot;</span>
+<span class="p">)</span>
+<span class="n">ea2debye</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">ea2debye</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">1 Debye = </span><span class="si">{</span><span class="n">DEBYE_TO_ELECTRON_ANGSTROM</span><span class="si">}</span><span class="s2"> electron Angstroms&quot;</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Old aliases (try not to use if possible)</span>
+<span class="n">ev2kcalmol</span> <span class="o">=</span> <span class="n">ev2kcalpermol</span>
+<span class="n">hartree2kcalmol</span> <span class="o">=</span> <span class="n">hartree2kcalpermol</span>
+<span class="n">ev2kjoulemol</span> <span class="o">=</span> <span class="n">ev2kjoulepermol</span>
+<span class="n">hartree2kjoulemol</span> <span class="o">=</span> <span class="n">hartree2kjoulepermol</span>
+<span class="n">HARTREE_TO_KCALMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_KCALPERMOL</span>
+<span class="n">EV_TO_KCALMOL</span> <span class="o">=</span> <span class="n">EV_TO_KCALPERMOL</span>
+<span class="n">HARTREE_TO_KJOULEMOL</span> <span class="o">=</span> <span class="n">HARTREE_TO_KJOULEPERMOL</span>
+<span class="n">EV_TO_KJOULEMOL</span> <span class="o">=</span> <span class="n">EV_TO_KJOULEPERMOL</span>
 </pre></div>
 
-           </div>
-           
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
           </div>
-          <footer>
-  
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
-  </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
-
-</footer>
-
-        </div>
-      </div>
-
-    </section>
-
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
   </div>
   
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
-
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
-
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
   
-  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
     
-   
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
 
-</body>
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

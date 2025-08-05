@@ -1,0 +1,1130 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.nn &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.nn';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.grad" href="torchani.grad.html" />
+    <link rel="prev" title="torchani.aev" href="torchani.aev.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.nn</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.nn">
+<span id="torchani-nn"></span><h1>torchani.nn<a class="headerlink" href="#module-torchani.nn" title="Link to this heading">#</a></h1>
+<p>Classes that represent atomic (and groups of element-specific) neural networks</p>
+<p>The most important classes in this module are <a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a>, which represents a
+callable that computes scalars from local atomic features, <a class="reference internal" href="#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANINetworks</span></code></a>, and
+<a class="reference internal" href="#torchani.nn.Ensemble" title="torchani.nn.Ensemble"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Ensemble</span></code></a>, which collect groups of element-specific neural networks and perform
+different reduction operations over them.</p>
+<p>It also contains useful factory methods to instantiate neural networks for different
+elements.</p>
+<p>Inference-optimized versions of <a class="reference internal" href="#torchani.nn.Ensemble" title="torchani.nn.Ensemble"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Ensemble</span></code></a> and <a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a>, recommended for
+calculations of single molecules, molecular dynamics and geometry optimizations, are
+also provided.</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_activation</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.AtomicOneHot" title="torchani.nn.AtomicOneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicOneHot</span></code></a></p></td>
+<td><p>Embed a sequence of atoms into one-hot vectors</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.AtomicEmbedding" title="torchani.nn.AtomicEmbedding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicEmbedding</span></code></a></p></td>
+<td><p>Embed a sequence of atoms into a continuous vector space</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.AtomicContainer" title="torchani.nn.AtomicContainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicContainer</span></code></a></p></td>
+<td><p>Base class for ANI modules that contain Atomic Neural Networks</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANINetworks</span></code></a></p></td>
+<td><p>Predict molecular or atomic scalars from a set of element-specific networks</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.ANISharedNetworks" title="torchani.nn.ANISharedNetworks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANISharedNetworks</span></code></a></p></td>
+<td><p>Predict molecular or atomic scalars form (possibly partially shared) networks</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.SingleNN" title="torchani.nn.SingleNN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SingleNN</span></code></a></p></td>
+<td><p>Predict molecular or atomic scalars form fully shared networks</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.Ensemble" title="torchani.nn.Ensemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ensemble</span></code></a></p></td>
+<td><p>Calculate output scalars by averaging over many containers of networks</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpeciesConverter</span></code></a></p></td>
+<td><p>Convert atomic numbers into internal ANI element indices</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.MNPNetworks" title="torchani.nn.MNPNetworks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MNPNetworks</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.BmmLinear" title="torchani.nn.BmmLinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BmmLinear</span></code></a></p></td>
+<td><p>Batched Linear layer that fuses multiple Linear layers that have same architecture If &quot;e&quot; is the number of fused layers (which usually corresponds to members in an ensamble), then we have:</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.BmmEnsemble" title="torchani.nn.BmmEnsemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BmmEnsemble</span></code></a></p></td>
+<td><p>The inference-optimized analogue of a <a class="reference internal" href="#torchani.nn.Ensemble" title="torchani.nn.Ensemble"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.Ensemble</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.BmmAtomicNetwork" title="torchani.nn.BmmAtomicNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BmmAtomicNetwork</span></code></a></p></td>
+<td><p>The inference-optimized analogue of an <a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.TightCELU" title="torchani.nn.TightCELU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TightCELU</span></code></a></p></td>
+<td><p>CELU activation function with alpha=0.1</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.nn.ANIModel" title="torchani.nn.ANIModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIModel</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.nn.Sequential" title="torchani.nn.Sequential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sequential</span></code></a></p></td>
+<td><p>Create a pipeline of modules, like <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.AtomicOneHot">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">AtomicOneHot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicOneHot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicOneHot" title="Link to this definition">#</a></dt>
+<dd><p>Embed a sequence of atoms into one-hot vectors</p>
+<p>Padding atoms are set to zeros. As an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">symbols</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">)</span>
+<span class="n">one_hot</span> <span class="o">=</span> <span class="n">AtomicOneHot</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+<span class="n">encoded</span> <span class="o">=</span> <span class="n">one_hot</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<span class="c1"># encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, 0, 0]])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.AtomicOneHot.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicOneHot.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicOneHot.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.AtomicEmbedding">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">AtomicEmbedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicEmbedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicEmbedding" title="Link to this definition">#</a></dt>
+<dd><p>Embed a sequence of atoms into a continuous vector space</p>
+<p>This module is a thin wrapper over <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html#torch.nn.Embedding" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.nn.Embedding</span></code></a>. Padding
+atoms are set to zero. As an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">symbols</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">)</span>
+<span class="n">embed</span> <span class="o">=</span> <span class="n">AtomicEmbedding</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">encoded</span> <span class="o">=</span> <span class="n">embed</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<span class="c1"># `encoded` depends on the random init, but it could be for instance:</span>
+<span class="c1"># torch.tensor([[1.2, .1], [-.5, .8], [.3, -.4], [0, 0]])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.AtomicEmbedding.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicEmbedding.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicEmbedding.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.AtomicContainer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">AtomicContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicContainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicContainer" title="Link to this definition">#</a></dt>
+<dd><p>Base class for ANI modules that contain Atomic Neural Networks</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.AtomicContainer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicContainer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicContainer.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.AtomicNetwork">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">AtomicNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gelu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicNetwork" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.AtomicNetwork.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#AtomicNetwork.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.AtomicNetwork.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.ANINetworks">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">ANINetworks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#ANINetworks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.ANINetworks" title="Link to this definition">#</a></dt>
+<dd><p>Predict molecular or atomic scalars from a set of element-specific networks</p>
+<p>Iterate over atomic networks and calculate the corresponding atomic scalars. By
+default the outputs are summed over atoms to obtain molecular quantities. This can
+be disabled with <code class="docutils literal notranslate"><span class="pre">atomic=True</span></code>. If you want to allow different elements to map to
+the same network, pass <code class="docutils literal notranslate"><span class="pre">alias=True</span></code>, otherwise elemetns are required to be mapped
+to different, element-specific networks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn._core.AtomicNetwork"><em>AtomicNetwork</em></a><em>]</em>) – symbol-network mapping for each supported element. Different elements
+will share networks if the same ref is used for different keys</p></li>
+<li><p><strong>alias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Allow the class to map different elements to the same atomic network.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The input element indices must be 0, 1, 2, 3, …, not atomic numbers. You can
+convert from atomic numbers with <a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a></p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.ANINetworks.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#ANINetworks.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.ANINetworks.forward" title="Link to this definition">#</a></dt>
+<dd><p>Calculate atomic scalars from the input features</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_idxs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>aevs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A float tensor with local atomic features (AEVs). Shape is
+<code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">num-aev-features)</span></code>.</p></li>
+<li><p><strong>atomic</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to perform a sum reduction in the <code class="docutils literal notranslate"><span class="pre">atoms</span></code> dim. If
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, the returned tensor has shape <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms)</span></code>,
+otherwise it has shape <code class="docutils literal notranslate"><span class="pre">(molecules,)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with the predicted scalars.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.ANISharedNetworks">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">ANISharedNetworks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#ANISharedNetworks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.ANISharedNetworks" title="Link to this definition">#</a></dt>
+<dd><p>Predict molecular or atomic scalars form (possibly partially shared) networks</p>
+<p>This model is similar to <a class="reference internal" href="#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.ANINetworks</span></code></a> with the caveat that
+it allows for partially sharing layers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shared</strong> (<a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn._core.AtomicNetwork"><em>AtomicNetwork</em></a>) – Shared layers for all elements</p></li>
+<li><p><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn._core.AtomicNetwork"><em>AtomicNetwork</em></a><em>]</em>) – symbol-network mapping for each supported element. Different elements
+will share networks if the same ref is used for different keys</p></li>
+<li><p><strong>alias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Allow the class to map different elements to the same atomic network.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.ANISharedNetworks.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#ANISharedNetworks.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.ANISharedNetworks.forward" title="Link to this definition">#</a></dt>
+<dd><p>Calculate atomic scalars from the input features</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_idxs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>aevs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A float tensor with local atomic features (AEVs). Shape is
+<code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">num-aev-features)</span></code>.</p></li>
+<li><p><strong>atomic</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to perform a sum reduction in the <code class="docutils literal notranslate"><span class="pre">atoms</span></code> dim. If
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, the returned tensor has shape <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms)</span></code>,
+otherwise it has shape <code class="docutils literal notranslate"><span class="pre">(molecules,)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with the predicted scalars.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.SingleNN">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">SingleNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embed_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continuous'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embed_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#SingleNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.SingleNN" title="Link to this definition">#</a></dt>
+<dd><p>Predict molecular or atomic scalars form fully shared networks</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>network</strong> (<a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn._core.AtomicNetwork"><em>AtomicNetwork</em></a>) – Atomic network to wrap, output dimension should be equal
+to the number of supported elements</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.SingleNN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#SingleNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.SingleNN.forward" title="Link to this definition">#</a></dt>
+<dd><p>Calculate atomic scalars from the input features</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_idxs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>aevs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A float tensor with local atomic features (AEVs). Shape is
+<code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">num-aev-features)</span></code>.</p></li>
+<li><p><strong>atomic</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to perform a sum reduction in the <code class="docutils literal notranslate"><span class="pre">atoms</span></code> dim. If
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, the returned tensor has shape <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms)</span></code>,
+otherwise it has shape <code class="docutils literal notranslate"><span class="pre">(molecules,)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with the predicted scalars.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.Ensemble">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">Ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#Ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.Ensemble" title="Link to this definition">#</a></dt>
+<dd><p>Calculate output scalars by averaging over many containers of networks</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a><em>[</em><a class="reference internal" href="#torchani.nn.AtomicContainer" title="torchani.nn._core.AtomicContainer"><em>AtomicContainer</em></a><em>]</em>) – Set of network containers to average over.</p></li>
+<li><p><strong>repeats</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to allow repeated networks.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.Ensemble.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#Ensemble.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.Ensemble.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.SpeciesConverter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">SpeciesConverter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#SpeciesConverter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.SpeciesConverter" title="Link to this definition">#</a></dt>
+<dd><p>Convert atomic numbers into internal ANI element indices</p>
+<p>Conversion is done according to the symbols sequence passed as init argument. If the
+class is initialized with <code class="docutils literal notranslate"><span class="pre">['H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O']</span></code>, it will convert <code class="docutils literal notranslate"><span class="pre">tensor([1,</span> <span class="pre">6,</span>
+<span class="pre">7,</span> <span class="pre">1,</span> <span class="pre">8])</span></code> into a <code class="docutils literal notranslate"><span class="pre">tensor([0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">0,</span> <span class="pre">3])</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbols</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">tuple</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of strings that are valid chemical symbols.
+(case sensitive).</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.SpeciesConverter.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_nums</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_dont_use</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_containers.html#SpeciesConverter.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.SpeciesConverter.forward" title="Link to this definition">#</a></dt>
+<dd><p>Perform the conversion to element indices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>atomic_nums</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int tensor that stores the atomic numbers of a batch of
+molecules. Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.MNPNetworks">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">MNPNetworks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_mnp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#MNPNetworks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.MNPNetworks" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.MNPNetworks.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#MNPNetworks.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.MNPNetworks.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.BmmLinear">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">BmmLinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">linears</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmLinear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmLinear" title="Link to this definition">#</a></dt>
+<dd><p>Batched Linear layer that fuses multiple Linear layers that have same architecture
+If “e” is the number of fused layers (which usually corresponds to members
+in an ensamble), then we have:</p>
+<p>input:  (e x n x m)
+weight: (e x m x p)
+bias:   (e x 1 x p)
+output: (e x n x p)</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.BmmLinear.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmLinear.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmLinear.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.BmmEnsemble">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">BmmEnsemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ensemble</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmEnsemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmEnsemble" title="Link to this definition">#</a></dt>
+<dd><p>The inference-optimized analogue of a <a class="reference internal" href="#torchani.nn.Ensemble" title="torchani.nn.Ensemble"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.Ensemble</span></code></a></p>
+<p>Combines all networks of an ensemble that correspond to the same element into a
+single <a class="reference internal" href="#torchani.nn.BmmAtomicNetwork" title="torchani.nn.BmmAtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">BmmAtomicNetwork</span></code></a>.</p>
+<p>As an example, if an ensemble has 8 models, and each model has 1 H-network
+and 1 C-network, all 8 H-networks and all 8 C-networks are fused into two
+networks: one single H-BmmAtomicNework and one single C-BmmAtomicNetwork.</p>
+<p>The resulting networks perform the same calculations but faster, and using less CUDA
+kernel calls, since the conversion avoids iteration over the ensemble members in
+python.</p>
+<p>The <a class="reference internal" href="#torchani.nn.BmmAtomicNetwork" title="torchani.nn.BmmAtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">BmmAtomicNetwork</span></code></a> modules consist of sequences of <a class="reference internal" href="#torchani.nn.BmmLinear" title="torchani.nn.BmmLinear"><code class="xref any py py-class docutils literal notranslate"><span class="pre">BmmLinear</span></code></a>, which perform
+batched matrix multiplication (BMM).</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.BmmEnsemble.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aevs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmEnsemble.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmEnsemble.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.BmmAtomicNetwork">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">BmmAtomicNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">networks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmAtomicNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmAtomicNetwork" title="Link to this definition">#</a></dt>
+<dd><p>The inference-optimized analogue of an <a class="reference internal" href="#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a></p>
+<p><a class="reference internal" href="#torchani.nn.BmmAtomicNetwork" title="torchani.nn.BmmAtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">BmmAtomicNetwork</span></code></a> instances are “combined” networks for a single element. Each
+combined network holds all networks associated with all the members of an ensemble.
+They consist on a sequence of <a class="reference internal" href="#torchani.nn.BmmLinear" title="torchani.nn.BmmLinear"><code class="xref any py py-class docutils literal notranslate"><span class="pre">BmmLinear</span></code></a> layers with interleaved activation
+functions (simple multi-layer perceptrons or MLPs).</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.BmmAtomicNetwork.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_infer.html#BmmAtomicNetwork.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.BmmAtomicNetwork.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.TightCELU">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">TightCELU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#TightCELU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.TightCELU" title="Link to this definition">#</a></dt>
+<dd><p>CELU activation function with alpha=0.1</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.TightCELU.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_core.html#TightCELU.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.TightCELU.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.ANIModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">ANIModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modules</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_internal.html#ANIModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.ANIModel" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.nn.Sequential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.nn.</span></span><span class="sig-name descname"><span class="pre">Sequential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">modules</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_internal.html#Sequential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.Sequential" title="Link to this definition">#</a></dt>
+<dd><p>Create a pipeline of modules, like <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a></p>
+<dl class="simple">
+<dt>Deprecated:</dt><dd><p>Use of <a class="reference internal" href="#torchani.nn.Sequential" title="torchani.nn.Sequential"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.Sequential</span></code></a> is strongly discouraged. Please use
+<a class="reference internal" href="torchani.arch.html#torchani.arch.Assembler" title="torchani.arch.Assembler"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.arch.Assembler</span></code></a>, or write a <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>. For more info
+consult <a class="reference internal" href="../migrating-to-2.html#torchani-migrating"><span class="std std-ref">the migration guide</span></a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.nn.Sequential.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/nn/_internal.html#Sequential.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.nn.Sequential.forward" title="Link to this definition">#</a></dt>
+<dd><p>Return the result of chaining together the calculation of the modules</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.aev.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.aev</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.grad.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.grad</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicOneHot"><code class="docutils literal notranslate"><span class="pre">AtomicOneHot</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicOneHot.forward"><code class="docutils literal notranslate"><span class="pre">AtomicOneHot.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicEmbedding"><code class="docutils literal notranslate"><span class="pre">AtomicEmbedding</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicEmbedding.forward"><code class="docutils literal notranslate"><span class="pre">AtomicEmbedding.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicContainer"><code class="docutils literal notranslate"><span class="pre">AtomicContainer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicContainer.forward"><code class="docutils literal notranslate"><span class="pre">AtomicContainer.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicNetwork"><code class="docutils literal notranslate"><span class="pre">AtomicNetwork</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.AtomicNetwork.forward"><code class="docutils literal notranslate"><span class="pre">AtomicNetwork.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.ANINetworks"><code class="docutils literal notranslate"><span class="pre">ANINetworks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.ANINetworks.forward"><code class="docutils literal notranslate"><span class="pre">ANINetworks.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.ANISharedNetworks"><code class="docutils literal notranslate"><span class="pre">ANISharedNetworks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.ANISharedNetworks.forward"><code class="docutils literal notranslate"><span class="pre">ANISharedNetworks.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.SingleNN"><code class="docutils literal notranslate"><span class="pre">SingleNN</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.SingleNN.forward"><code class="docutils literal notranslate"><span class="pre">SingleNN.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.Ensemble"><code class="docutils literal notranslate"><span class="pre">Ensemble</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.Ensemble.forward"><code class="docutils literal notranslate"><span class="pre">Ensemble.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.SpeciesConverter"><code class="docutils literal notranslate"><span class="pre">SpeciesConverter</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.SpeciesConverter.forward"><code class="docutils literal notranslate"><span class="pre">SpeciesConverter.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.MNPNetworks"><code class="docutils literal notranslate"><span class="pre">MNPNetworks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.MNPNetworks.forward"><code class="docutils literal notranslate"><span class="pre">MNPNetworks.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmLinear"><code class="docutils literal notranslate"><span class="pre">BmmLinear</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmLinear.forward"><code class="docutils literal notranslate"><span class="pre">BmmLinear.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmEnsemble"><code class="docutils literal notranslate"><span class="pre">BmmEnsemble</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmEnsemble.forward"><code class="docutils literal notranslate"><span class="pre">BmmEnsemble.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmAtomicNetwork"><code class="docutils literal notranslate"><span class="pre">BmmAtomicNetwork</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.BmmAtomicNetwork.forward"><code class="docutils literal notranslate"><span class="pre">BmmAtomicNetwork.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.TightCELU"><code class="docutils literal notranslate"><span class="pre">TightCELU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.TightCELU.forward"><code class="docutils literal notranslate"><span class="pre">TightCELU.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.ANIModel"><code class="docutils literal notranslate"><span class="pre">ANIModel</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.Sequential"><code class="docutils literal notranslate"><span class="pre">Sequential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.nn.Sequential.forward"><code class="docutils literal notranslate"><span class="pre">Sequential.forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

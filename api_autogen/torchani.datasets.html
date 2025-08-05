@@ -1,0 +1,859 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.datasets &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.datasets';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.datasets.filters" href="torchani.datasets.filters.html" />
+    <link rel="prev" title="torchani.cutoffs" href="torchani.cutoffs.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">torchani.datasets</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.datasets</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.datasets">
+<span id="torchani-datasets"></span><h1>torchani.datasets<a class="headerlink" href="#module-torchani.datasets" title="Link to this heading">#</a></h1>
+<p>Functions and classes for creating batched and map-like datasets.</p>
+<p>Backends for the on-disk map-like datasets inlcude HDF5, Apache Parquet and Zarr. For a
+tutorial introduction on the use of this API consult the <a class="reference internal" href="../user-guide.html#torchani-user-guide"><span class="std std-ref">User guide</span></a>.</p>
+<p>Built-in datasets are downloaded on first instantiation. Each built-in dataset that this
+module provides access to is calculated with a specific level of theory (LoT) which is
+in general specified as a combination of functional/basis_set or
+wavefunction_method/basis_set when appropriate.</p>
+<p>Some of the provided built-in datasets have been published in ANI papers, and some are
+external freely available datasets published elsewhere, that have been reformatted to
+conform to TorchANI’s API. If you use any of these datasets in your work please cite the
+relevate article(s).</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_batched_dataset</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_all_in_ram</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.concatenate" title="torchani.datasets.concatenate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concatenate</span></code></a></p></td>
+<td><p>Combine all the backing stores in a given ANIDataset into one</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.TestData" title="torchani.datasets.TestData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TestData</span></code></a></p></td>
+<td><p>GDB subset, only for debugging and code test purposes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.TestDataIons" title="torchani.datasets.TestDataIons"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TestDataIons</span></code></a></p></td>
+<td><p>Only for debugging and test purposes, includes forces, dipoles and charges</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.TestDataForcesDipoles" title="torchani.datasets.TestDataForcesDipoles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TestDataForcesDipoles</span></code></a></p></td>
+<td><p>Only for debugging and code testing purposes, includes forces and dipoles</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.IonsVeryHeavy" title="torchani.datasets.IonsVeryHeavy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IonsVeryHeavy</span></code></a></p></td>
+<td><p>Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of Si,As,Br,Se,P,B,I (disjoint from LightIons and IonsHeavy) This dataset is not meant to be trained to on its own</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.IonsHeavy" title="torchani.datasets.IonsHeavy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IonsHeavy</span></code></a></p></td>
+<td><p>WARNING: This dataset may have incorrect energies and/or forces.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.IonsLight" title="torchani.datasets.IonsLight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IonsLight</span></code></a></p></td>
+<td><p>WARNING: This dataset may have incorrect energies and/or forces.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.ANI1q" title="torchani.datasets.ANI1q"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI1q</span></code></a></p></td>
+<td><p>Very limited subset of ANI-1x for which 'atomic CM5 charges' are available.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.ANI2qHeavy" title="torchani.datasets.ANI2qHeavy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI2qHeavy</span></code></a></p></td>
+<td><p>Subset of ANI-2x 'heavy' for which 'atomic CM5 charges' are available.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.ANI1ccx" title="torchani.datasets.ANI1ccx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI1ccx</span></code></a></p></td>
+<td><p>This dataset also has Hartree Fock (HF) energies, RI-MP2 energies and forces and DPLNO-CCSD(T) energies for different basis sets and PNO settings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.ANI1x" title="torchani.datasets.ANI1x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI1x</span></code></a></p></td>
+<td><p>Originally published in <em>The ANI-1ccx and ANI-1x data sets, coupled-cluster and density functional theory properties for molecules</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.ANI2x" title="torchani.datasets.ANI2x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI2x</span></code></a></p></td>
+<td><p>In all cases the 'v2' and '2x' datasets are supersets of the 'v1' and '1x' datasets, so everything that is in the v1/1x datasets is also in the v2/2x datasets, which contain extra structures, except for some wb97X/def2-TZVPP data points for which there are 'v1' values but not 'v2' values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.COMP6v1" title="torchani.datasets.COMP6v1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMP6v1</span></code></a></p></td>
+<td><p>Test set, not meant for direct training.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.COMP6v2" title="torchani.datasets.COMP6v2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMP6v2</span></code></a></p></td>
+<td><p>Test set, not meant for direct training.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.ANI1e" title="torchani.datasets.ANI1e"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI1e</span></code></a></p></td>
+<td><p>Structures corresponding to all smiles extracted from the ANI-1x dataset, embedded in 3D space and optimized with PM7.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.BatchedDataset" title="torchani.datasets.BatchedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BatchedDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.ANIBatchedDataset" title="torchani.datasets.ANIBatchedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIBatchedDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.datasets.ANIBatchedInMemoryDataset" title="torchani.datasets.ANIBatchedInMemoryDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIBatchedInMemoryDataset</span></code></a></p></td>
+<td><p>This dataset does not support multiprocessing or pin_memory=True in dataloader (num_workers&gt;0)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.datasets.ANIDataset" title="torchani.datasets.ANIDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></p></td>
+<td><p>Dataset that supports multiple stores and manages them as one single entity.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Batcher</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.datasets.BatchedDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">BatchedDataset</span></span><a class="reference internal" href="../_modules/torchani/datasets/batching.html#BatchedDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.BatchedDataset" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.datasets.ANIBatchedDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANIBatchedDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'division'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Identity()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/batching.html#ANIBatchedDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANIBatchedDataset" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.datasets.ANIBatchedDataset.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/batching.html#ANIBatchedDataset.cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANIBatchedDataset.cache" title="Link to this definition">#</a></dt>
+<dd><p>Saves the full dataset into RAM</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.datasets.ANIBatchedInMemoryDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANIBatchedInMemoryDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Identity()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'division'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/batching.html#ANIBatchedInMemoryDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANIBatchedInMemoryDataset" title="Link to this definition">#</a></dt>
+<dd><p>This dataset does not support multiprocessing or pin_memory=True in
+dataloader (num_workers&gt;0)</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.datasets.ANIDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANIDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/anidataset.html#ANIDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANIDataset" title="Link to this definition">#</a></dt>
+<dd><p>Dataset that supports multiple stores and manages them as one single entity.</p>
+<p>Datasets have a “grouping” for the different conformers, which can be
+“by_formula”, “by_num_atoms”, “legacy”.
+Regrouping to one of the standard groupings can be done using
+‘regroup_by_formula’ or ‘regroup_by_num_atoms’.</p>
+<p>Conformers can be extracted as {property: Tensor} or {property: ndarray}
+dicts, and can also be appended or deleted from the backing stores.</p>
+<p>All conformers in a datasets must have the same properties and the first
+dimension in all Tensors/arrays is the same for all conformer groups (it is
+the batch dimension). Property manipulation (renaming, deleting, adding)
+is also supported.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.datasets.ANIDataset.from_dir">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/anidataset.html#ANIDataset.from_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANIDataset.from_dir" title="Link to this definition">#</a></dt>
+<dd><p>Initializes datasets from all files in a given directory</p>
+<p>File backends are inferred from the suffixes. All files must have
+different names.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.concatenate">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">concatenate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hdf5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delete_originals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/anidataset.html#concatenate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.concatenate" title="Link to this definition">#</a></dt>
+<dd><p>Combine all the backing stores in a given ANIDataset into one</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.TestData">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">TestData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#TestData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.TestData" title="Link to this definition">#</a></dt>
+<dd><p>GDB subset, only for debugging and code test purposes</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.TestDataIons">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">TestDataIons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b973c-def2mtzvp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#TestDataIons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.TestDataIons" title="Link to this definition">#</a></dt>
+<dd><p>Only for debugging and test purposes, includes forces, dipoles and charges</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.TestDataForcesDipoles">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">TestDataForcesDipoles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b973c-def2mtzvp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#TestDataForcesDipoles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.TestDataForcesDipoles" title="Link to this definition">#</a></dt>
+<dd><p>Only for debugging and code testing purposes, includes forces and dipoles</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.IonsVeryHeavy">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">IonsVeryHeavy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b973c-def2mtzvp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#IonsVeryHeavy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.IonsVeryHeavy" title="Link to this definition">#</a></dt>
+<dd><p>Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of
+Si,As,Br,Se,P,B,I (disjoint from LightIons and IonsHeavy) This dataset is not meant
+to be trained to on its own</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.IonsHeavy">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">IonsHeavy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b973c-def2mtzvp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#IonsHeavy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.IonsHeavy" title="Link to this definition">#</a></dt>
+<dd><p>WARNING: This dataset may have incorrect energies and/or forces. Dataset that
+includes ions, with H,C,N,O elements and at least one of F,S,Cl (disjoint from
+IonsLight) This dataset is not meant to be trained to on its own</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.IonsLight">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">IonsLight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b973c-def2mtzvp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#IonsLight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.IonsLight" title="Link to this definition">#</a></dt>
+<dd><p>WARNING: This dataset may have incorrect energies and/or forces. Dataset that
+includes ions, with H,C,N,O elements only. Not meant to be trained to on its own</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI1q">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI1q</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI1q"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI1q" title="Link to this definition">#</a></dt>
+<dd><p>Very limited subset of ANI-1x for which ‘atomic CM5 charges’ are available. This
+dataset is not meant to be trained to on its own. Originally published in <em>The
+ANI-1ccx and ANI-1x data sets, coupled-cluster and density functional theory
+properties for molecules</em>. DOI: ‘10.1038/s41597-020-0473-z’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI2qHeavy">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI2qHeavy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI2qHeavy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI2qHeavy" title="Link to this definition">#</a></dt>
+<dd><p>Subset of ANI-2x ‘heavy’ for which ‘atomic CM5 charges’ are available. This dataset
+is not meant to be trained to on its own. Originally published in <em>TODO</em>. DOI:
+‘TODO’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI1ccx">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI1ccx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ccsd(t)star-cbs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI1ccx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI1ccx" title="Link to this definition">#</a></dt>
+<dd><p>This dataset also has Hartree Fock (HF) energies, RI-MP2 energies and forces and
+DPLNO-CCSD(T) energies for different basis sets and PNO settings. This dataset was
+originally used for transfer learning, not direct training. Originally published in
+<em>The ANI-1ccx and ANI-1x data sets, coupled-cluster and density functional theory
+properties for molecules</em>. DOI: ‘10.1038/s41597-020-0473-z’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI1x">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI1x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI1x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI1x" title="Link to this definition">#</a></dt>
+<dd><p>Originally published in <em>The ANI-1ccx and ANI-1x data sets, coupled-cluster and
+density functional theory properties for molecules</em>. DOI:
+‘10.1038/s41597-020-0473-z’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI2x">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI2x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI2x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI2x" title="Link to this definition">#</a></dt>
+<dd><p>In all cases the ‘v2’ and ‘2x’ datasets are supersets of the ‘v1’ and ‘1x’ datasets,
+so everything that is in the v1/1x datasets is also in the v2/2x datasets, which
+contain extra structures, except for some wb97X/def2-TZVPP data points for which
+there are ‘v1’ values but not ‘v2’ values. Originally published in <em>TODO</em>. DOI:
+‘TODO’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.COMP6v1">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">COMP6v1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#COMP6v1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.COMP6v1" title="Link to this definition">#</a></dt>
+<dd><p>Test set, not meant for direct training. In all cases the ‘v2’ and ‘2x’ datasets are
+supersets of the ‘v1’ and ‘1x’ datasets, so everything that is in the v1/1x datasets
+is also in the v2/2x datasets, which contain extra structures, except for some
+wb97X/def2-TZVPP data points for which there are ‘v1’ values but not ‘v2’ values.
+Note that the ANI-BenchMD, S66x8 and the <code class="docutils literal notranslate"><span class="pre">13</span></code> molecules (with 13 heavy atoms) of
+GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2, with default integration
+grids. The numerical difference is not significant for the purposes of training.
+Originally published in <em>TODO</em>. DOI: ‘TODO’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.COMP6v2">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">COMP6v2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#COMP6v2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.COMP6v2" title="Link to this definition">#</a></dt>
+<dd><p>Test set, not meant for direct training. Note that the ANI-BenchMD, S66x8 and the
+<code class="docutils literal notranslate"><span class="pre">13</span></code> molecules (with 13 heavy atoms) of GDB-10to13 were recalculated using ORCA
+5.0 instead of 4.2, with default integration grids. The numerical difference is not
+significant for the purposes of training. Originally published in <em>TODO</em>. DOI:
+‘TODO’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.datasets.ANI1e">
+<span class="sig-prename descclassname"><span class="pre">torchani.datasets.</span></span><span class="sig-name descname"><span class="pre">ANI1e</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wb97x-631gd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/datasets/builtin.html#ANI1e"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.datasets.ANI1e" title="Link to this definition">#</a></dt>
+<dd><p>Structures corresponding to all smiles extracted from the ANI-1x dataset, embedded
+in 3D space and optimized with PM7. This dataset does not have forces, but it has
+other physical properties: Rotational constants A, B, C (GHz); dipole and
+polarizability magnitudes (Debye and a_0^3 respectively); energy of HOMO and LUMO,
+and HOMO-LUMO gap (Ha); average &lt;r^2&gt; (spatial extent, a_0^2); zero point
+vibrational energies (ZPVE, Ha); zero Kelvin internal energy (Ha); thermal
+quantities, U, H, G, C_v, at 298.15 K (C_v in cal/K/mol, rest in Ha). Originally
+published in <em>ANI-1E: An equilibrium database from the ANI-1 database</em>. DOI: ‘TODO’</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<p class="rubric">Modules</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.datasets.filters.html#module-torchani.datasets.filters" title="torchani.datasets.filters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></a></p></td>
+<td><p>Filters to remove unwanted structures from datasets</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.cutoffs.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.cutoffs</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.datasets.filters.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.datasets.filters</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.BatchedDataset"><code class="docutils literal notranslate"><span class="pre">BatchedDataset</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANIBatchedDataset"><code class="docutils literal notranslate"><span class="pre">ANIBatchedDataset</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANIBatchedDataset.cache"><code class="docutils literal notranslate"><span class="pre">ANIBatchedDataset.cache()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANIBatchedInMemoryDataset"><code class="docutils literal notranslate"><span class="pre">ANIBatchedInMemoryDataset</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANIDataset"><code class="docutils literal notranslate"><span class="pre">ANIDataset</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANIDataset.from_dir"><code class="docutils literal notranslate"><span class="pre">ANIDataset.from_dir()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.concatenate"><code class="docutils literal notranslate"><span class="pre">concatenate()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.TestData"><code class="docutils literal notranslate"><span class="pre">TestData()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.TestDataIons"><code class="docutils literal notranslate"><span class="pre">TestDataIons()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.TestDataForcesDipoles"><code class="docutils literal notranslate"><span class="pre">TestDataForcesDipoles()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.IonsVeryHeavy"><code class="docutils literal notranslate"><span class="pre">IonsVeryHeavy()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.IonsHeavy"><code class="docutils literal notranslate"><span class="pre">IonsHeavy()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.IonsLight"><code class="docutils literal notranslate"><span class="pre">IonsLight()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI1q"><code class="docutils literal notranslate"><span class="pre">ANI1q()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI2qHeavy"><code class="docutils literal notranslate"><span class="pre">ANI2qHeavy()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI1ccx"><code class="docutils literal notranslate"><span class="pre">ANI1ccx()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI1x"><code class="docutils literal notranslate"><span class="pre">ANI1x()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI2x"><code class="docutils literal notranslate"><span class="pre">ANI2x()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.COMP6v1"><code class="docutils literal notranslate"><span class="pre">COMP6v1()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.COMP6v2"><code class="docutils literal notranslate"><span class="pre">COMP6v2()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.datasets.ANI1e"><code class="docutils literal notranslate"><span class="pre">ANI1e()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

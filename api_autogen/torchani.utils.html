@@ -1,0 +1,860 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.utils &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.utils';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.units" href="torchani.units.html" />
+    <link rel="prev" title="torchani.constants" href="torchani.constants.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.utils</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.utils">
+<span id="torchani-utils"></span><h1>torchani.utils<a class="headerlink" href="#module-torchani.utils" title="Link to this heading">#</a></h1>
+<p>Misc utilities used throughout the code</p>
+<p class="rubric">Module Attributes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.SYMBOLS_1X" title="torchani.utils.SYMBOLS_1X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SYMBOLS_1X</span></code></a></p></td>
+<td><p>Elements used in the ANI-1x and ANI-1ccx models, in order</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.SYMBOLS_2X" title="torchani.utils.SYMBOLS_2X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SYMBOLS_2X</span></code></a></p></td>
+<td><p>Elements used in the ANI-2x model, in ani2x-model-order</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.SYMBOLS_2X_ZNUM_ORDER" title="torchani.utils.SYMBOLS_2X_ZNUM_ORDER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SYMBOLS_2X_ZNUM_ORDER</span></code></a></p></td>
+<td><p>Elements used in the ANI-2x model, in znum order</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.download_and_extract" title="torchani.utils.download_and_extract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_and_extract</span></code></a></p></td>
+<td><p>Download and extract a .tar.gz or .zip file form a given url</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.strip_redundant_padding" title="torchani.utils.strip_redundant_padding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_redundant_padding</span></code></a></p></td>
+<td><p>Strip padding from a sequence of padded properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.pad_atomic_properties" title="torchani.utils.pad_atomic_properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_atomic_properties</span></code></a></p></td>
+<td><p>Combine a sequence of properties together into single tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.sort_by_atomic_num" title="torchani.utils.sort_by_atomic_num"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sort_by_atomic_num</span></code></a></p></td>
+<td><p>Sort an iterable of chemical symbols by atomic number</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.get_atomic_masses" title="torchani.utils.get_atomic_masses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_atomic_masses</span></code></a></p></td>
+<td><p>Convert a sequence of atomic nubmers to masses</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.AtomicNumbersToChemicalSymbols" title="torchani.utils.AtomicNumbersToChemicalSymbols"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicNumbersToChemicalSymbols</span></code></a></p></td>
+<td><p>Converts tensor of atomic numbers to list of chemical symbols</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.IntsToChemicalSymbols" title="torchani.utils.IntsToChemicalSymbols"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IntsToChemicalSymbols</span></code></a></p></td>
+<td><p>Convert tensor or list of integers to list[str] of chemical symbols</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.ChemicalSymbolsToInts" title="torchani.utils.ChemicalSymbolsToInts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalSymbolsToInts</span></code></a></p></td>
+<td><p>Helper that can be called to convert chemical symbol string to integers</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.ChemicalSymbolsToAtomicNumbers" title="torchani.utils.ChemicalSymbolsToAtomicNumbers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalSymbolsToAtomicNumbers</span></code></a></p></td>
+<td><p>Converts a sequence of chemical symbols into a tensor of atomic numbers</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.utils.AtomicNumbersToMasses" title="torchani.utils.AtomicNumbersToMasses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicNumbersToMasses</span></code></a></p></td>
+<td><p>Convert a tensor of atomic numbers into a tensor of atomic masses</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.utils.EnergyShifter" title="torchani.utils.EnergyShifter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnergyShifter</span></code></a></p></td>
+<td><p>Helper class for adding and subtracting self atomic energies</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.utils.download_and_extract">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">download_and_extract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#download_and_extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.download_and_extract" title="Link to this definition">#</a></dt>
+<dd><p>Download and extract a .tar.gz or .zip file form a given url</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.utils.strip_redundant_padding">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">strip_redundant_padding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('species',</span> <span class="pre">'numbers',</span> <span class="pre">'atomic_numbers',</span> <span class="pre">'coordinates',</span> <span class="pre">'forces',</span> <span class="pre">'coefficients',</span> <span class="pre">'atomic_charges',</span> <span class="pre">'atomic_volumes_mbis',</span> <span class="pre">'atomic_charges_mbis',</span> <span class="pre">'atomic_dipole_magnitudes_mbis',</span> <span class="pre">'atomic_quadrupole_magnitudes_mbis',</span> <span class="pre">'atomic_octupole_magnitudes_mbis',</span> <span class="pre">'atomic_dipoles',</span> <span class="pre">'atomic_polarizabilities')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#strip_redundant_padding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.strip_redundant_padding" title="Link to this definition">#</a></dt>
+<dd><p>Strip padding from a sequence of padded properties</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.utils.pad_atomic_properties">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">pad_atomic_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#pad_atomic_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.pad_atomic_properties" title="Link to this definition">#</a></dt>
+<dd><p>Combine a sequence of properties together into single tensor.</p>
+<p>Inputs are <code class="docutils literal notranslate"><span class="pre">[{'species':</span> <span class="pre">tensor,</span> <span class="pre">...},</span> <span class="pre">{'species':</span> <span class="pre">tensor,</span> <span class="pre">...},</span> <span class="pre">...]</span></code> and the
+output is of the form <code class="docutils literal notranslate"><span class="pre">{'species':</span> <span class="pre">padded_tensor,</span> <span class="pre">...}</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.13)"><em>Mapping</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em>]</em><em>]</em>) – Sequence of properties</p></li>
+<li><p><strong>padding_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Values to use for padding.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Padded tensors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.AtomicNumbersToChemicalSymbols">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">AtomicNumbersToChemicalSymbols</span></span><a class="reference internal" href="../_modules/torchani/utils.html#AtomicNumbersToChemicalSymbols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.AtomicNumbersToChemicalSymbols" title="Link to this definition">#</a></dt>
+<dd><p>Converts tensor of atomic numbers to list of chemical symbols</p>
+<p>On initialization, it is optional to supply the class with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">dict</span></code></a> containing
+custom numbers and symbols. This is not necessary, as the class is provided
+ATOMIC_NUMBER by default. Otherwise, the class should be supplied with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of
+<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">str</span></code></a>.The returned instance is a callable object, which can be called an arbituary
+tensor of the supported atomic numbers that is converted into a list of strings.</p>
+<p>Usage example:
+.. code-block:: python</p>
+<blockquote>
+<div><blockquote>
+<div><p># We intialize our class
+numbers_to_symbols = AtomicNumberstoChemicalSymbols()</p>
+<p># We have atomic numbers which we want to convert to a species list
+atomic_numbers  = torch.tensor([6, 1, 1, 1])</p>
+<p>symbols = numbers_to_symbols(atomic_numbers)</p>
+<dl class="simple">
+<dt>Output:</dt><dd><p>[‘C’, ‘H’, ‘H’, ‘H’]</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>atomic_numbers: tensor of atomic number values you wish to convert (must be 1-D)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.IntsToChemicalSymbols">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">IntsToChemicalSymbols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#IntsToChemicalSymbols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.IntsToChemicalSymbols" title="Link to this definition">#</a></dt>
+<dd><p>Convert tensor or list of integers to list[str] of chemical symbols</p>
+<p>On initialization, it is optional to supply the class with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">dict</span></code></a>
+containing custom numbers and symbols. This is not necessary, as the class
+is provided ATOMIC_NUMBER by default. Otherwise, the class should be
+supplied with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">str</span></code></a>. The returned instance
+is a callable object, which can be called with an arbitrary list or tensor
+of the supported indicies that is converted into a list of strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbols</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">tuple</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of strings that are valid chemical symbols.
+(case sensitive).</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Species list used for indexing</span>
+<span class="n">elements</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">,</span><span class="s1">&#39;S&#39;</span><span class="p">,</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;Cl&#39;</span><span class="p">]</span>
+<span class="n">species_converter</span> <span class="o">=</span> <span class="n">IntsToChemicalSymbols</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+<span class="n">species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">species_converter</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>  <span class="c1"># Output: [&#39;O&#39;, &#39;H&#39;, &#39;H&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.ChemicalSymbolsToInts">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">ChemicalSymbolsToInts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#ChemicalSymbolsToInts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.ChemicalSymbolsToInts" title="Link to this definition">#</a></dt>
+<dd><p>Helper that can be called to convert chemical symbol string to integers</p>
+<p>On initialization the class should be supplied with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">str</span></code></a>. The returned
+instance is a callable object, which can be called with an arbitrary list of the
+supported species that is converted into an integer tensor. Usage
+example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchani.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChemicalSymbolsToInts</span>
+<span class="c1"># We initialize ChemicalSymbolsToInts with the supported species</span>
+<span class="n">elements</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;Cl&#39;</span><span class="p">]</span>
+<span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">ChemicalSymbolsToInts</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+<span class="n">species_convert</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">]</span>
+<span class="c1"># We have a species list which we want to convert to an index tensor</span>
+<span class="n">index_tensor</span> <span class="o">=</span> <span class="n">species_to_tensor</span><span class="p">(</span><span class="n">species_convert</span><span class="p">)</span>
+<span class="c1"># index_tensor is now [1, 4, 3, 5, 0, 0]</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbols</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">tuple</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">list</span></code></a> of strings that are valid chemical symbols.
+(case sensitive).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.ChemicalSymbolsToAtomicNumbers">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">ChemicalSymbolsToAtomicNumbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#ChemicalSymbolsToAtomicNumbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.ChemicalSymbolsToAtomicNumbers" title="Link to this definition">#</a></dt>
+<dd><p>Converts a sequence of chemical symbols into a tensor of atomic numbers</p>
+<p>On initialization, it is optional to supply the class with a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">dict</span></code></a> containing
+custom numbers and symbols. This is not necessary, as the class is provided
+ATOMIC_NUMBER by default. Output is an integer tensor. Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># We have a species list which we want to convert to atomic numbers</span>
+<span class="n">symbols_to_numbers</span> <span class="o">=</span> <span class="n">ChemicalSymbolsToAtomicNumbers</span><span class="p">()</span>
+<span class="n">species_convert</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">]</span>
+<span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">symbols_to_numbers</span><span class="p">(</span><span class="n">species_convert</span><span class="p">)</span>
+<span class="c1"># atomic_numbers is now torch.tensor([ 6, 16,  8,  9,  1,  1])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.AtomicNumbersToMasses">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">AtomicNumbersToMasses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">masses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#AtomicNumbersToMasses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.AtomicNumbersToMasses" title="Link to this definition">#</a></dt>
+<dd><p>Convert a tensor of atomic numbers into a tensor of atomic masses</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.utils.AtomicNumbersToMasses.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#AtomicNumbersToMasses.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.AtomicNumbersToMasses.forward" title="Link to this definition">#</a></dt>
+<dd><p>Perform conversion to atomic masses</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>atomic_numbers</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int tensor that stores the atomic numbers of a batch of
+molecules. Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of atomic masses, with the same shape as the input.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.utils.sort_by_atomic_num">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">sort_by_atomic_num</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">it</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#sort_by_atomic_num"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.sort_by_atomic_num" title="Link to this definition">#</a></dt>
+<dd><p>Sort an iterable of chemical symbols by atomic number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>it</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Iterable of chemical symbols</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sorted tuple of chemical symbols</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><em>Tuple</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.utils.EnergyShifter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">EnergyShifter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self_energies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#EnergyShifter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.EnergyShifter" title="Link to this definition">#</a></dt>
+<dd><p>Helper class for adding and subtracting self atomic energies</p>
+<dl class="simple">
+<dt>Deprecated:</dt><dd><p>This class is part of the <em>Legacy API</em>. Please use
+<a class="reference internal" href="torchani.sae.html#torchani.sae.SelfEnergy" title="torchani.sae.SelfEnergy"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.sae.SelfEnergy</span></code></a>, which has equivalent functionality, instead.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em>) – Sequence of floating
+numbers for the self energy of each atom type. The numbers should
+be in order, i.e. <code class="docutils literal notranslate"><span class="pre">self_energies[i]</span></code> should be atom type <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p></li>
+<li><p><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to calculate the intercept during the LSTSQ
+fit. The intercept will also be taken into account to shift energies.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.utils.EnergyShifter.sae">
+<span class="sig-name descname"><span class="pre">sae</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#EnergyShifter.sae"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.EnergyShifter.sae" title="Link to this definition">#</a></dt>
+<dd><p>Compute self energies for molecules.</p>
+<p>Padding atoms are automatically excluded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>species</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="torchani.nn.html#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1D tensor of shape <code class="docutils literal notranslate"><span class="pre">(molecules,)</span></code> with molecular self-energies</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.utils.EnergyShifter.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species_energies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/utils.html#EnergyShifter.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.utils.EnergyShifter.forward" title="Link to this definition">#</a></dt>
+<dd><p>Transforms a species_energies tuples by adding self-energies</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.utils.get_atomic_masses">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">get_atomic_masses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#torchani.utils.get_atomic_masses" title="Link to this definition">#</a></dt>
+<dd><p>Convert a sequence of atomic nubmers to masses</p>
+<p>Convenience wrapper over <a class="reference internal" href="#torchani.utils.AtomicNumbersToMasses" title="torchani.utils.AtomicNumbersToMasses"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AtomicNumbersToMasses</span></code></a>. Non-jittable.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchani.utils.SYMBOLS_1X">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">SYMBOLS_1X</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O')</span></em><a class="headerlink" href="#torchani.utils.SYMBOLS_1X" title="Link to this definition">#</a></dt>
+<dd><p>Elements used in the ANI-1x and ANI-1ccx models, in order</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchani.utils.SYMBOLS_2X">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">SYMBOLS_2X</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O',</span> <span class="pre">'S',</span> <span class="pre">'F',</span> <span class="pre">'Cl')</span></em><a class="headerlink" href="#torchani.utils.SYMBOLS_2X" title="Link to this definition">#</a></dt>
+<dd><p>Elements used in the ANI-2x model, in ani2x-model-order</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchani.utils.SYMBOLS_2X_ZNUM_ORDER">
+<span class="sig-prename descclassname"><span class="pre">torchani.utils.</span></span><span class="sig-name descname"><span class="pre">SYMBOLS_2X_ZNUM_ORDER</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O',</span> <span class="pre">'F',</span> <span class="pre">'S',</span> <span class="pre">'Cl')</span></em><a class="headerlink" href="#torchani.utils.SYMBOLS_2X_ZNUM_ORDER" title="Link to this definition">#</a></dt>
+<dd><p>Elements used in the ANI-2x model, in znum order</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.constants.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.constants</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.units.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.units</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.download_and_extract"><code class="docutils literal notranslate"><span class="pre">download_and_extract()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.strip_redundant_padding"><code class="docutils literal notranslate"><span class="pre">strip_redundant_padding()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.pad_atomic_properties"><code class="docutils literal notranslate"><span class="pre">pad_atomic_properties()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.AtomicNumbersToChemicalSymbols"><code class="docutils literal notranslate"><span class="pre">AtomicNumbersToChemicalSymbols</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.IntsToChemicalSymbols"><code class="docutils literal notranslate"><span class="pre">IntsToChemicalSymbols</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.ChemicalSymbolsToInts"><code class="docutils literal notranslate"><span class="pre">ChemicalSymbolsToInts</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.ChemicalSymbolsToAtomicNumbers"><code class="docutils literal notranslate"><span class="pre">ChemicalSymbolsToAtomicNumbers</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.AtomicNumbersToMasses"><code class="docutils literal notranslate"><span class="pre">AtomicNumbersToMasses</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.AtomicNumbersToMasses.forward"><code class="docutils literal notranslate"><span class="pre">AtomicNumbersToMasses.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.sort_by_atomic_num"><code class="docutils literal notranslate"><span class="pre">sort_by_atomic_num()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.EnergyShifter"><code class="docutils literal notranslate"><span class="pre">EnergyShifter</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.EnergyShifter.sae"><code class="docutils literal notranslate"><span class="pre">EnergyShifter.sae()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.EnergyShifter.forward"><code class="docutils literal notranslate"><span class="pre">EnergyShifter.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.get_atomic_masses"><code class="docutils literal notranslate"><span class="pre">get_atomic_masses()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.SYMBOLS_1X"><code class="docutils literal notranslate"><span class="pre">SYMBOLS_1X</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.SYMBOLS_2X"><code class="docutils literal notranslate"><span class="pre">SYMBOLS_2X</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.utils.SYMBOLS_2X_ZNUM_ORDER"><code class="docutils literal notranslate"><span class="pre">SYMBOLS_2X_ZNUM_ORDER</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

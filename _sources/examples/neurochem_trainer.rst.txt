@@ -1,234 +1,0 @@
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        Click :ref:`here <sphx_glr_download_examples_neurochem_trainer.py>`     to download the full example code
-    .. rst-class:: sphx-glr-example-title
-
-    .. _sphx_glr_examples_neurochem_trainer.py:
-
-
-.. _neurochem-training:
-
-Train Neural Network Potential From NeuroChem Input File
-========================================================
-
-This example shows how to use TorchANI's NeuroChem trainer to read and run
-NeuroChem's training config file to train a neural network potential.
-
-To begin with, let's first import the modules we will use:
-
-
-.. code-block:: default
-
-    import torchani
-    import torch
-    import os
-    import sys
-    import tqdm
-
-
-
-
-
-
-
-
-Now let's setup path for the dataset and NeuroChem input file. Note that
-these paths assumes the user run this script under the ``examples`` directory
-of TorchANI's repository. If you download this script, you should manually
-set the path of these files in your system before this script can run
-successfully. Also note that here for our demo purpose, we set both training
-set and validation set the ``ani_gdb_s01.h5`` in TorchANI's repository. This
-allows this program to finish very quick, because that dataset is very small.
-But this is wrong and should be avoided for any serious training.
-
-
-.. code-block:: default
-
-
-    try:
-        path = os.path.dirname(os.path.realpath(__file__))
-    except NameError:
-        path = os.getcwd()
-    cfg_path = os.path.join(path, '../tests/test_data/inputtrain.ipt')
-    training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
-    validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
-
-
-
-
-
-
-
-
-We also need to set the device to run the training:
-
-
-.. code-block:: default
-
-    device_str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    device = torch.device(device_str)
-
-
-    trainer = torchani.neurochem.Trainer(cfg_path, device, True, 'runs')
-    trainer.load_data(training_path, validation_path)
-
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    => loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
-    1/1  [==============================] - 0.0s
-    2/1  [============================================================] - 0.1s    3/1  [==========================================================================================] - 0.1s=> loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
-    1/1  [==============================] - 0.0s
-    2/1  [============================================================] - 0.1s    3/1  [==========================================================================================] - 0.1s
-
-
-
-Once everything is set up, running NeuroChem is very easy. We simplify need a
-``trainer.run()``. But here, in order for sphinx-gallery to be able to
-capture the output of tqdm, let's do some hacking first to make tqdm to print
-its progressbar to stdout.
-
-
-.. code-block:: default
-
-    def my_tqdm(*args, **kwargs):
-        return tqdm.tqdm(*args, **kwargs, file=sys.stdout)
-
-
-    trainer.tqdm = my_tqdm
-
-
-
-
-
-
-
-
-Now, let's go!
-
-
-.. code-block:: default
-
-    trainer.run()
-
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    epoch 1:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 1:  20%|##        | 1/5 [00:00<00:01,  3.10it/s]    epoch 1:  40%|####      | 2/5 [00:00<00:00,  3.12it/s]    epoch 1:  60%|######    | 3/5 [00:00<00:00,  3.14it/s]    epoch 1:  80%|########  | 4/5 [00:01<00:00,  3.12it/s]    epoch 1: 100%|##########| 5/5 [00:01<00:00,  3.68it/s]
-    epoch 2:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 2:  20%|##        | 1/5 [00:00<00:01,  3.15it/s]    epoch 2:  40%|####      | 2/5 [00:00<00:00,  3.12it/s]    epoch 2:  60%|######    | 3/5 [00:00<00:00,  3.12it/s]    epoch 2:  80%|########  | 4/5 [00:01<00:00,  3.05it/s]    epoch 2: 100%|##########| 5/5 [00:01<00:00,  3.59it/s]
-    epoch 3:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 3:  20%|##        | 1/5 [00:00<00:01,  3.16it/s]    epoch 3:  40%|####      | 2/5 [00:00<00:00,  3.17it/s]    epoch 3:  60%|######    | 3/5 [00:00<00:00,  3.15it/s]    epoch 3:  80%|########  | 4/5 [00:01<00:00,  3.15it/s]    epoch 3: 100%|##########| 5/5 [00:01<00:00,  3.70it/s]
-    epoch 4:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 4:  20%|##        | 1/5 [00:00<00:01,  3.19it/s]    epoch 4:  40%|####      | 2/5 [00:00<00:00,  3.17it/s]    epoch 4:  60%|######    | 3/5 [00:00<00:00,  3.09it/s]    epoch 4:  80%|########  | 4/5 [00:01<00:00,  3.12it/s]    epoch 4: 100%|##########| 5/5 [00:01<00:00,  3.63it/s]
-    epoch 5:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 5:  20%|##        | 1/5 [00:00<00:01,  3.01it/s]    epoch 5:  40%|####      | 2/5 [00:00<00:00,  3.05it/s]    epoch 5:  60%|######    | 3/5 [00:00<00:00,  3.10it/s]    epoch 5:  80%|########  | 4/5 [00:01<00:00,  3.12it/s]    epoch 5: 100%|##########| 5/5 [00:01<00:00,  3.68it/s]
-    epoch 6:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 6:  20%|##        | 1/5 [00:00<00:01,  2.89it/s]    epoch 6:  40%|####      | 2/5 [00:00<00:01,  2.98it/s]    epoch 6:  60%|######    | 3/5 [00:00<00:00,  3.03it/s]    epoch 6:  80%|########  | 4/5 [00:01<00:00,  3.06it/s]    epoch 6: 100%|##########| 5/5 [00:01<00:00,  3.63it/s]
-    epoch 7:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 7:  20%|##        | 1/5 [00:00<00:01,  3.10it/s]    epoch 7:  40%|####      | 2/5 [00:00<00:00,  3.08it/s]    epoch 7:  60%|######    | 3/5 [00:00<00:00,  3.09it/s]    epoch 7:  80%|########  | 4/5 [00:01<00:00,  3.07it/s]    epoch 7: 100%|##########| 5/5 [00:01<00:00,  3.60it/s]
-    epoch 8:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 8:  20%|##        | 1/5 [00:00<00:01,  3.08it/s]    epoch 8:  40%|####      | 2/5 [00:00<00:00,  3.08it/s]    epoch 8:  60%|######    | 3/5 [00:00<00:00,  3.09it/s]    epoch 8:  80%|########  | 4/5 [00:01<00:00,  3.09it/s]    epoch 8: 100%|##########| 5/5 [00:01<00:00,  3.63it/s]
-    epoch 9:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 9:  20%|##        | 1/5 [00:00<00:01,  3.06it/s]    epoch 9:  40%|####      | 2/5 [00:00<00:00,  3.07it/s]    epoch 9:  60%|######    | 3/5 [00:00<00:00,  3.09it/s]    epoch 9:  80%|########  | 4/5 [00:01<00:00,  3.07it/s]    epoch 9: 100%|##########| 5/5 [00:01<00:00,  3.58it/s]
-
-
-
-
-Alternatively, you can run NeuroChem trainer directly using command line.
-There is no need for programming. Just run the following command for help
-``python -m torchani.neurochem.trainer -h`` for usage. For this demo, the
-equivalent command is:
-
-
-.. code-block:: default
-
-    cmd = ['python', '-m', 'torchani.neurochem.trainer', '-d', device_str,
-           '--tqdm', '--tensorboard', 'runs', cfg_path, training_path,
-           validation_path]
-    print(' '.join(cmd))
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    python -m torchani.neurochem.trainer -d cpu --tqdm --tensorboard runs /home/runner/work/torchani/torchani/examples/../tests/test_data/inputtrain.ipt /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
-
-
-
-
-Now let's invoke this command to see what we get. Again, we redirect stderr
-to stdout simplify for sphinx-gallery to be able to capture it when
-generating this document:
-
-
-.. code-block:: default
-
-    from subprocess import Popen, PIPE  # noqa: E402
-    print(Popen(cmd, stderr=PIPE).stderr.read().decode('utf-8'))
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    epoch 1:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 1:  20%|██        | 1/5 [00:00<00:01,  3.06it/s]    epoch 1:  40%|████      | 2/5 [00:00<00:00,  3.08it/s]    epoch 1:  60%|██████    | 3/5 [00:00<00:00,  3.11it/s]    epoch 1:  80%|████████  | 4/5 [00:01<00:00,  3.12it/s]    epoch 1: 100%|██████████| 5/5 [00:01<00:00,  3.68it/s]
-    epoch 2:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 2:  20%|██        | 1/5 [00:00<00:01,  3.12it/s]    epoch 2:  40%|████      | 2/5 [00:00<00:00,  3.10it/s]    epoch 2:  60%|██████    | 3/5 [00:00<00:00,  3.12it/s]    epoch 2:  80%|████████  | 4/5 [00:01<00:00,  3.08it/s]    epoch 2: 100%|██████████| 5/5 [00:01<00:00,  3.63it/s]
-
-
-
-
-
-
-.. rst-class:: sphx-glr-timing
-
-   **Total running time of the script:** ( 0 minutes  25.263 seconds)
-
-
-.. _sphx_glr_download_examples_neurochem_trainer.py:
-
-
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
-
-
-
-  .. container:: sphx-glr-download sphx-glr-download-python
-
-     :download:`Download Python source code: neurochem_trainer.py <neurochem_trainer.py>`
-
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: neurochem_trainer.ipynb <neurochem_trainer.ipynb>`
-
-
-.. only:: html
-
- .. rst-class:: sphx-glr-signature
-
-    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

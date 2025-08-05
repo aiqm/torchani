@@ -1,0 +1,951 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.nn._infer &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/nn/_infer';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.nn._infer</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for torchani.nn._infer</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">accumulate</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.csrc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MNP_IS_INSTALLED</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.nn._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicContainer</span><span class="p">,</span> <span class="n">AtomicNetwork</span><span class="p">,</span> <span class="n">TightCELU</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">jit_unused_if_no_mnp</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">MNP_IS_INSTALLED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_openmp_threads</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;OMP_NUM_THREADS&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;OMP_NUM_THREADS not set.&quot;</span>
+            <span class="s2">&quot; MNP works best if OMP_NUM_THREADS &gt;= 2.&quot;</span>
+            <span class="s2">&quot; You can set this variable by running &#39;export OMP_NUM_THREADS=4&#39;)&quot;</span>
+            <span class="s2">&quot; or &#39;export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK&#39; if using slurm&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OMP_NUM_THREADS&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">num_threads</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OMP_NUM_THREADS set to an incorrect value: </span><span class="si">{</span><span class="n">num_threads</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@jit_unused_if_no_mnp</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_same_tensor_optimized</span><span class="p">(</span><span class="n">last</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mnp</span><span class="o">.</span><span class="n">is_same_tensor</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">last</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span> <span class="o">==</span> <span class="n">current</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_same_tensor</span><span class="p">(</span><span class="n">last</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="c1"># Potentially, slower fallback if MNP is not installed (until JIT supports data_ptr)</span>
+    <span class="n">same_shape</span> <span class="o">=</span> <span class="n">last</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">current</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">same_shape</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="n">last</span> <span class="o">==</span> <span class="n">current</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_idx_list</span><span class="p">(</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">num_species</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">idx_list</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">idx_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_species</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_species</span><span class="p">):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">species_</span> <span class="o">==</span> <span class="n">i</span>
+            <span class="n">midx</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">midx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">midx</span>
+    <span class="k">return</span> <span class="n">idx_list</span>
+
+
+<div class="viewcode-block" id="BmmEnsemble">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmEnsemble">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BmmEnsemble</span><span class="p">(</span><span class="n">AtomicContainer</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The inference-optimized analogue of a `torchani.nn.Ensemble`</span>
+
+<span class="sd">    Combines all networks of an ensemble that correspond to the same element into a</span>
+<span class="sd">    single `BmmAtomicNetwork`.</span>
+
+<span class="sd">    As an example, if an ensemble has 8 models, and each model has 1 H-network</span>
+<span class="sd">    and 1 C-network, all 8 H-networks and all 8 C-networks are fused into two</span>
+<span class="sd">    networks: one single H-BmmAtomicNework and one single C-BmmAtomicNetwork.</span>
+
+<span class="sd">    The resulting networks perform the same calculations but faster, and using less CUDA</span>
+<span class="sd">    kernel calls, since the conversion avoids iteration over the ensemble members in</span>
+<span class="sd">    python.</span>
+
+<span class="sd">    The `BmmAtomicNetwork` modules consist of sequences of `BmmLinear`, which perform</span>
+<span class="sd">    batched matrix multiplication (BMM).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">:</span> <span class="n">AtomicContainer</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_MNP_IS_INSTALLED</span> <span class="o">=</span> <span class="n">MNP_IS_INSTALLED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_members_num</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Operates as a single ANINetworks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_members_idxs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">num_species</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ensemble</span><span class="p">,</span> <span class="s2">&quot;members&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;BmmEnsemble can only take an Ensemble as an input&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomics</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">s</span><span class="p">:</span> <span class="n">BmmAtomicNetwork</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">atomics</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">members</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">symbols</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="c1"># bookkeeping for optimization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">_make_idx_list</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="BmmEnsemble.forward">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmEnsemble.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">aevs</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">aevs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">aevs</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">aevs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;BmmEnsemble only supports single-conformer inputs&quot;</span>
+
+        <span class="c1"># Initialize each elem_idxs if it has not been init or the species has changed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MNP_IS_INSTALLED</span><span class="p">:</span>
+            <span class="n">same_elem_idxs</span> <span class="o">=</span> <span class="n">_is_same_tensor_optimized</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">same_elem_idxs</span> <span class="o">=</span> <span class="n">_is_same_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">same_elem_idxs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span> <span class="o">=</span> <span class="n">_make_idx_list</span><span class="p">(</span><span class="n">elem_idxs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span> <span class="o">=</span> <span class="n">elem_idxs</span>
+
+        <span class="n">aevs</span> <span class="o">=</span> <span class="n">aevs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="n">aevs</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">aevs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bmm_atomic</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomics</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">nvtx</span><span class="o">.</span><span class="n">range_push</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bmm-species-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">input_</span> <span class="o">=</span> <span class="n">aevs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">energies</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">bmm_atomic</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">nvtx</span><span class="o">.</span><span class="n">range_pop</span><span class="p">()</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">elem_idxs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">atomic</span><span class="p">:</span>
+            <span class="n">energies</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">energies</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BmmAtomicNetwork">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmAtomicNetwork">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BmmAtomicNetwork</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The inference-optimized analogue of an `AtomicNetwork`</span>
+
+<span class="sd">    `BmmAtomicNetwork` instances are &quot;combined&quot; networks for a single element. Each</span>
+<span class="sd">    combined network holds all networks associated with all the members of an ensemble.</span>
+<span class="sd">    They consist on a sequence of `BmmLinear` layers with interleaved activation</span>
+<span class="sd">    functions (simple multi-layer perceptrons or MLPs).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">networks</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AtomicNetwork</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_biases</span> <span class="o">=</span> <span class="n">networks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">has_biases</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">networks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">activation</span>
+
+        <span class="n">num_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">networks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">network</span> <span class="ow">in</span> <span class="n">networks</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">has_biases</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_biases</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All networks must have the same bias flag&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">!=</span> <span class="n">num_layers</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All networks must have the same number of layers&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All networks must have the same activation function&quot;</span><span class="p">)</span>
+
+        <span class="c1"># &quot;layers&quot; is now a sequence of BmmLinear</span>
+        <span class="c1">#  Not sure why this fail</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">BmmLinear</span><span class="p">([</span><span class="n">n</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">networks</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)]</span>  <span class="c1"># type: ignore  # noqa</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span> <span class="o">=</span> <span class="n">BmmLinear</span><span class="p">([</span><span class="n">n</span><span class="o">.</span><span class="n">final_layer</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">networks</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_batched_networks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">networks</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BmmAtomicNetwork.forward">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmAtomicNetwork.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_batched_networks</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">layer</span><span class="p">(</span><span class="n">features</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BmmLinear">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmLinear">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BmmLinear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batched Linear layer that fuses multiple Linear layers that have same architecture</span>
+<span class="sd">    If &quot;e&quot; is the number of fused layers (which usually corresponds to members</span>
+<span class="sd">    in an ensamble), then we have:</span>
+
+<span class="sd">    input:  (e x n x m)</span>
+<span class="sd">    weight: (e x m x p)</span>
+<span class="sd">    bias:   (e x 1 x p)</span>
+<span class="sd">    output: (e x n x p)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linears</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Concatenate weights</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="n">has_bias</span> <span class="o">=</span> <span class="n">linears</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">linear</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">has_bias</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All Linear modules must have the same bias flag&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Concatenate biases</span>
+        <span class="k">if</span> <span class="n">has_bias</span><span class="p">:</span>
+            <span class="n">bias</span> <span class="o">=</span> <span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">bias</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BmmLinear.forward">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.BmmLinear.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">baddbmm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="n">input_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:meta private:&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;# batch_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;# in_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">in_features</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;# out_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">out_features</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;# bias=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MNPNetworks">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.MNPNetworks">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MNPNetworks</span><span class="p">(</span><span class="n">AtomicContainer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">AtomicContainer</span><span class="p">,</span> <span class="n">use_mnp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;MNPNetworks needs a CUDA device to use CUDA Streams&quot;</span><span class="p">)</span>
+
+        <span class="c1"># MNP strategy in general is hard to maintain so emit warnings</span>
+        <span class="k">if</span> <span class="n">use_mnp</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;MNPNetworks with MNP C++ extension is experimental.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;MNPNetworks with no MNP C++ extension is not optimized.&quot;</span>
+                <span class="s2">&quot; It is meant only for testing purposes&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_MNP_IS_INSTALLED</span> <span class="o">=</span> <span class="n">MNP_IS_INSTALLED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_members_num</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_members_idxs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">num_species</span>
+
+        <span class="c1"># Detect &quot;ensemble&quot; case via duck typing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_bmm</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">&quot;members&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_bmm</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atomics</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="n">s</span><span class="p">:</span> <span class="n">BmmAtomicNetwork</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">atomics</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">members</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">symbols</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atomics</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">atomics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_mnp</span> <span class="o">=</span> <span class="n">use_mnp</span>
+
+        <span class="c1"># Bookkeeping for optimization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">_make_idx_list</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Stream list, to use multiple cuda streams (doesn&#39;t really work correctly)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Stream</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">)]</span>
+
+        <span class="c1"># Variables used to pass tensors to torch.ops.mnp when use_mnp=True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_names</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bias_names</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Num linears (or bmm-linears) in each atomic network</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_layers</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Idx in the flattened weight/bias lists where each atomic network starts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_layer_idxs</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_mnp</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MNP_IS_INSTALLED</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The MNP C++ extension is not installed&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Check that the OpenMP environment variable is correctly set</span>
+            <span class="n">_check_openmp_threads</span><span class="p">()</span>
+
+            <span class="c1"># Copy params from networks (reshape &amp; transpose if from BmmEnsemble)</span>
+            <span class="n">weights</span><span class="p">,</span> <span class="n">biases</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_weights_and_biases</span><span class="p">()</span>
+
+            <span class="c1"># Cumulative sum from zero, over all the layers, gives the starting idxs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_first_layer_idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_layers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+            <span class="c1"># Flatten weight/bias lists and and register as buffers</span>
+            <span class="c1"># (registration is so they behave correctly with to(*) methods)</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;weigth-</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_weight_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">biases</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;bias-</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bias_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_copy_weights_and_biases</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+        <span class="n">activation</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomics</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">activation</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">,</span> <span class="n">TightCELU</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unsupported activation </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span><span class="si">}</span><span class="s2">,&quot;</span>
+                <span class="s2">&quot; only torchani.atomics.TightCELU is supported&quot;</span>
+            <span class="p">)</span>
+        <span class="n">num_layers</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># len: num_species</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># len: sum(num_species * num_layers[j])</span>
+        <span class="n">biases</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># len: sum(num_species * num_layers[j])</span>
+        <span class="k">for</span> <span class="n">atomic</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomics</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atomic</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">activation</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All atomic networks must have the same activation fn&quot;</span><span class="p">)</span>
+            <span class="n">num_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atomic</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atomic</span><span class="p">,</span> <span class="n">BmmAtomicNetwork</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">atomic</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="p">[</span><span class="n">atomic</span><span class="o">.</span><span class="n">final_layer</span><span class="p">]):</span>
+                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+                    <span class="n">biases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atomic</span><span class="p">,</span> <span class="n">AtomicNetwork</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">atomic</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="p">[</span><span class="n">atomic</span><span class="o">.</span><span class="n">final_layer</span><span class="p">]):</span>
+                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">biases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported atomic network </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">atomic</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">weights</span><span class="p">,</span> <span class="n">biases</span><span class="p">,</span> <span class="n">num_layers</span>
+
+<div class="viewcode-block" id="MNPNetworks.forward">
+<a class="viewcode-back" href="../../../api_autogen/torchani.nn.html#torchani.nn.MNPNetworks.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">aevs</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">aevs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">aevs</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">aevs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;MNPNetworks only supports single-conformer inputs&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">atomic</span><span class="p">,</span> <span class="s2">&quot;MNPNetworks doesn&#39;t support atomic energies&quot;</span>
+        <span class="n">aevs</span> <span class="o">=</span> <span class="n">aevs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MNP_IS_INSTALLED</span><span class="p">:</span>
+            <span class="n">same_species</span> <span class="o">=</span> <span class="n">_is_same_tensor_optimized</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">same_species</span> <span class="o">=</span> <span class="n">_is_same_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">same_species</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span> <span class="o">=</span> <span class="n">_make_idx_list</span><span class="p">(</span><span class="n">elem_idxs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_species</span> <span class="o">=</span> <span class="n">elem_idxs</span>
+
+        <span class="c1"># pyMNP</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_mnp</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;JIT-MNPNetworks only supported with use_mnp=True&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">PythonMNP</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="n">aevs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomics</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_list</span>
+            <span class="p">)</span>
+        <span class="c1"># cppMNP</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_mnp</span><span class="p">(</span><span class="n">aevs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@jit_unused_if_no_mnp</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cpp_mnp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aev</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">biases</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">buffer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bias_names</span><span class="p">:</span>
+                <span class="n">biases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_names</span><span class="p">:</span>
+                <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mnp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="n">aev</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_layers</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_first_layer_idxs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_idx_list</span><span class="p">,</span>
+            <span class="n">weights</span><span class="p">,</span>
+            <span class="n">biases</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_list</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_bmm</span><span class="p">,</span>
+            <span class="mf">0.1</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="c1"># ######################################################################################</span>
+<span class="c1"># This code is a python implementation of the MNP (Multi Net Parallel) functionality,</span>
+<span class="c1"># which is supposed to parallelize multiple networks across distinct CUDA streams.</span>
+<span class="c1"># The python implementation is meant as a proof of concept and is not performant,</span>
+<span class="c1"># in fact it is slower than a straightforward loop.</span>
+<span class="c1"># This implementation has no multiprocessing, but OpenMP is used for the C++</span>
+<span class="c1"># Implementation in torchani.csrc</span>
+<span class="c1"># ######################################################################################</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PythonMNP</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">,</span>
+        <span class="n">aev</span><span class="p">,</span>
+        <span class="n">idx_list</span><span class="p">,</span>
+        <span class="n">atomic_networks</span><span class="p">,</span>
+        <span class="n">stream_list</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">num_species</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atomic_networks</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">num_species</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">atomic_networks</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">num_species</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream_list</span><span class="p">)</span>
+        <span class="n">energy_list</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_species</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">aev</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">aev</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">event_list</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_species</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">current_stream</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_stream</span><span class="p">()</span>
+        <span class="n">start_event</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="n">start_event</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">current_stream</span><span class="p">)</span>
+
+        <span class="n">input_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_species</span>
+        <span class="n">output_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_species</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">net</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atomic_networks</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">nvtx</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;species = </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">wait_event</span><span class="p">(</span><span class="n">start_event</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">input_</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+                    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">():</span>
+                        <span class="n">output</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                    <span class="n">input_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_</span>
+                    <span class="n">output_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
+                    <span class="n">energy_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">event_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">event_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># sync default stream with events on different streams</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">event_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">current_stream</span><span class="o">.</span><span class="n">wait_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+        <span class="n">ctx</span><span class="o">.</span><span class="n">energy_list</span> <span class="o">=</span> <span class="n">energy_list</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">stream_list</span> <span class="o">=</span> <span class="n">stream_list</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">output_list</span> <span class="o">=</span> <span class="n">output_list</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_list</span> <span class="o">=</span> <span class="n">input_list</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">idx_list</span> <span class="o">=</span> <span class="n">idx_list</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">aev</span> <span class="o">=</span> <span class="n">aev</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">energy_list</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">grad_o</span><span class="p">):</span>
+        <span class="n">stream_list</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">stream_list</span>
+        <span class="n">output_list</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">output_list</span>
+        <span class="n">input_list</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">input_list</span>
+        <span class="n">idx_list</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">idx_list</span>
+        <span class="n">aev</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">aev</span>
+        <span class="n">aev_grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">aev</span><span class="p">)</span>
+
+        <span class="n">current_stream</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_stream</span><span class="p">()</span>
+        <span class="n">start_event</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="n">start_event</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">current_stream</span><span class="p">)</span>
+        <span class="n">event_list</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stream_list</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">nvtx</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;backward species = </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">wait_event</span><span class="p">(</span><span class="n">start_event</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">grad_tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
+                        <span class="n">output</span><span class="p">,</span> <span class="n">input_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">grad_o</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+                    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">aev_grad</span><span class="p">[</span><span class="n">idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">grad_tmp</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">event_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">stream_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">event_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># sync default stream with events on different streams</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">event_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">current_stream</span><span class="o">.</span><span class="n">wait_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">aev_grad</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

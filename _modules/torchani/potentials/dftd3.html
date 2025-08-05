@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.potentials.dftd3 &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/potentials/dftd3';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.potentials.dftd3</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for torchani.potentials.dftd3</h1><div class="highlight"><pre>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Potentials that calculate dispersion (i.e. van der Waals) interactions&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.jit</span><span class="w"> </span><span class="kn">import</span> <span class="n">Final</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tpx</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.constants</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ATOMIC_NUMBER</span><span class="p">,</span>
+    <span class="n">FUNCTIONAL_D3BJ_CONSTANTS</span><span class="p">,</span>
+    <span class="n">COVALENT_RADIUS</span><span class="p">,</span>
+    <span class="n">SQRT_EMPIRICAL_CHARGE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.cutoffs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CutoffArg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Neighbors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.potentials.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePairPotential</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.paths</span><span class="w"> </span><span class="kn">import</span> <span class="n">_resources_dir</span>
+
+
+<span class="c1"># TODO: trainable?</span>
+<span class="c1"># NOTE: Precalculated C6 constants for D3</span>
+<span class="c1"># - Precalculated C6 coefficients</span>
+<span class="c1"># shape (Elements, Elements, Ref, Ref), where &quot;Ref&quot; is the number of references</span>
+<span class="c1"># (Grimme et. al. provides 5)</span>
+<span class="c1"># This means for each pair of elements and reference indices there is an</span>
+<span class="c1"># associated precalc C6 coeff</span>
+<span class="c1"># - Precalculated coordination numbers</span>
+<span class="c1"># shape (Elements, Elements, Ref, Ref, 2)</span>
+<span class="c1"># Where the final axis indexes the coordination number of the first or second</span>
+<span class="c1"># atom respectively.</span>
+<span class="c1"># This means for each pair of elements and reference indices there is an</span>
+<span class="c1"># associated coordination number for the first and second items.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_c6_constants</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">_resources_dir</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;c6.h5&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">c6_constants</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;all/constants&quot;</span><span class="p">][:])</span>
+        <span class="n">c6_coordnums_a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;all/coordnums_a&quot;</span><span class="p">][:])</span>
+        <span class="n">c6_coordnums_b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;all/coordnums_b&quot;</span><span class="p">][:])</span>
+    <span class="k">return</span> <span class="n">c6_constants</span><span class="p">,</span> <span class="n">c6_coordnums_a</span><span class="p">,</span> <span class="n">c6_coordnums_b</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BeckeJohnsonDamp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Implementation of Becke-Johnson style damping</span>
+
+<span class="sd">    Damp functions are like cutoff functions, but modulate potentials close to</span>
+<span class="sd">    zero.</span>
+
+<span class="sd">    For modulating potentials of different &quot;order&quot; (e.g. ``1 / r ** 6`` =&gt; order 6),</span>
+<span class="sd">    different parameters may be needed.</span>
+
+<span class="sd">    For BJ damping style, the cutoff radii are by default calculated directly</span>
+<span class="sd">    from the order 8 and order 6 coeffs, via the square root of the effective</span>
+<span class="sd">    charges. Note that the cutoff radii is a matrix of T x T where T are the</span>
+<span class="sd">    possible atom types and that these cutoff radii are in AU (Bohr)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_a1</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">_a2</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">a1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">a2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">sqrt_empirical_charge</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">ATOMIC_NUMBER</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sqrt_empirical_charge</span><span class="p">:</span>
+            <span class="n">sqrt_empirical_charge</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">SQRT_EMPIRICAL_CHARGE</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span>
+            <span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">sqrt_empirical_charge</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;len(sqrt_empirical_charge), if provided, must match len(symbols)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">_sqrt_empirical_charge</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">sqrt_empirical_charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;cutoff_radii&quot;</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">_sqrt_empirical_charge</span><span class="p">,</span> <span class="n">_sqrt_empirical_charge</span><span class="p">)),</span>
+        <span class="p">)</span>
+        <span class="c1"># Sanity check</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_radii</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_a1</span> <span class="o">=</span> <span class="n">a1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_a2</span> <span class="o">=</span> <span class="n">a2</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_functional</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">functional</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tpx</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">FUNCTIONAL_D3BJ_CONSTANTS</span><span class="p">[</span><span class="n">functional</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">a1</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;a1&quot;</span><span class="p">],</span> <span class="n">a2</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;a2&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">species12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">order</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">cutoff_radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_radii</span><span class="p">[</span><span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">damp_term</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_a1</span> <span class="o">*</span> <span class="n">cutoff_radii</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_a2</span><span class="p">)</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distances</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">+</span> <span class="n">damp_term</span>
+
+
+<div class="viewcode-block" id="TwoBodyDispersionD3">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.TwoBodyDispersionD3">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TwoBodyDispersionD3</span><span class="p">(</span><span class="n">BasePairPotential</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculates the DFT-D3 dispersion corrections</span>
+
+<span class="sd">    Only calculates the 2-body part of the dispersion corrections. Requires a</span>
+<span class="sd">    damping function for the order-6 and order-8 potential terms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_s6</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">_s8</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">_k1</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">_k2</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">_k3</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="c1"># Needed for bw compatibility</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_from_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">old_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">old_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;damp_fn_6&quot;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>
+                <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="s2">&quot;damp_fn_8&quot;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>
+                <span class="n">new_key</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;damp_fn_8&quot;</span><span class="p">,</span> <span class="s2">&quot;damp_fn&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_key</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="n">state_dict</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_load_from_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="c1"># Potential</span>
+        <span class="n">s6</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">s8</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">damp_a1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">damp_a2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">sqrt_empirical_charge</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">covalent_radii</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="o">*</span><span class="p">,</span>  <span class="c1"># Cutoff</span>
+        <span class="n">cutoff_fn</span><span class="p">:</span> <span class="n">CutoffArg</span> <span class="o">=</span> <span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">cutoff_fn</span><span class="o">=</span><span class="n">cutoff_fn</span><span class="p">)</span>
+        <span class="n">sqrt_empirical_charge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_elem_seq</span><span class="p">(</span>
+            <span class="s2">&quot;sqrt_empirical_charge&quot;</span><span class="p">,</span> <span class="n">sqrt_empirical_charge</span><span class="p">,</span> <span class="n">SQRT_EMPIRICAL_CHARGE</span>
+        <span class="p">)</span>
+
+        <span class="n">covalent_radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_elem_seq</span><span class="p">(</span>
+            <span class="s2">&quot;covalent_radii&quot;</span><span class="p">,</span> <span class="n">covalent_radii</span><span class="p">,</span> <span class="n">COVALENT_RADIUS</span>
+        <span class="p">)</span>
+        <span class="c1"># Convert to Bohr since they are expected to be in angstrom</span>
+        <span class="n">covalent_radii</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ANGSTROM_TO_BOHR</span> <span class="o">*</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">covalent_radii</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_damp_fn</span> <span class="o">=</span> <span class="n">BeckeJohnsonDamp</span><span class="p">(</span>
+            <span class="n">symbols</span><span class="p">,</span> <span class="n">damp_a1</span><span class="p">,</span> <span class="n">damp_a2</span><span class="p">,</span> <span class="n">sqrt_empirical_charge</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s6</span> <span class="o">=</span> <span class="n">s6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s8</span> <span class="o">=</span> <span class="n">s8</span>
+
+        <span class="c1"># Hardcoded values from Grimme et. al.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_k1</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_k2</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_k3</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="c1"># Needed to get around numerical issues</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eps</span> <span class="o">=</span> <span class="mf">1e-35</span>
+
+        <span class="n">order6_constants</span><span class="p">,</span> <span class="n">coordnums_a</span><span class="p">,</span> <span class="n">coordnums_b</span> <span class="o">=</span> <span class="n">_load_c6_constants</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;precalc_coeff6&quot;</span><span class="p">,</span>
+            <span class="n">order6_constants</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="p">:][:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;precalc_coordnums_a&quot;</span><span class="p">,</span>
+            <span class="n">coordnums_a</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="p">:][:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;precalc_coordnums_b&quot;</span><span class="p">,</span>
+            <span class="n">coordnums_b</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="p">:][:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="c1"># The product of the sqrt of the empirical q&#39;s is stored directly</span>
+        <span class="n">_sqrt_empirical_charge</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">sqrt_empirical_charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;sqrt_charge_ab&quot;</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">_sqrt_empirical_charge</span><span class="p">,</span> <span class="n">_sqrt_empirical_charge</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;covalent_radii&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">covalent_radii</span><span class="p">))</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_functional</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">functional</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cutoff_fn</span><span class="p">:</span> <span class="n">CutoffArg</span> <span class="o">=</span> <span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tpx</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">FUNCTIONAL_D3BJ_CONSTANTS</span><span class="p">[</span><span class="n">functional</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">s6</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;s6&quot;</span><span class="p">],</span>
+            <span class="n">s8</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;s8&quot;</span><span class="p">],</span>
+            <span class="n">damp_a1</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;a1&quot;</span><span class="p">],</span>
+            <span class="n">damp_a2</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;a2&quot;</span><span class="p">],</span>
+            <span class="n">symbols</span><span class="o">=</span><span class="n">symbols</span><span class="p">,</span>
+            <span class="n">cutoff_fn</span><span class="o">=</span><span class="n">cutoff_fn</span><span class="p">,</span>
+            <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="TwoBodyDispersionD3.pair_energies">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.TwoBodyDispersionD3.pair_energies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pair_energies</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">element_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Internally this module works in AU</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ANGSTROM_TO_BOHR</span> <span class="o">*</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span>
+
+        <span class="n">species12</span> <span class="o">=</span> <span class="n">element_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">molecs</span><span class="p">,</span> <span class="n">atoms</span> <span class="o">=</span> <span class="n">element_idxs</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># Shape is num_molecules * num_atoms</span>
+        <span class="n">coordnums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coordnums</span><span class="p">(</span>
+            <span class="n">molecs</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">species12</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">,</span> <span class="n">distances</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Order 6 and 8 coeff</span>
+        <span class="n">order6_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolate_coeff6</span><span class="p">(</span><span class="n">species12</span><span class="p">,</span> <span class="n">coordnums</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+        <span class="n">order8_coeff</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mi">3</span> <span class="o">*</span> <span class="n">order6_coeff</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sqrt_charge_ab</span><span class="p">[</span><span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Order 6 and 8 energies</span>
+        <span class="n">order6_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s6</span> <span class="o">*</span> <span class="n">order6_coeff</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_damp_fn</span><span class="p">(</span><span class="n">species12</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="n">order8_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s8</span> <span class="o">*</span> <span class="n">order8_coeff</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_damp_fn</span><span class="p">(</span><span class="n">species12</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">order6_energy</span> <span class="o">+</span> <span class="n">order8_energy</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Use the coordination numbers and the internal precalc C6&#39;s and</span>
+    <span class="c1"># CNa&#39;s/CNb&#39;s to get interpolated C6 coeffs, C8 coeffs are obtained from C6</span>
+    <span class="c1"># coeffs directly Output shape is (A,)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_coordnums</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_molecules</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_atoms</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">species12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">atom_index12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># For coordination numbers &quot;covalent radii&quot; are used, not &quot;cutoff radii&quot;</span>
+        <span class="n">covalent_radii_sum</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">covalent_radii</span><span class="p">[</span><span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">covalent_radii</span><span class="p">[</span><span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="p">)</span>
+
+        <span class="n">count_fn</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_k1</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_k2</span> <span class="o">*</span> <span class="n">covalent_radii_sum</span> <span class="o">/</span> <span class="n">distances</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add terms corresponding to all neighbors</span>
+        <span class="n">coordnums</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span><span class="p">))</span>
+        <span class="n">coordnums</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">atom_index12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">count_fn</span><span class="p">)</span>
+        <span class="n">coordnums</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">atom_index12</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">count_fn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">coordnums</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_interpolate_coeff6</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">species12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">coordnums</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">atom_index12</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">coordnums</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;coordnums must be one dimensional&quot;</span>
+        <span class="k">assert</span> <span class="n">species12</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;species12 must be 2 dimensional&quot;</span>
+
+        <span class="c1"># Find pre-computed values for every species pair, and flatten over all</span>
+        <span class="c1"># references shape is (num_pairs, 5, 5) flat-&gt; (num_pairs, 25)</span>
+        <span class="n">precalc_coeff6</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precalc_coeff6</span><span class="p">[</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">precalc_cn_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precalc_coordnums_a</span><span class="p">[</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">precalc_cn_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precalc_coordnums_b</span><span class="p">[</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">species12</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">gauss_dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordnums</span><span class="p">[</span><span class="n">atom_index12</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">precalc_cn_a</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="n">coordnums</span><span class="p">[</span><span class="n">atom_index12</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">precalc_cn_b</span>
+        <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="c1"># Extra factor of gauss_dist.mean() and + 20 needed for numerical stability</span>
+        <span class="n">gauss_dist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_k3</span> <span class="o">*</span> <span class="n">gauss_dist</span><span class="p">)</span>
+        <span class="c1"># only consider C6 coefficients strictly greater than zero,</span>
+        <span class="c1"># don&#39;t include -1 and 0.0 terms in the sums,</span>
+        <span class="c1"># all missing parameters (with -1.0 values) are guaranteed to be the</span>
+        <span class="c1"># same for precalc_cn_a/b and precalc_order6</span>
+        <span class="n">gauss_dist</span> <span class="o">=</span> <span class="n">gauss_dist</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">precalc_coeff6</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># sum over references for w factor and z factor</span>
+        <span class="c1"># This is needed for numerical stability, it will give 1 if W or Z are not</span>
+        <span class="c1"># &gt;&gt; 1e-35 but those situations are rare in practice, and it avoids all</span>
+        <span class="c1"># issues with NaN and exploding numbers / vanishing quantities</span>
+        <span class="n">w_factor</span> <span class="o">=</span> <span class="n">gauss_dist</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps</span>
+        <span class="n">z_factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">precalc_coeff6</span> <span class="o">*</span> <span class="n">gauss_dist</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps</span>
+        <span class="k">return</span> <span class="n">z_factor</span> <span class="o">/</span> <span class="n">w_factor</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

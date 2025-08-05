@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.neighbors" href="torchani.neighbors.html" />
+    <link rel="prev" title="Constructing a TorchANI model from NeuroChem files" href="../examples_autogen/neurochem_loading.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani">
+<span id="torchani"></span><h1>torchani<a class="headerlink" href="#module-torchani" title="Link to this heading">#</a></h1>
+<p>The TorchANI neural network potential library main namespace</p>
+<p>Most of the functions and classes of the library are accessible from their specific
+modules. For convenience, some useful classes are accessible <em>also</em> from here. These
+are:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="torchani.nn.html#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.SpeciesConverter</span></code></a></p></li>
+<li><p><a class="reference internal" href="torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.AEVComputer</span></code></a></p></li>
+<li><p><a class="reference internal" href="torchani.nn.html#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.ANINetworks</span></code></a></p></li>
+<li><p><a class="reference internal" href="torchani.sae.html#torchani.sae.SelfEnergy" title="torchani.sae.SelfEnergy"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.SelfEnergy</span></code></a></p></li>
+</ul>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">single_point</span></code></p></td>
+<td><p>Calculate properties for a batch of molecules</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<p class="rubric">Modules</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.neighbors.html#module-torchani.neighbors" title="torchani.neighbors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">neighbors</span></code></a></p></td>
+<td><p>Modular neighborlists to improve scaling for large systems</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.aev.html#module-torchani.aev" title="torchani.aev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aev</span></code></a></p></td>
+<td><p>Atomic Environment Vectors (AEVs) are TorchANI's name for local atomic features, calculated from the local chemical environment of each atom.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.nn.html#module-torchani.nn" title="torchani.nn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nn</span></code></a></p></td>
+<td><p>Classes that represent atomic (and groups of element-specific) neural networks</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.grad.html#module-torchani.grad" title="torchani.grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grad</span></code></a></p></td>
+<td><p>Wrapper functions that make use of <a class="reference external" href="https://docs.pytorch.org/docs/stable/autograd.html#module-torch.autograd" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.autograd</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.models.html#module-torchani.models" title="torchani.models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">models</span></code></a></p></td>
+<td><p>Provides access to all published ANI models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.potentials.html#module-torchani.potentials" title="torchani.potentials"><code class="xref py py-obj docutils literal notranslate"><span class="pre">potentials</span></code></a></p></td>
+<td><p>Callable objects that can be attached to TorchANI models.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.cutoffs.html#module-torchani.cutoffs" title="torchani.cutoffs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cutoffs</span></code></a></p></td>
+<td><p>Collection of Cutoff functions</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.datasets.html#module-torchani.datasets" title="torchani.datasets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets</span></code></a></p></td>
+<td><p>Functions and classes for creating batched and map-like datasets.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.transforms.html#module-torchani.transforms" title="torchani.transforms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transforms</span></code></a></p></td>
+<td><p>Composable functions that modify to properties when training or batching a dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.io.html#module-torchani.io" title="torchani.io"><code class="xref py py-obj docutils literal notranslate"><span class="pre">io</span></code></a></p></td>
+<td><p>Convenience functions for reading and writing molecules in &quot;.xyz&quot; format</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.electro.html#module-torchani.electro" title="torchani.electro"><code class="xref py py-obj docutils literal notranslate"><span class="pre">electro</span></code></a></p></td>
+<td><p>Utilities for working with charged systems</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.arch.html#module-torchani.arch" title="torchani.arch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">arch</span></code></a></p></td>
+<td><p>Construction of ANI-style models and definition of their architecture</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.constants.html#module-torchani.constants" title="torchani.constants"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constants</span></code></a></p></td>
+<td><p>Atomic constants, and Density Functional constants</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.utils.html#module-torchani.utils" title="torchani.utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utils</span></code></a></p></td>
+<td><p>Misc utilities used throughout the code</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.units.html#module-torchani.units" title="torchani.units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">units</span></code></a></p></td>
+<td><p>Unit conversion factors used in TorchANI</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.sae.html#module-torchani.sae" title="torchani.sae"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sae</span></code></a></p></td>
+<td><p>Simple module that calculates a &quot;1-body atomic potential&quot;</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.sae_estimation.html#module-torchani.sae_estimation" title="torchani.sae_estimation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sae_estimation</span></code></a></p></td>
+<td><p>Functions to calculate self atomic energies (SAEs) via linear regression.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.cli.html#module-torchani.cli" title="torchani.cli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cli</span></code></a></p></td>
+<td><p>Contains the TorchANI CLI entrypoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.paths.html#module-torchani.paths" title="torchani.paths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">paths</span></code></a></p></td>
+<td><p>Locations used by TorchANI to cache various resources</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.ase.html#module-torchani.ase" title="torchani.ase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ase</span></code></a></p></td>
+<td><p>Calculator subclass, used for interfacing with the ASE library</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.annotations.html#module-torchani.annotations" title="torchani.annotations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">annotations</span></code></a></p></td>
+<td><p>Type aliases; common type annotations used throughout the code</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="torchani.neurochem.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">neurochem</span></code></a></p></td>
+<td><p>This module is part of the <em>Legacy API</em> of TorchANI 2 and should not be used in new code.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="torchani.legacy_data.html#module-torchani.legacy_data" title="torchani.legacy_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">legacy_data</span></code></a></p></td>
+<td><p>This module is part of the <em>Legacy API</em> of TorchANI 2 and should not be used in new code.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../examples_autogen/neurochem_loading.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Constructing a TorchANI model from NeuroChem files</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.neighbors.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.neighbors</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

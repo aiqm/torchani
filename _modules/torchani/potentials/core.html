@@ -1,0 +1,774 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.potentials.core &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/potentials/core';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.potentials.core</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for torchani.potentials.core</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.tuples</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnergiesScalars</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.cutoffs</span><span class="w"> </span><span class="kn">import</span> <span class="n">_parse_cutoff_fn</span><span class="p">,</span> <span class="n">CutoffArg</span><span class="p">,</span> <span class="n">CutoffDummy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Neighbors</span><span class="p">,</span> <span class="n">adaptive_list</span><span class="p">,</span> <span class="n">all_pairs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_validate_user_kwargs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">ANGSTROM_TO_BOHR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ChemModule</span>
+
+
+<div class="viewcode-block" id="Potential">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.Potential">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Potential</span><span class="p">(</span><span class="n">_ChemModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for all atomic potentials</span>
+
+<span class="sd">    Potentials may be many-body (3-body, 4-body, ...) potentials or 2-body (pair)</span>
+<span class="sd">    potentials. Subclasses must implement ``compute`` and may override ``__init__``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ANGSTROM_TO_BOHR</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">_enabled</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ANGSTROM_TO_BOHR</span> <span class="o">=</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Currently meant for other classes to access only</span>
+
+<div class="viewcode-block" id="Potential.forward">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.Potential.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">atomic_nums_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Outputs energy, as calculated by the potential</span>
+
+<span class="sd">        Output shape depends on the value of ``atomic``, it is either</span>
+<span class="sd">        ``(molecs, atoms)`` or ``(molecs,)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">atomic_nums_input</span><span class="p">:</span>
+            <span class="n">elem_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conv_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">species</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="n">species</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elem_idxs</span> <span class="o">=</span> <span class="n">species</span>
+        <span class="c1"># Check inputs</span>
+        <span class="k">assert</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">neighbors</span> <span class="o">=</span> <span class="n">adaptive_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">neighbors</span> <span class="o">=</span> <span class="n">all_pairs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_from_neighbors</span><span class="p">(</span>
+            <span class="n">elem_idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="n">atomic</span><span class="p">,</span> <span class="n">ensemble_values</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">energies</span></div>
+
+
+<div class="viewcode-block" id="Potential.compute_from_neighbors">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.Potential.compute_from_neighbors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_from_neighbors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+        <span class="n">charge</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ghost_flags</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EnergiesScalars</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the energies associated with the potential</span>
+
+<span class="sd">        If the potential is an ensemble of multiple models, ensemble_values=True should</span>
+<span class="sd">        return the individual values of the models, in the first dimension ``(submodels,</span>
+<span class="sd">        ...)``. Otherwise it should *disregard* ``ensemble_values``.</span>
+
+<span class="sd">        Must be implemented by subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Must be implemented by subclasses&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DummyPotential">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.DummyPotential">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DummyPotential</span><span class="p">(</span><span class="n">Potential</span><span class="p">):</span>
+<div class="viewcode-block" id="DummyPotential.compute_from_neighbors">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.DummyPotential.compute_from_neighbors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_from_neighbors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+        <span class="n">charge</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ghost_flags</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EnergiesScalars</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">atomic</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">EnergiesScalars</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">EnergiesScalars</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BasePairPotential">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.BasePairPotential">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BasePairPotential</span><span class="p">(</span><span class="n">Potential</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;General base class for all pairwise potentials</span>
+
+<span class="sd">    Subclasses must implement pair_energies, and override init using this template:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        def __init__(</span>
+<span class="sd">            symbols,</span>
+<span class="sd">            ..., # User args go here</span>
+<span class="sd">            cutoff: float=math.inf,</span>
+<span class="sd">            cutoff_fn=&quot;smooth&quot;,</span>
+<span class="sd">            ..., # User kwargs go here</span>
+<span class="sd">        )</span>
+<span class="sd">            super().__init__(symbols, cutoff, cutoff_fn)</span>
+<span class="sd">            ... # User code goes here</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+        <span class="n">cutoff_fn</span><span class="p">:</span> <span class="n">CutoffArg</span> <span class="o">=</span> <span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cutoff</span> <span class="o">!=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_fn</span> <span class="o">=</span> <span class="n">_parse_cutoff_fn</span><span class="p">(</span><span class="n">cutoff_fn</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_fn</span> <span class="o">=</span> <span class="n">CutoffDummy</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clamp</span><span class="p">(</span><span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">distances</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasePairPotential.pair_energies">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.BasePairPotential.pair_energies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pair_energies</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return energy of all pairs of neighbors</span>
+
+<span class="sd">        Returns a Tensor of energies, of shape (&#39;pairs&#39;,) where &#39;pairs&#39; is</span>
+<span class="sd">        the number of neighbor pairs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Must be overriden by subclasses&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Modulate pair_energies by wrapping with the cutoff fn envelope,</span>
+    <span class="c1"># and scale ghost pair energies by 0.5</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pair_energies_wrapper</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+        <span class="n">ghost_flags</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Input validation</span>
+        <span class="k">assert</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;species should be 2 dimensional&quot;</span>
+        <span class="k">assert</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;distances should be 1 dimensional&quot;</span>
+        <span class="k">assert</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;atom_index12 should be 2 dimensional&quot;</span>
+        <span class="k">assert</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">pair_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_energies</span><span class="p">(</span><span class="n">elem_idxs</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">)</span>
+        <span class="n">pair_energies</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_fn</span><span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ghost_flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ghost_flags</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">numel</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;ghost_flags and species should have the same number of elements&quot;</span>
+                <span class="p">)</span>
+            <span class="n">ghost12</span> <span class="o">=</span> <span class="n">ghost_flags</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span>
+            <span class="n">ghost_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">ghost12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ghost12</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">pair_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ghost_mask</span><span class="p">,</span> <span class="n">pair_energies</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">pair_energies</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pair_energies</span>
+
+    <span class="c1"># Compute_form_neighbors should not be modified by subclasses of BasePairPotential</span>
+<div class="viewcode-block" id="BasePairPotential.compute_from_neighbors">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.BasePairPotential.compute_from_neighbors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_from_neighbors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+        <span class="n">charge</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">atomic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ensemble_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ghost_flags</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EnergiesScalars</span><span class="p">:</span>
+        <span class="c1"># NOTE: Currently having ensembles of pair potentials is not supported, so</span>
+        <span class="c1"># ensemble_values is disregarded</span>
+        <span class="c1"># NOTE: Currently charge is not passed to the pair_potentials</span>
+        <span class="n">pair_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pair_energies_wrapper</span><span class="p">(</span><span class="n">elem_idxs</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="n">ghost_flags</span><span class="p">)</span>
+        <span class="n">molecs_num</span><span class="p">,</span> <span class="n">atoms_num</span> <span class="o">=</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">atomic</span><span class="p">:</span>
+            <span class="n">energies</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">molecs_num</span> <span class="o">*</span> <span class="n">atoms_num</span><span class="p">)</span>
+            <span class="n">energies</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pair_energies</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">energies</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pair_energies</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">energies</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">molecs_num</span><span class="p">,</span> <span class="n">atoms_num</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">energies</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">molecs_num</span><span class="p">)</span>
+            <span class="n">molecs_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+                <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span>
+            <span class="p">)</span>
+            <span class="n">energies</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">molecs_idxs</span><span class="p">,</span> <span class="n">pair_energies</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">EnergiesScalars</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BasePairPotential.symm">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.BasePairPotential.symm">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">symm</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Takes an NxN tensor with 0 lower triangle and returns it symmetrized&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Arg to symm must be an N x N tensor&quot;</span>
+        <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Arg to symm must be an N x N tensor&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;Arg to symm must have 0 low triangle part&quot;</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
+
+
+<div class="viewcode-block" id="BasePairPotential.to_pair_values">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.BasePairPotential.to_pair_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_pair_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns values of elem pairs from a NxN tensor with 0 low triangle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symm</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="n">elem_idxs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">elem_idxs</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>  <span class="c1"># shape(num-elem, num-elem)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PairPotential">
+<a class="viewcode-back" href="../../../api_autogen/torchani.potentials.html#torchani.potentials.PairPotential">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PairPotential</span><span class="p">(</span><span class="n">BasePairPotential</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;User friendly, simple class for pairwise potentials</span>
+
+<span class="sd">    Subclasses must implement ``pair_energies`` and, if they use</span>
+<span class="sd">    any parameters or buffers, specify three list of strings:</span>
+
+<span class="sd">    - ``&#39;tensors&#39;``: Vectors (all with the same len) or scalars</span>
+<span class="sd">    - ``&#39;elem_tensors&#39;``: With shape ``(num-sym,)``</span>
+<span class="sd">    - ``&#39;pair_elem_tensors&#39;``: With shape ``(num-sym * (num-sym + 1) / 2,)``</span>
+
+<span class="sd">    Usage is better understood by an example:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from torchani.potentials import PairPotential</span>
+
+
+<span class="sd">        class Square(PairPotential):</span>
+<span class="sd">            tensors = [&#39;bias&#39;]  # Vectors (all with the same len) or scalars</span>
+<span class="sd">            pair_elem_tensors = [&quot;k&quot;, &quot;eq&quot;]  # shape (num-sym * (num-sym + 1) / 2)</span>
+
+<span class="sd">            def pair_energies(self, elem_idxs, neighbors):</span>
+<span class="sd">                elem_pairs = elem_idxs.view(-1)[neighbors.indices]</span>
+<span class="sd">                eq = self.to_pair_values(self.eq, elem_pairs)</span>
+<span class="sd">                k = self.to_pair_values(self.k, elem_pairs)</span>
+<span class="sd">                return self.bias + k / 2 * (neighbors.distances - eq) ** 2</span>
+
+
+<span class="sd">        #  Order for the pair elem tensors is HH, HC, HO, CC, CO, ...</span>
+<span class="sd">        #  Values for demonstration purpose only</span>
+<span class="sd">        k = (1.,) * (3 * (3 + 1) // 2)</span>
+<span class="sd">        eq = (1.5,) * (3 * (3 + 1) // 2)</span>
+<span class="sd">        pot = Square(symbols=(&quot;H&quot;, &quot;C&quot;, &quot;O&quot;), k=k, eq=eq, bias=0.1)</span>
+
+<span class="sd">        # Or if the constants are trainable:</span>
+<span class="sd">        pot = Square(symbols=(&quot;H&quot;, &quot;C&quot;, &quot;O&quot;), k=k, bias=0.1, eq=eq, trainable=&quot;k&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tensors</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">elem_tensors</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pair_elem_tensors</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">trainable</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">tp</span><span class="o">.</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+        <span class="n">cutoff_fn</span><span class="p">:</span> <span class="n">CutoffArg</span> <span class="o">=</span> <span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">cutoff_fn</span><span class="o">=</span><span class="n">cutoff_fn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trainable</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">trainable</span> <span class="o">=</span> <span class="p">[</span><span class="n">trainable</span><span class="p">]</span>
+
+        <span class="n">_validate_user_kwargs</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;tensors&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensors</span><span class="p">,</span>
+                <span class="s2">&quot;elem_tensors&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">elem_tensors</span><span class="p">,</span>
+                <span class="s2">&quot;pair_elem_tensors&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_elem_tensors</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">trainable</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elem_tensors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_elem_seq</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_elem_tensors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_elem_seq</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">pair</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_elem_tensors</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">),)</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="n">upper</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">upper</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tensor</span>
+                <span class="n">tensor</span> <span class="o">=</span> <span class="n">upper</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trainable</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">tensor</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">tensor</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Constructing a TorchANI model from NeuroChem files &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples_autogen/neurochem_loading';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani" href="../api_autogen/torchani.html" />
+    <link rel="prev" title="Using TorchScript to serialize models" href="just_in_time_compilation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="fundamentals.html">Fundamentals of TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating-to-2.html">Migrating to TorchANI 2</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Molecular dynamics and second-order properties</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Molecular dynamics using ASE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing vibrational frequencies</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Extending TorchANI</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dispersion_potential.html">Using DFT-D3 dispersion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repulsive_potential.html">Using xTB repulsion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending_aev.html">Extending the local atomic features: AEVs with custom terms and cutoffs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Manipulating ANI Datasets</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="datasets_simple_usage.html">Basic usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets_advanced_usage.html">Advanced usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Training and deploying NN-IPs</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training an ANI network using a custom script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="just_in_time_compilation.html">Using TorchScript to serialize models</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Working with legacy NeuroChem files</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Constructing a TorchANI model from NeuroChem files</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../user-guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Constructing a TorchANI model from NeuroChem files</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-examples-autogen-neurochem-loading-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="constructing-a-torchani-model-from-neurochem-files">
+<span id="sphx-glr-examples-autogen-neurochem-loading-py"></span><h1>Constructing a TorchANI model from NeuroChem files<a class="headerlink" href="#constructing-a-torchani-model-from-neurochem-files" title="Link to this heading">#</a></h1>
+<p>This tutorial illustrates how to manually load model from <a class="reference external" href="https://github.com/isayev/ASE_ANI/tree/master/ani_models">NeuroChem files</a>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># To begin with, let&#39;s first import the modules we will use:</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.paths</span><span class="w"> </span><span class="kn">import</span> <span class="n">neurochem_dir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.grad</span><span class="w"> </span><span class="kn">import</span> <span class="n">energies_and_forces</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.neurochem</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">download_model_parameters</span><span class="p">,</span>
+    <span class="n">load_aev_computer_and_symbols</span><span class="p">,</span>
+    <span class="n">load_sae</span><span class="p">,</span>
+    <span class="n">load_member</span><span class="p">,</span>
+    <span class="n">load_ensemble</span><span class="p">,</span>
+    <span class="n">load_model_from_info_file</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>First lets download all model parameters, by default they will be loaded into
+torchani.paths.NEUROCHEM, which is ~/.local/torchani/Neurochem.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a> <span class="o">=</span> <span class="n">neurochem_dir</span><span class="p">()</span>
+<span class="n">download_model_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Found existing files in directory, assuming params already present
+</pre></div>
+</div>
+<p>Now let’s read constants from constant file and construct AEV computer,
+The sae’s and construct a SelfEnergy potential,
+and the networks to construct an ensemble</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">const_file</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a><span class="p">,</span> <span class="s2">&quot;ani-1x_8x&quot;</span><span class="p">,</span> <span class="s2">&quot;rHCNO-5.2R_16-3.5A_a4-8.params&quot;</span><span class="p">)</span>
+<span class="n">aev_computer</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">symbols</span></a> <span class="o">=</span> <span class="n">load_aev_computer_and_symbols</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">const_file</span></a><span class="p">)</span>
+<a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">model_prefix</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a><span class="p">,</span> <span class="s2">&quot;ani-1x_8x&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span>
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">load_ensemble</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">symbols</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">model_prefix</span></a><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sae_file</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a><span class="p">,</span> <span class="s2">&quot;ani-1x_8x&quot;</span><span class="p">,</span> <span class="s2">&quot;sae_linfit.dat&quot;</span><span class="p">)</span>
+<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sae_file</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can also load a single model from the ensemble</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">model_dir</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a><span class="p">,</span> <span class="s2">&quot;ani-1x_8x&quot;</span><span class="p">,</span> <span class="s2">&quot;train0&quot;</span><span class="p">,</span> <span class="s2">&quot;networks&quot;</span><span class="p">)</span>
+<span class="n">member</span> <span class="o">=</span> <span class="n">load_member</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">symbols</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">model_dir</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can also load an ANI model using neurochem</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble_model</span> <span class="o">=</span> <span class="n">load_model_from_info_file</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a> <span class="o">/</span> <span class="s2">&quot;ani-1x_8x.info&quot;</span><span class="p">)</span>
+<span class="n">single_model</span> <span class="o">=</span> <span class="n">load_model_from_info_file</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">root</span></a> <span class="o">/</span> <span class="s2">&quot;ani-1x_8x.info&quot;</span><span class="p">,</span> <span class="n">model_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">single_model</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANI(
+  (neighborlist): AllPairs()
+  (energy_shifter): SelfEnergy()
+  (species_converter): SpeciesConverter()
+  (potentials): ModuleDict(
+    (nnp): NNPotential(
+      (aev_computer): AEVComputer(
+        #  out_dim=384
+        #  radial_len=64 (16.67% of feats)
+        #  angular_len=320 (83.33% of feats)
+        num_species=4,
+        strategy=pyaev,
+        (radial): ANIRadial(
+          #  num_feats=16
+          #  num_shifts=16
+          eta=16.0000,
+          shifts=[0.9000, 1.1688, 1.4375, 1.7062, 1.9750, 2.2438, 2.5125, 2.7812, 3.0500, 3.3187, 3.5875, 3.8563, 4.1250, 4.3938, 4.6625, 4.9313],
+          cutoff=5.2000,
+          (cutoff_fn): CutoffCosine()
+        )
+        (angular): ANIAngular(
+          #  num_feats=32
+          #  num_shifts=4
+          #  num_sections=8
+          eta=8.0000,
+          zeta=32.0000,
+          shifts=[0.9000, 1.5500, 2.2000, 2.8500],
+          sections=[0.1963, 0.5890, 0.9817, 1.3744, 1.7671, 2.1598, 2.5525, 2.9452],
+          cutoff=3.5000,
+          (cutoff_fn): CutoffCosine()
+        )
+        (neighborlist): AllPairs()
+      )
+      (neural_networks): Ensemble(
+        (members): ModuleList(
+          (0-7): 8 x ANINetworks(
+            (atomics): ModuleDict(
+              (H): AtomicNetwork(
+                layer_dims=(384, 160, 128, 96, 1),
+                activation=TightCELU(),
+                bias=True,
+                (layers): ModuleList(
+                  (0): Linear(in_features=384, out_features=160, bias=True)
+                  (1): Linear(in_features=160, out_features=128, bias=True)
+                  (2): Linear(in_features=128, out_features=96, bias=True)
+                )
+                (final_layer): Linear(in_features=96, out_features=1, bias=True)
+                (activation): TightCELU()
+              )
+              (C): AtomicNetwork(
+                layer_dims=(384, 144, 112, 96, 1),
+                activation=TightCELU(),
+                bias=True,
+                (layers): ModuleList(
+                  (0): Linear(in_features=384, out_features=144, bias=True)
+                  (1): Linear(in_features=144, out_features=112, bias=True)
+                  (2): Linear(in_features=112, out_features=96, bias=True)
+                )
+                (final_layer): Linear(in_features=96, out_features=1, bias=True)
+                (activation): TightCELU()
+              )
+              (N): AtomicNetwork(
+                layer_dims=(384, 128, 112, 96, 1),
+                activation=TightCELU(),
+                bias=True,
+                (layers): ModuleList(
+                  (0): Linear(in_features=384, out_features=128, bias=True)
+                  (1): Linear(in_features=128, out_features=112, bias=True)
+                  (2): Linear(in_features=112, out_features=96, bias=True)
+                )
+                (final_layer): Linear(in_features=96, out_features=1, bias=True)
+                (activation): TightCELU()
+              )
+              (O): AtomicNetwork(
+                layer_dims=(384, 128, 112, 96, 1),
+                activation=TightCELU(),
+                bias=True,
+                (layers): ModuleList(
+                  (0): Linear(in_features=384, out_features=128, bias=True)
+                  (1): Linear(in_features=128, out_features=112, bias=True)
+                  (2): Linear(in_features=112, out_features=96, bias=True)
+                )
+                (final_layer): Linear(in_features=96, out_features=1, bias=True)
+                (activation): TightCELU()
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+ANI(
+  (neighborlist): AllPairs()
+  (energy_shifter): SelfEnergy()
+  (species_converter): SpeciesConverter()
+  (potentials): ModuleDict(
+    (nnp): NNPotential(
+      (aev_computer): AEVComputer(
+        #  out_dim=384
+        #  radial_len=64 (16.67% of feats)
+        #  angular_len=320 (83.33% of feats)
+        num_species=4,
+        strategy=pyaev,
+        (radial): ANIRadial(
+          #  num_feats=16
+          #  num_shifts=16
+          eta=16.0000,
+          shifts=[0.9000, 1.1688, 1.4375, 1.7062, 1.9750, 2.2438, 2.5125, 2.7812, 3.0500, 3.3187, 3.5875, 3.8563, 4.1250, 4.3938, 4.6625, 4.9313],
+          cutoff=5.2000,
+          (cutoff_fn): CutoffCosine()
+        )
+        (angular): ANIAngular(
+          #  num_feats=32
+          #  num_shifts=4
+          #  num_sections=8
+          eta=8.0000,
+          zeta=32.0000,
+          shifts=[0.9000, 1.5500, 2.2000, 2.8500],
+          sections=[0.1963, 0.5890, 0.9817, 1.3744, 1.7671, 2.1598, 2.5525, 2.9452],
+          cutoff=3.5000,
+          (cutoff_fn): CutoffCosine()
+        )
+        (neighborlist): AllPairs()
+      )
+      (neural_networks): ANINetworks(
+        (atomics): ModuleDict(
+          (H): AtomicNetwork(
+            layer_dims=(384, 160, 128, 96, 1),
+            activation=TightCELU(),
+            bias=True,
+            (layers): ModuleList(
+              (0): Linear(in_features=384, out_features=160, bias=True)
+              (1): Linear(in_features=160, out_features=128, bias=True)
+              (2): Linear(in_features=128, out_features=96, bias=True)
+            )
+            (final_layer): Linear(in_features=96, out_features=1, bias=True)
+            (activation): TightCELU()
+          )
+          (C): AtomicNetwork(
+            layer_dims=(384, 144, 112, 96, 1),
+            activation=TightCELU(),
+            bias=True,
+            (layers): ModuleList(
+              (0): Linear(in_features=384, out_features=144, bias=True)
+              (1): Linear(in_features=144, out_features=112, bias=True)
+              (2): Linear(in_features=112, out_features=96, bias=True)
+            )
+            (final_layer): Linear(in_features=96, out_features=1, bias=True)
+            (activation): TightCELU()
+          )
+          (N): AtomicNetwork(
+            layer_dims=(384, 128, 112, 96, 1),
+            activation=TightCELU(),
+            bias=True,
+            (layers): ModuleList(
+              (0): Linear(in_features=384, out_features=128, bias=True)
+              (1): Linear(in_features=128, out_features=112, bias=True)
+              (2): Linear(in_features=112, out_features=96, bias=True)
+            )
+            (final_layer): Linear(in_features=96, out_features=1, bias=True)
+            (activation): TightCELU()
+          )
+          (O): AtomicNetwork(
+            layer_dims=(384, 128, 112, 96, 1),
+            activation=TightCELU(),
+            bias=True,
+            (layers): ModuleList(
+              (0): Linear(in_features=384, out_features=128, bias=True)
+              (1): Linear(in_features=128, out_features=112, bias=True)
+              (2): Linear(in_features=112, out_features=96, bias=True)
+            )
+            (final_layer): Linear(in_features=96, out_features=1, bias=True)
+            (activation): TightCELU()
+          )
+        )
+      )
+    )
+  )
+)
+</pre></div>
+</div>
+<p>Now let’s define a methane molecule</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span> <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span> <span class="mf">0.20759389</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span> <span class="mf">0.54289633</span><span class="p">,</span> <span class="mf">0.81170881</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">],</span>
+        <span class="p">]</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">long</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s compute energies using the ensemble directly:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energies</span></a><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">forces</span></a> <span class="o">=</span> <span class="n">energies_and_forces</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Energy:&quot;</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energies</span></a><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Force:&quot;</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">forces</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45901870727539
+Force: tensor([[ 0.031, -0.132, -0.053],
+        [-0.129,  0.164, -0.077],
+        [ 0.086, -0.043,  0.041],
+        [ 0.027,  0.006,  0.038],
+        [-0.014,  0.005,  0.051]])
+</pre></div>
+</div>
+<p>We can do the same thing with the single model:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energies</span></a><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">forces</span></a> <span class="o">=</span> <span class="n">energies_and_forces</span><span class="p">(</span><span class="n">single_model</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Energy:&quot;</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energies</span></a><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Force:&quot;</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">forces</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.46279525756836
+Force: tensor([[ 0.056, -0.127, -0.054],
+        [-0.140,  0.155, -0.075],
+        [ 0.075, -0.037,  0.039],
+        [ 0.024,  0.002,  0.033],
+        [-0.016,  0.007,  0.057]])
+</pre></div>
+</div>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-autogen-neurochem-loading-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/18bd1c0c38e6f59bc960335e51c45c89/neurochem_loading.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">neurochem_loading.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/49127bd5ddfc4940961a0d4c63c4d197/neurochem_loading.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neurochem_loading.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/a76e4586764bde4f3c03ea329f4051c0/neurochem_loading.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">neurochem_loading.zip</span></code></a></p>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="just_in_time_compilation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Using TorchScript to serialize models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api_autogen/torchani.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

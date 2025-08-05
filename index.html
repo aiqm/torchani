@@ -1,281 +1,505 @@
 
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Welcome to TorchANI’s documentation! &mdash; TorchANI 2.1.1 documentation</title>
-  
 
-  
-  
-  
-  
 
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+<html lang="en" data-content_root="./" >
 
-    
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <title>TorchANI documentation &#8212; TorchANI v2.6 (dev) Manual</title>
   
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery-dataframe.css" type="text/css" />
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="start.html" /> 
-</head>
+    <link rel="next" title="Installing" href="installing.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
-   
-  <div class="wy-grid-for-nav">
+  
+  <dialog id="pst-search-dialog">
     
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-          
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
 
-          
-            <a href="#" class="icon icon-home"> TorchANI
-          
-
-          
-          </a>
-
-          
-            
-            
-              <div class="version">
-                2.1.1
-              </div>
-            
-          
-
-          
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
 
-          
-        </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
 
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
           
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="torchani-documentation">
+<h1>TorchANI documentation<a class="headerlink" href="#torchani-documentation" title="Link to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p><strong>Date</strong>: Aug 05, 2025 <strong>Version</strong>: 2.6 (dev)</p>
+<p><strong>Useful links</strong>:
+<a class="reference external" href="https://github.com/aiqm/torchani">GitHub Repo</a>  |
+<a class="reference external" href="https://github.com/aiqm/torchani/issues">Issue Tracker</a>  |
+<a class="reference external" href="https://roitberg.chem.ufl.edu">Roitberg Lab</a></p>
+<p><strong>TorchANI</strong> is an open-source library that supports training, development, and research
+of ANI-style neural network interatomic potentials. It was originally developed and is
+currently maintained by the Roitberg group.</p>
+<p>If you were using TorchANI before version 2, your code may need updating to be
+compatible with its new features. Please consult <a class="reference internal" href="migrating-to-2.html#torchani-migrating"><span class="std std-ref">the migration guide</span></a> for more information. If you still have problems, please open an
+issue on the GitHub <a class="reference external" href="https://github.com/aiqm/torchani/issues">issue tracker</a>.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-2 sd-g-xs-2 sd-g-sm-3 sd-g-md-4 sd-g-lg-4 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<img alt="" class="sd-card-img-top" src="_images/installing.svg" />
+<div class="sd-card-header docutils">
+<p class="sd-card-text"><strong>Installing</strong></p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Want to install the TorchANI library? Read this section for details on how to
+install using <code class="docutils literal notranslate"><span class="pre">conda</span></code> or <code class="docutils literal notranslate"><span class="pre">pip</span></code>. If you want to build TorchANI from source
+instead, please consult the <code class="docutils literal notranslate"><span class="pre">README</span></code> in the GitHub repo.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal" href="installing.html"><span class="doc">To the installation guide</span></a></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<img alt="" class="sd-card-img-top" src="_images/user-guide.svg" />
+<div class="sd-card-header docutils">
+<p class="sd-card-text"><strong>User guide</strong></p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Start here! This sections describes how to use the TorchANI models in your
+research or application. It also teaches you about the main classes in in the
+library, and how to extend them.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal" href="user-guide.html"><span class="doc">To the user guide</span></a></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<img alt="" class="sd-card-img-top" src="_images/api.svg" />
+<div class="sd-card-header docutils">
+<p class="sd-card-text"><strong>API reference</strong></p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">A detailed description of the TorchANI API. It shows all its <em>public</em> functions,
+classes, and their methods and properties. Use this for reference. It assumes a
+basic understanding of Python and <code class="docutils literal notranslate"><span class="pre">torch</span></code>.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal" href="api_autogen/torchani.html"><span class="doc">To the API reference</span></a></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<img alt="" class="sd-card-img-top" src="_images/publications.svg" />
+<div class="sd-card-header docutils">
+<p class="sd-card-text"><strong>Publications</strong></p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Articles regarding TorchANI itself, and also with specific methods and models it
+implements. Please consult and cite the corresponding articles if you use
+TorchANI in a scientific publication.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal" href="publications.html"><span class="doc">To the publications page</span></a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="right-next"
+       href="installing.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Installing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
             
             
               
             
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="start.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-</ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">TorchANI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.models">Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.data">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.utils">Utilities</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.units">Units</a></li>
-</ul>
-
-            
-          
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">TorchANI</a>
-        
-      </nav>
-
-
-      <div class="wy-nav-content">
-        
-        <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
-  <ul class="wy-breadcrumbs">
-    
-      <li><a href="#">Docs</a> &raquo;</li>
-        
-      <li>Welcome to TorchANI’s documentation!</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-            
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-          
-        
-      </li>
-    
-  </ul>
-
-  
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-            
-  <div class="section" id="module-torchani">
-<span id="welcome-to-torchani-s-documentation"></span><h1>Welcome to TorchANI’s documentation!<a class="headerlink" href="#module-torchani" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://doi.org/10.26434/chemrxiv.12218294.v1">TorchANI</a> is a PyTorch implementation of <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI</a>, created and maintained by
-the <a class="reference external" href="https://roitberg.chem.ufl.edu/">Roitberg group</a>.  TorchANI contains classes like
-<a class="reference internal" href="api.html#torchani.AEVComputer" title="torchani.AEVComputer"><code class="xref py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, <a class="reference internal" href="api.html#torchani.ANIModel" title="torchani.ANIModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ANIModel</span></code></a>, and <a class="reference internal" href="api.html#torchani.EnergyShifter" title="torchani.EnergyShifter"><code class="xref py py-class docutils literal notranslate"><span class="pre">EnergyShifter</span></code></a> that can
-be pipelined to compute molecular energies from the 3D coordinates of
-molecules.  It also include tools to: deal with ANI datasets(e.g. <a class="reference external" href="https://www.nature.com/articles/sdata2017193">ANI-1</a>,
-<a class="reference external" href="https://aip.scitation.org/doi/abs/10.1063/1.5023802">ANI-1x</a>, <a class="reference external" href="https://doi.org/10.26434/chemrxiv.6744440.v1">ANI-1ccx</a>, <a class="reference external" href="https://doi.org/10.26434/chemrxiv.11819268.v1">ANI-2x</a>) at <a class="reference internal" href="api.html#module-torchani.data" title="torchani.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.data</span></code></a>, import various file
-formats of NeuroChem at <a class="reference internal" href="api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a>, and more at <a class="reference internal" href="api.html#module-torchani.utils" title="torchani.utils"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.utils</span></code></a>.</p>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="start.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/jit.html">Using TorchScript to serialize and deploy model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="examples/jit.html#scripting-builtin-model-directly">Scripting builtin model directly</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples/jit.html#customize-the-model-and-script">Customize the model and script</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">TorchANI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.models">Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.data">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.utils">Utilities</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.units">Units</a></li>
-</ul>
-</div>
-<div class="section" id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
-</ul>
-</div>
-</div>
-
-
-           </div>
-           
           </div>
-          <footer>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
   
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
       
-        <a href="start.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
       
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
       
     </div>
   
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
-  </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
-
-</footer>
-
-        </div>
-      </div>
-
-    </section>
-
-  </div>
-  
-
-
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
-
   
   
-    
-   
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
 
-</body>
+  </footer>
+  </body>
 </html>

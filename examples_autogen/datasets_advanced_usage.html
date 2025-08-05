@@ -1,0 +1,1349 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Advanced usage of ANIDataset &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples_autogen/datasets_advanced_usage';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Training an ANI network using a custom script" href="training.html" />
+    <link rel="prev" title="Basic usage of ANIDataset" href="datasets_simple_usage.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="fundamentals.html">Fundamentals of TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating-to-2.html">Migrating to TorchANI 2</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Molecular dynamics and second-order properties</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Molecular dynamics using ASE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing vibrational frequencies</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Extending TorchANI</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dispersion_potential.html">Using DFT-D3 dispersion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repulsive_potential.html">Using xTB repulsion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending_aev.html">Extending the local atomic features: AEVs with custom terms and cutoffs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Manipulating ANI Datasets</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="datasets_simple_usage.html">Basic usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Advanced usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Training and deploying NN-IPs</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training an ANI network using a custom script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="just_in_time_compilation.html">Using TorchScript to serialize models</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Working with legacy NeuroChem files</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="neurochem_loading.html">Constructing a TorchANI model from NeuroChem files</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../user-guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Advanced usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-examples-autogen-datasets-advanced-usage-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="advanced-usage-of-anidataset">
+<span id="sphx-glr-examples-autogen-datasets-advanced-usage-py"></span><h1>Advanced usage of <a class="reference internal" href="../api_autogen/torchani.datasets.html#torchani.datasets.ANIDataset" title="torchani.datasets.ANIDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a><a class="headerlink" href="#advanced-usage-of-anidataset" title="Link to this heading">#</a></h1>
+<p>Example showing more involved conformer and property manipulation.</p>
+<p>To begin with, let’s import the modules we will use:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.datasets</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="collections.abc.Mapping" class="sphx-glr-backref-module-collections-abc sphx-glr-backref-type-py-class"><span class="n">ANIDataset</span></a><span class="p">,</span> <span class="n">concatenate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.datasets.filters</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_by_high_force</span>
+</pre></div>
+</div>
+<p>Again for the purposes of this example we will copy and modify two files
+inside torchani/dataset, which can be downloaded by running the download.sh
+script.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file1_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;file1.h5&quot;</span>
+<a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file2_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;file2.h5&quot;</span>
+<a href="https://docs.python.org/3/library/shutil.html#shutil.copy" title="shutil.copy" class="sphx-glr-backref-module-shutil sphx-glr-backref-type-py-function"><span class="n">shutil</span><span class="o">.</span><span class="n">copy</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file1_path</span></a><span class="p">)</span>
+<a href="https://docs.python.org/3/library/shutil.html#shutil.copy" title="shutil.copy" class="sphx-glr-backref-module-shutil sphx-glr-backref-type-py-function"><span class="n">shutil</span><span class="o">.</span><span class="n">copy</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file2_path</span></a><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="collections.abc.Mapping" class="sphx-glr-backref-module-collections-abc sphx-glr-backref-type-py-class"><span class="n">ANIDataset</span></a><span class="p">(</span><span class="n">locations</span><span class="o">=</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file1_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">file2_path</span></a><span class="p">),</span> <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;file1&quot;</span><span class="p">,</span> <span class="s2">&quot;file2&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 22it [00:00, 3006.87it/s]
+/home/ipickering/Repos/ani/torchani/datasets/anidataset.py:351: UserWarning: {&#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;} found in legacy dataset, this will generate unpredictable issues.
+ Probably .items() and .values() will work but not much else. It is highly  recommended that you backup these properties (if needed) and *delete them* using dataset.delete_properties
+  warnings.warn(
+
+Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 92it [00:00, 2786.03it/s]
+</pre></div>
+</div>
+<section id="property-deletion-renaming">
+<h2>Property deletion / renaming<a class="headerlink" href="#property-deletion-renaming" title="Link to this heading">#</a></h2>
+<p>All of the molecules in the dataset have the same properties, energies,
+coordinates, etc. You can query which are these.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+<p>It is possible to delete unwanted / unnedded properties.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">delete_properties</span><span class="p">((</span><span class="s2">&quot;coordinatesHE&quot;</span><span class="p">,</span> <span class="s2">&quot;energiesHE&quot;</span><span class="p">,</span> <span class="s2">&quot;smiles&quot;</span><span class="p">))</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Deleting properties:   0%|                                                                                                                                             | 0/3 [00:00&lt;?, ?it/s]
+
+
+Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 13it [00:00, 4817.21it/s]
+
+Deleting properties:   0%|                                                                                                                                            | 0/13 [00:00&lt;?, ?it/s]
+
+
+Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 53it [00:00, 4707.51it/s]
+
+{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+<p>It is also possible to rename the properties by passing a dict of old-new names (the
+class assumes at least one of “species” or “numbers” is always present, so don’t
+rename those).</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">rename_properties</span><span class="p">({</span><span class="s2">&quot;energies&quot;</span><span class="p">:</span> <span class="s2">&quot;molecular_energies&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="s2">&quot;coord&quot;</span><span class="p">})</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 13it [00:00, 4870.56it/s]
+
+Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 53it [00:00, 4661.71it/s]
+
+{&#39;coord&#39;, &#39;molecular_energies&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+<p>Lets rename them back to their original values:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">rename_properties</span><span class="p">({</span><span class="s2">&quot;molecular_energies&quot;</span><span class="p">:</span> <span class="s2">&quot;energies&quot;</span><span class="p">,</span> <span class="s2">&quot;coord&quot;</span><span class="p">:</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">})</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 13it [00:00, 4738.09it/s]
+
+Verifying format correctness: 0it [00:00, ?it/s]
+Verifying format correctness: 53it [00:00, 4693.60it/s]
+
+{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+</section>
+<section id="grouping">
+<h2>Grouping<a class="headerlink" href="#grouping" title="Link to this heading">#</a></h2>
+<p>You can query whether your dataset is in a legacy format by interrogating the
+dataset grouping attribute</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">grouping</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&#39;legacy&#39;
+</pre></div>
+</div>
+<p>Legacy format is the format used by some old datasets. In the legacy format
+there can be groups arbitrarily nested in the hierarchical tree inside the h5
+files, and the “species”/”numbers” property does not have a batch dimension.
+This means all properties with an “atomic” dimension must be ordered the same
+way within a group (don’t worry too much if you don’t understand what this
+means, it basically means this is difficult to deal with)</p>
+<p>We can convert to a less error prone and easier to parse format by calling
+“regroup_by_formula” or “regroup_by_num_atoms”</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">regroup_by_formula</span><span class="p">()</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">grouping</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Regrouping by formulas:   0%|                                                                                                                                          | 0/3 [00:00&lt;?, ?it/s]
+
+
+Regrouping by formulas:   0%|                                                                                                                                         | 0/13 [00:00&lt;?, ?it/s]
+Regrouping by formulas:  15%|███████████████████▊                                                                                                             | 2/13 [00:00&lt;00:00, 13.07it/s]
+Regrouping by formulas:  46%|███████████████████████████████████████████████████████████▌                                                                     | 6/13 [00:00&lt;00:00, 25.80it/s]
+Regrouping by formulas:  85%|████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                   | 11/13 [00:00&lt;00:00, 33.35it/s]
+
+&#39;by_formula&#39;
+</pre></div>
+</div>
+<p>Another possibility is to group by num atoms</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">regroup_by_num_atoms</span><span class="p">()</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">grouping</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Regrouping by number of atoms:   0%|                                                                                                                                   | 0/3 [00:00&lt;?, ?it/s]
+
+
+Regrouping by number of atoms:   0%|                                                                                                                                  | 0/13 [00:00&lt;?, ?it/s]
+
+&#39;by_num_atoms&#39;
+</pre></div>
+</div>
+<p>In these formats all of the first dimensions of all properties are the same
+in all groups, and groups can only have depth one. In other words the tree
+structure is, for “by_formula”</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">C10H22</span><span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+       <span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+       <span class="o">/</span><span class="n">energies</span><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,)</span>
+<span class="o">/</span><span class="n">C8H22N2</span><span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+       <span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+       <span class="o">/</span><span class="n">energies</span><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">10</span><span class="p">,)</span>
+<span class="o">/</span><span class="n">C12H22</span><span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+       <span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
+       <span class="o">/</span><span class="n">energies</span><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,)</span>
+</pre></div>
+</div>
+<p>and for, “by_num_atoms”</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="mi">032</span><span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+     <span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+     <span class="o">/</span><span class="n">energies</span><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">20</span><span class="p">,)</span>
+<span class="o">/</span><span class="mi">034</span><span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+     <span class="o">/</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
+     <span class="o">/</span><span class="n">energies</span><span class="p">,</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">5</span><span class="p">,)</span>
+</pre></div>
+</div>
+<p>Conformer groups can be iterated over in chunks, up to a specified maximum
+chunk size. This breaks a conformer group into mini-batches containing
+multiple inputs, allowing the dataset to be iterated over much more
+efficiently. As we regrouped the dataset by num_atoms in the previous step,
+this will iterate over conformer groups containing the same number of atoms.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">ds</span><span class="o">.</span><span class="n">keep_open</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">read_ds</span><span class="p">:</span>
+    <span class="k">for</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">group</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">j</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a> <span class="ow">in</span> <span class="n">read_ds</span><span class="o">.</span><span class="n">chunked_items</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a><span class="p">[</span><span class="s2">&quot;species&quot;</span><span class="p">]</span>
+        <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a><span class="p">[</span><span class="s2">&quot;coordinates&quot;</span><span class="p">]</span>
+        <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ani_input</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ani_input</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>(tensor([[8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        ...,
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1]]), tensor([[[    -0.000,     -0.006,      0.107],
+         [     0.000,      0.777,     -0.421],
+         [     0.000,     -0.678,     -0.343]],
+
+        [[     0.000,     -0.005,      0.133],
+         [    -0.000,      0.639,     -0.614],
+         [     0.000,     -0.566,     -0.557]],
+
+        [[     0.000,      0.001,      0.123],
+         [    -0.000,      0.718,     -0.504],
+         [    -0.000,     -0.727,     -0.511]],
+
+        ...,
+
+        [[    -0.000,     -0.005,      0.103],
+         [     0.000,      0.838,     -0.385],
+         [     0.000,     -0.756,     -0.321]],
+
+        [[    -0.000,     -0.002,      0.109],
+         [     0.000,      0.845,     -0.406],
+         [     0.000,     -0.817,     -0.384]],
+
+        [[     0.000,     -0.004,      0.132],
+         [    -0.000,      0.795,     -0.606],
+         [    -0.000,     -0.729,     -0.554]]]))
+(tensor([[8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1]]), tensor([[[     0.000,     -0.006,      0.125],
+         [    -0.000,      0.703,     -0.560],
+         [     0.000,     -0.609,     -0.487]],
+
+        [[    -0.000,      0.005,      0.105],
+         [     0.000,      0.871,     -0.335],
+         [    -0.000,     -0.946,     -0.394]],
+
+        [[     0.000,      0.007,      0.131],
+         [    -0.000,      0.687,     -0.529],
+         [    -0.000,     -0.794,     -0.612]],
+
+        ...,
+
+        [[     0.000,      0.005,      0.124],
+         [    -0.000,      0.589,     -0.487],
+         [    -0.000,     -0.667,     -0.548]],
+
+        [[     0.000,      0.007,      0.131],
+         [    -0.000,      0.666,     -0.528],
+         [    -0.000,     -0.771,     -0.610]],
+
+        [[     0.000,      0.001,      0.122],
+         [    -0.000,      0.743,     -0.495],
+         [    -0.000,     -0.764,     -0.512]]]))
+</pre></div>
+</div>
+</section>
+<section id="property-creation">
+<h2>Property creation<a class="headerlink" href="#property-creation" title="Link to this heading">#</a></h2>
+<p>Sometimes it may be useful to just create one placeholder property for some
+purpose. You can make the second dimension equal to the number of atoms in
+the group by setting <code class="docutils literal notranslate"><span class="pre">is_atomic=True</span></code>, and you can add also extra dims, for
+example, this creates a property with shape <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">A)</span></code>, for more examples see
+docstring of the function.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">create_full_property</span><span class="p">(</span>
+    <span class="s2">&quot;new_property&quot;</span><span class="p">,</span> <span class="n">is_atomic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
+<span class="p">)</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;new_property&#39;, &#39;energies&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+<p>We now delete the created property for cleanup</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">delete_properties</span><span class="p">(</span><span class="s2">&quot;new_property&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+</pre></div>
+</div>
+</section>
+<section id="manipulating-conformers">
+<h2>Manipulating conformers<a class="headerlink" href="#manipulating-conformers" title="Link to this heading">#</a></h2>
+<p>All of the molecules in the dataset have the same properties
+Conformers as tensors can be appended by calling <code class="docutils literal notranslate"><span class="pre">append_conformers</span></code>.
+Here I put random numbers as species and coordinates but you should put
+something that makes sense, if you have only one store you can pass
+“group_name” directly.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformers</span></a> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;species&quot;</span><span class="p">:</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">]]),</span>
+    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.randn.html#torch.randn" title="torch.randn" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">randn</span></a><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="s2">&quot;energies&quot;</span><span class="p">:</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.randn.html#torch.randn" title="torch.randn" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">randn</span></a><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformers</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x77c8fdff17d0&gt;
+</pre></div>
+</div>
+<p>It is also possible to append conformers as numpy arrays, in this case
+“species” can hold the chemical symbols or atomic numbers. Internally these
+will be converted to atomic numbers.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">numpy_conformers</span></a> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;species&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span>
+        <span class="p">[[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">]]</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="s2">&quot;energies&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">numpy_conformers</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x77c8fdff17d0&gt;
+</pre></div>
+</div>
+<p>Conformers can also be deleted from the dataset. Passing an index will delete
+a series of conformers, not passing anything deletes the whole group</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">molecules</span></a> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">get_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">molecules</span></a>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
+         [ 0.385, -0.882,  0.067],
+         [ 0.318,  0.931,  0.038],
+         [-0.979, -0.132,  0.169]],
+
+        [[ 0.003, -0.015, -0.143],
+         [ 0.533, -0.736,  0.341],
+         [ 0.229,  0.820,  0.439],
+         [-0.803,  0.118,  0.400]],
+
+        [[-0.007,  0.010, -0.095],
+         [ 0.566, -0.902,  0.221],
+         [ 0.528,  0.938,  0.149],
+         [-0.991, -0.180,  0.147]],
+
+        ...,
+
+        [[-1.085, -1.394,  1.733],
+         [ 1.458,  1.045,  1.105],
+         [-0.762, -0.927,  1.413],
+         [ 2.445,  0.477,  0.374]],
+
+        [[ 0.404, -0.482,  1.349],
+         [-0.418, -1.193, -1.064],
+         [-1.062, -0.213, -1.173],
+         [ 0.953,  0.415,  1.292]],
+
+        [[ 0.089, -0.831, -0.574],
+         [ 2.249,  0.328,  1.063],
+         [ 2.075, -1.790, -1.010],
+         [-0.703,  0.882,  0.188]]]), &#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ...,   0.194,  -0.844,   0.196], dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
+        ...,
+        [1, 1, 6, 7],
+        [1, 1, 7, 8],
+        [1, 1, 1, 1]])}
+</pre></div>
+</div>
+<p>Lets delete some conformers and try again</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">delete_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">molecules</span></a> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">get_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The len of the dataset has not changed</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>10
+</pre></div>
+</div>
+<p>Lets get rid of the whole group</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">delete_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">)</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>9
+</pre></div>
+</div>
+<p>Currently, when appending the class checks:</p>
+<ul class="simple">
+<li><p>That the first dimension of all your properties is the same</p></li>
+<li><p>That you are appending a set of conformers with correct properties</p></li>
+<li><p>That all your formulas are correct when the grouping type is “by_formula”,</p></li>
+<li><p>That your group name does not contain illegal “/” characters</p></li>
+<li><p>That you are only appending one of “species” or “numbers”</p></li>
+</ul>
+<p>It does NOT check:</p>
+<ul class="simple">
+<li><p>That the number of atoms is the same in all properties that are atomic</p></li>
+<li><p>That the name of the group is consistent with the formula / num atoms</p></li>
+</ul>
+<p>It is the responsibility of the user to make sure of those items.</p>
+</section>
+<section id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading">#</a></h2>
+<p>Multiple datasets can be concatenated into one h5 file, optionally deleting the
+original h5 files if the concatenation is successful.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">concat_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;concat.h5&quot;</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">concat_path</span></a><span class="p">,</span> <span class="n">delete_originals</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Concatenating datasets:   0%|                                                                                                                                          | 0/9 [00:00&lt;?, ?it/s]
+Concatenating datasets: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 9/9 [00:00&lt;00:00, 213.56it/s]
+
+Deleting original stores:   0%|                                                                                                                                        | 0/2 [00:00&lt;?, ?it/s]
+Deleting original stores: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00&lt;00:00, 41323.19it/s]
+</pre></div>
+</div>
+</section>
+<section id="context-manager-usage">
+<h2>Context manager usage<a class="headerlink" href="#context-manager-usage" title="Link to this heading">#</a></h2>
+<p>If you need to perform a lot of read/write operations in the dataset it can
+be useful to keep all the underlying stores open, you can do this by using a
+<code class="docutils literal notranslate"><span class="pre">keep_open</span></code> context.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">ds</span><span class="o">.</span><span class="n">keep_open</span><span class="p">(</span><span class="s2">&quot;r+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">open_ds</span><span class="p">:</span>
+    <span class="k">for</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a> <span class="ow">in</span> <span class="n">open_ds</span><span class="o">.</span><span class="n">iter_conformers</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.527],
+        [ 0.000,  0.000, -0.527]]), &#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.528],
+        [ 0.000,  0.000, -0.528]]), &#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.571],
+        [ 0.000,  0.000, -0.571]]), &#39;energies&#39;: tensor(-109.494, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.576],
+        [ 0.000,  0.000, -0.576]]), &#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.574],
+        [ 0.000,  0.000, -0.574]]), &#39;energies&#39;: tensor(-109.493, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
+        [ 0.000,  0.000, -0.524]]), &#39;energies&#39;: tensor(-109.489, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.578],
+        [ 0.000,  0.000, -0.578]]), &#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.564],
+        [ 0.000,  0.000, -0.564]]), &#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.541],
+        [ 0.000,  0.000, -0.541]]), &#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
+        [ 0.000,  0.000, -0.524]]), &#39;energies&#39;: tensor(-109.488, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+</pre></div>
+</div>
+</section>
+<section id="creating-a-dataset-from-scratch">
+<h2>Creating a dataset from scratch<a class="headerlink" href="#creating-a-dataset-from-scratch" title="Link to this heading">#</a></h2>
+<p>It is possible to create an ANIDataset from scratch by calling: By defalt the
+grouping is “by_num_atoms”. The first set of conformers you append will
+determine what properties this dataset will support.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">new_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd" title="pathlib.Path.cwd" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span></a><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;new_ds.h5&quot;</span>
+<span class="n">new_ds</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="collections.abc.Mapping" class="sphx-glr-backref-module-collections-abc sphx-glr-backref-type-py-class"><span class="n">ANIDataset</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">new_path</span></a><span class="p">,</span> <span class="n">grouping</span><span class="o">=</span><span class="s2">&quot;by_formula&quot;</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">numpy_conformers</span></a> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;species&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]]),</span>
+    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="s2">&quot;forces&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html#numpy.random.normal" title="numpy.random.normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
+    <span class="s2">&quot;dipoles&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="s2">&quot;energies&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">new_ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;C2H2&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">numpy_conformers</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">new_ds</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
+<span class="k">for</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a> <span class="ow">in</span> <span class="n">new_ds</span><span class="o">.</span><span class="n">iter_conformers</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;dipoles&#39;, &#39;forces&#39;, &#39;species&#39;}
+{&#39;coordinates&#39;: tensor([[ 1.613, -0.334,  0.351],
+        [ 0.500, -0.269,  0.011],
+        [-0.085, -0.051, -0.760],
+        [ 0.700, -0.938,  0.440]], dtype=torch.float64), &#39;energies&#39;: tensor(0.036, dtype=torch.float64), &#39;dipoles&#39;: tensor([ 1.084, -2.262,  1.254], dtype=torch.float64), &#39;species&#39;: tensor([1, 1, 6, 6]), &#39;forces&#39;: tensor([[-0.002,  0.033, -0.156],
+        [ 0.076,  0.062, -0.060],
+        [ 0.015,  0.036, -0.042],
+        [-0.053, -0.160, -0.014]], dtype=torch.float64)}
+{&#39;coordinates&#39;: tensor([[ 0.980, -0.380, -0.262],
+        [ 0.979,  0.503,  0.248],
+        [-0.417,  0.189,  0.136],
+        [ 2.500,  0.698, -0.506]], dtype=torch.float64), &#39;energies&#39;: tensor(-1.366, dtype=torch.float64), &#39;dipoles&#39;: tensor([ 1.980, -0.217, -0.262], dtype=torch.float64), &#39;species&#39;: tensor([1, 6, 1, 6]), &#39;forces&#39;: tensor([[ 0.002,  0.184, -0.066],
+        [ 0.018, -0.130,  0.019],
+        [-0.121,  0.059,  0.056],
+        [ 0.050, -0.076,  0.170]], dtype=torch.float64)}
+</pre></div>
+</div>
+<p>Another useful feature is deleting inplace all conformers with force
+magnitude above a given threshold, we will exemplify this by introducing some
+conformers with extremely large forces</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">bad_conformers</span></a> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;species&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">]]),</span>
+    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="s2">&quot;forces&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html#numpy.random.normal" title="numpy.random.normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="mf">100.0</span><span class="p">),</span>
+    <span class="s2">&quot;dipoles&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="s2">&quot;energies&quot;</span><span class="p">:</span> <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.standard_normal.html#numpy.random.standard_normal" title="numpy.random.standard_normal" class="sphx-glr-backref-module-numpy-random sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span></a><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">new_ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;C2H2&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">bad_conformers</span></a><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">filtered_conformers_and_ids</span></a> <span class="o">=</span> <span class="n">filter_by_high_force</span><span class="p">(</span><span class="n">new_ds</span><span class="p">,</span> <span class="n">delete_inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">filtered_conformers_and_ids</span></a>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Filtering where any atomic force magnitude &gt; 2.0 Ha / Angstrom: 0it [00:00, ?it/s]
+Filtering where any atomic force magnitude &gt; 2.0 Ha / Angstrom: 1it [00:00, 1993.49it/s]
+
+Deleting filtered conformers:   0%|                                                                                                                                    | 0/1 [00:00&lt;?, ?it/s]
+Deleting filtered conformers: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00&lt;00:00, 361.86it/s]
+Deleted 2 bad conformations
+
+([{&#39;coordinates&#39;: tensor([[[-0.254,  0.803, -0.765],
+         [ 0.174, -0.832, -1.266],
+         [ 0.106, -0.148,  0.035],
+         [ 1.969, -1.141, -0.629]],
+
+        [[ 0.411, -0.884, -0.969],
+         [ 1.215,  0.733,  0.362],
+         [ 0.392,  0.086, -0.813],
+         [ 0.709,  0.235, -1.265]]], dtype=torch.float64), &#39;energies&#39;: tensor([-0.298,  1.358], dtype=torch.float64), &#39;dipoles&#39;: tensor([[ 0.046,  1.332,  1.425],
+        [-1.385, -0.658, -1.458]], dtype=torch.float64), &#39;species&#39;: tensor([[1, 1, 7, 7],
+        [1, 1, 7, 7]]), &#39;forces&#39;: tensor([[[  64.383,  -37.125,  -83.464],
+         [ -19.223,  140.810,  -48.995],
+         [   7.744,  -23.233,   18.535],
+         [  83.574,  -35.931,  -26.507]],
+
+        [[  79.934,   37.432,   58.834],
+         [   7.975,   99.776,  -84.915],
+         [   8.767,   40.437,   46.467],
+         [ 126.185, -141.392,  111.507]]], dtype=torch.float64)}], {&#39;C2H2&#39;: tensor([2, 3])})
+</pre></div>
+</div>
+<p>Finally, lets delete the files we used for cleanup</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.unlink" title="pathlib.Path.unlink" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">concat_path</span><span class="o">.</span><span class="n">unlink</span></a><span class="p">()</span>
+<a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path.unlink" title="pathlib.Path.unlink" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-method"><span class="n">new_path</span><span class="o">.</span><span class="n">unlink</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-autogen-datasets-advanced-usage-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/94933a0174b411303704eb2d0eeb22ed/datasets_advanced_usage.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">datasets_advanced_usage.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/1b83c484da0237277ba38194f74cc8de/datasets_advanced_usage.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">datasets_advanced_usage.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/84a83d18a86aa96667fe8349109bbb33/datasets_advanced_usage.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">datasets_advanced_usage.zip</span></code></a></p>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="datasets_simple_usage.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Basic usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="training.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Training an ANI network using a custom script</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#property-deletion-renaming">Property deletion / renaming</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grouping">Grouping</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#property-creation">Property creation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manipulating-conformers">Manipulating conformers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#utilities">Utilities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#context-manager-usage">Context manager usage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-a-dataset-from-scratch">Creating a dataset from scratch</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

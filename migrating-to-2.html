@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Migrating to TorchANI 2 &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'migrating-to-2';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Molecular dynamics using ASE" href="examples_autogen/ase_interface.html" />
+    <link rel="prev" title="Fundamentals of TorchANI" href="examples_autogen/fundamentals.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/fundamentals.html">Fundamentals of TorchANI</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Migrating to TorchANI 2</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Molecular dynamics and second-order properties</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/ase_interface.html">Molecular dynamics using ASE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/vibration_analysis.html">Computing vibrational frequencies</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Extending TorchANI</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/dispersion_potential.html">Using DFT-D3 dispersion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/repulsive_potential.html">Using xTB repulsion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/extending_aev.html">Extending the local atomic features: AEVs with custom terms and cutoffs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Manipulating ANI Datasets</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/datasets_simple_usage.html">Basic usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/datasets_advanced_usage.html">Advanced usage of <code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIDataset</span></code></a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Training and deploying NN-IPs</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/training.html">Training an ANI network using a custom script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/just_in_time_compilation.html">Using TorchScript to serialize models</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Working with legacy NeuroChem files</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="examples_autogen/neurochem_loading.html">Constructing a TorchANI model from NeuroChem files</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="user-guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Migrating to TorchANI 2</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="migrating-to-torchani-2">
+<span id="torchani-migrating"></span><h1>Migrating to TorchANI 2<a class="headerlink" href="#migrating-to-torchani-2" title="Link to this heading">#</a></h1>
+<p>If you were using a previous version of TorchANI you may need to update your code to
+work with TorchANI 2. We strive to keep backwards compatibility, but some minor breaking
+changes were necessary in order to support improvements in the models, dataset
+management, etc. Minor versions changes attempt to be fully backwards compatible, and
+breaking changes are reserved for major releases.</p>
+<p>Here we document the most important changes. In many cases code will run as is, but some
+warnings are emitted if the old, legacy API is being used, so we also provide
+recommendations to use the new functions when appropriate.</p>
+<section id="general-usage-of-built-in-ani-models">
+<h2>General usage of built-in ANI models<a class="headerlink" href="#general-usage-of-built-in-ani-models" title="Link to this heading">#</a></h2>
+<p>If you were previously calling torchani models as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+
+<span class="n">species_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1x</span><span class="p">()</span>
+
+<span class="n">species_indices</span><span class="p">,</span> <span class="n">energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species_indices</span><span class="p">,</span> <span class="n">coords</span><span class="p">))</span>
+<span class="c1"># or</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species_indices</span><span class="p">,</span> <span class="n">coords</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
+</pre></div>
+</div>
+<p>you may prefer to do instead:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani</span><span class="w"> </span><span class="kn">import</span> <span class="n">single_point</span>
+
+<span class="n">atomic_nums</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1x</span><span class="p">()</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">single_point</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">atomic_nums</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;energies&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Here “single-point” is typical chemistry jargon for “calculation on fixed molecule
+coords”. This was changed since it allows models to output more than a single scalar
+value, which is necessary e.g. for models that output charges. Additionally, the new
+allows for outputting forces and hessians without any familiarity with torch (no need to
+do anything with <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.Tensor.requires_grad.html#torch.Tensor.requires_grad" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor.requires_grad</span></code></a>). Calling a model directly is still
+possible.</p>
+<p>To output other quantities of interest use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">single_point</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">atomic_nums</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hessians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">atomic_charges</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;atomic_charges&quot;</span><span class="p">]</span>  <span class="c1"># Only for models that support this</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;energies&quot;</span><span class="p">]</span>
+<span class="n">forces</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;forces&quot;</span><span class="p">]</span>
+<span class="n">hessians</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;hessians&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="the-aevcomputer-animodel-ensemble-and-speciesconverter-classes">
+<h2>The <a class="reference internal" href="api_autogen/torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, <code class="docutils literal notranslate"><span class="pre">ANIModel</span></code>, <code class="docutils literal notranslate"><span class="pre">Ensemble</span></code>, and <a class="reference internal" href="api_autogen/torchani.nn.html#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpeciesConverter</span></code></a> classes<a class="headerlink" href="#the-aevcomputer-animodel-ensemble-and-speciesconverter-classes" title="Link to this heading">#</a></h2>
+<p>If you were previously using these classes as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="n">aevc</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">animodel</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ANIModel</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">Ensemble</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">converter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">SpeciesConverter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">idxs</span> <span class="o">=</span> <span class="n">converter</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">aevs</span> <span class="o">=</span> <span class="n">aevc</span><span class="p">((</span><span class="n">idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">energies</span> <span class="o">=</span> <span class="n">animodel</span><span class="p">((</span><span class="n">idxs</span><span class="p">,</span> <span class="n">aevs</span><span class="p">),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">energies</span> <span class="o">=</span> <span class="n">ensemble</span><span class="p">((</span><span class="n">idxs</span><span class="p">,</span> <span class="n">aevs</span><span class="p">),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>you should now do this instead:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="n">converter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SpeciesConverter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">aevc</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="c1"># Note that the following classes have different names</span>
+<span class="n">ani_nets</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ANINetworks</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">Ensemble</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="n">idxs</span> <span class="o">=</span> <span class="n">converter</span><span class="p">(</span><span class="n">atomic_nums</span><span class="p">)</span>
+<span class="n">aevs</span> <span class="o">=</span> <span class="n">aevc</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">animodel</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">aevs</span><span class="p">)</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">ensemble</span><span class="p">(</span><span class="n">ixs</span><span class="p">,</span> <span class="n">aevs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">torchani.nn.ANIModel</span></code> has been renamed to <a class="reference internal" href="api_autogen/torchani.nn.html#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANINetworks</span></code></a>.
+The old signature is still supported for now, but it will be removed in the future</p>
+<section id="extra-notes-on-the-aevcomputer">
+<h3>Extra notes on the <a class="reference internal" href="api_autogen/torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AEVComputer</span></code></a><a class="headerlink" href="#extra-notes-on-the-aevcomputer" title="Link to this heading">#</a></h3>
+<p>It is possible now to separate the <code class="docutils literal notranslate"><span class="pre">AEVComputer</span></code> and
+<a class="reference internal" href="api_autogen/torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Neighborlist</span></code></a> parts of a calculation like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="n">neighborlist</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neighbors</span><span class="o">.</span><span class="n">AllPairs</span><span class="p">()</span>
+<span class="n">aevc</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="o">.</span><span class="n">like_2x</span><span class="p">()</span>
+<span class="n">converter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">SpeciesConverter</span><span class="p">((</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">))</span>
+
+<span class="n">idxs</span> <span class="o">=</span> <span class="n">converter</span><span class="p">(</span><span class="n">atomic_nums</span><span class="p">)</span>
+<span class="n">cutoff</span> <span class="o">=</span> <span class="n">aevc</span><span class="o">.</span><span class="n">radial</span><span class="o">.</span><span class="n">cutoff</span>
+<span class="n">neighbors</span> <span class="o">=</span> <span class="n">neighborlist</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+<span class="n">aevc</span> <span class="o">=</span> <span class="n">aevc</span><span class="o">.</span><span class="n">compute_from_neighbors</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This may be useful if you are want to use the computed neighborlist in more modules
+afterwards (e.g. pair potentials, or other neural networks).</p>
+<p>Additionally, <a class="reference internal" href="api_autogen/torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AEVComputer</span></code></a> is now initialized with different inputs.
+If you prefer the old signature you can use the
+<a class="reference internal" href="api_autogen/torchani.aev.html#torchani.aev.AEVComputer.from_constants" title="torchani.aev.AEVComputer.from_constants"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_constants</span></code></a> constructor instead.</p>
+</section>
+</section>
+<section id="usage-of-torchani-data">
+<h2>Usage of <code class="docutils literal notranslate"><span class="pre">torchani.data</span></code><a class="headerlink" href="#usage-of-torchani-data" title="Link to this heading">#</a></h2>
+<p>This module is deprecated, you can still access it under <a class="reference internal" href="api_autogen/torchani.legacy_data.html#module-torchani.legacy_data" title="torchani.legacy_data"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">torchani.legacy_data</span></code></a>, but
+its use is discouraged, and moving forward it will not be maintained. Use
+<a class="reference internal" href="api_autogen/torchani.datasets.html#module-torchani.datasets" title="torchani.datasets"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">torchani.datasets</span></code></a> instead (it is similar to <code class="docutils literal notranslate"><span class="pre">torchvision.datasets</span></code> which you may
+be familiar with).</p>
+</section>
+<section id="usage-of-sequential">
+<h2>Usage of <a class="reference internal" href="api_autogen/torchani.nn.html#torchani.nn.Sequential" title="torchani.nn.Sequential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sequential</span></code></a><a class="headerlink" href="#usage-of-sequential" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="api_autogen/torchani.nn.html#torchani.nn.Sequential" title="torchani.nn.Sequential"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.Sequential</span></code></a> class is still available, but <em>its use is highly
+discouraged</em>.</p>
+<p>If you were previously doing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="n">aev_computer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">aev</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># Lots of arguments</span>
+<span class="n">neural_networks</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ANIModel</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># Lots of arguments</span>
+<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EnergyShifter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># More arguments</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">neural_networks</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You should probably stop. This approach is error prone and verbose, and has multiple
+gotchas.</p>
+<p>The simplest way of creating a model for training, with random initial weights, is using
+the factory functions in <a class="reference internal" href="api_autogen/torchani.arch.html#module-torchani.arch" title="torchani.arch"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">torchani.arch</span></code></a>, such as <a class="reference internal" href="api_autogen/torchani.arch.html#torchani.arch.simple_ani" title="torchani.arch.simple_ani"><code class="xref any py py-func docutils literal notranslate"><span class="pre">torchani.arch.simple_ani</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchani.arch</span><span class="w"> </span><span class="kn">import</span> <span class="n">simple_ani</span>
+
+<span class="c1"># LoT is used for the ground state energies, returned model is ready to train</span>
+<span class="c1"># Consult the documentation for the relevant options</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">simple_ani</span><span class="p">((</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">),</span> <span class="n">lot</span><span class="o">=</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>These functions are wrappers over <a class="reference internal" href="api_autogen/torchani.arch.html#torchani.arch.Assembler" title="torchani.arch.Assembler"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.arch.Assembler</span></code></a>, which you can also use
+to create your model. For example, to create a model just like <a class="reference internal" href="api_autogen/torchani.models.html#torchani.models.ANI2x" title="torchani.models.ANI2x"><code class="xref any py py-func docutils literal notranslate"><span class="pre">torchani.models.ANI2x</span></code></a>,
+but with random initial weights and the <code class="docutils literal notranslate"><span class="pre">cuAEV</span></code> strategy for faster training, do:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="n">asm</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">arch</span><span class="o">.</span><span class="n">Assembler</span><span class="p">()</span>
+<span class="n">asm</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">((</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">))</span>
+<span class="c1"># You can also pass your custom angular or radial terms as arguments</span>
+<span class="n">asm</span><span class="o">.</span><span class="n">set_aev_computer</span><span class="p">(</span><span class="n">radial</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">angular</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;cuaev&quot;</span><span class="p">)</span>
+<span class="c1"># A custom class with a custom constructor is also supported</span>
+<span class="n">asm</span><span class="o">.</span><span class="n">set_atomic_networks</span><span class="p">(</span><span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">)</span>
+<span class="n">asm</span><span class="o">.</span><span class="n">set_gsaes_as_self_energies</span><span class="p">(</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">)</span>  <span class="c1"># Add ground state atomic energies</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">asm</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>  <span class="c1"># The returned model is ready to train</span>
+</pre></div>
+</div>
+<p>This takes care of all the gotchas of building a model (for instance, it ensures the
+<code class="docutils literal notranslate"><span class="pre">AEVComputer</span></code> is initialized with the the correct number of elements, that it matches
+the initial size of the networks, and that the internal order of the element idxs is the
+same for all modules). It is a pretty customizable procedure, and has good defaults. It
+also avoids having to return irrelevant outputs and accept irrelevant inputs in your
+modules.</p>
+<p>If you want even <em>more</em> flexibility, we recommend you create your own <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>,
+which is way easier than it sounds. As an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchani</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">converter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SpeciesConverter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neighbors</span><span class="o">.</span><span class="n">AllPairs</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aevc</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">aev</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ANINetworks</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">sae</span><span class="o">.</span><span class="n">SelfEnergy</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atomic_nums</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">):</span>
+        <span class="n">idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">converter</span><span class="p">(</span><span class="n">atomic_nums</span><span class="p">)</span>
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aevc</span><span class="o">.</span><span class="n">radial</span><span class="o">.</span><span class="n">cutoff</span>
+        <span class="n">neighbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="n">aevs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aevc</span><span class="o">.</span><span class="n">compute_from_neighbors</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">aevs</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shifter</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">atomic_nums</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>  <span class="c1"># forward is automatically called</span>
+</pre></div>
+</div>
+<p>This gives you the full flexibility of <a class="reference external" href="https://docs.pytorch.org/docs/stable/torch.html#module-torch" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch</span></code></a>, at the cost of some complexity.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="examples_autogen/fundamentals.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Fundamentals of TorchANI</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="examples_autogen/ase_interface.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Molecular dynamics using ASE</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,997 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.potentials &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.potentials';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.cutoffs" href="torchani.cutoffs.html" />
+    <link rel="prev" title="torchani.models" href="torchani.models.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.potentials</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.potentials">
+<span id="torchani-potentials"></span><h1>torchani.potentials<a class="headerlink" href="#module-torchani.potentials" title="Link to this heading">#</a></h1>
+<p>Callable objects that can be attached to TorchANI models.</p>
+<p>Potentials calculate explicit analytical energy expressions that modify the final output
+of the models, usually to correct it in some regions of chemical space where they don’t
+behave in a physically appropriate manner.</p>
+<p>New potentials can be added to the TorchANI library by simple subclassing. For a
+tutorial on how to do this please refer to the corresponding documentation in examples.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Potential</span></code> is a torch <code class="docutils literal notranslate"><span class="pre">Module</span></code>. It can represent many-body potentials.
+<code class="docutils literal notranslate"><span class="pre">PairPotential</span></code> is a more specific subclass, which represents pair potentials.
+Subclasses of <code class="docutils literal notranslate"><span class="pre">Potential</span></code> should override <code class="docutils literal notranslate"><span class="pre">compute</span></code>, and subclasses of
+<code class="docutils literal notranslate"><span class="pre">PairPotential</span></code> should override <code class="docutils literal notranslate"><span class="pre">pair_energies</span></code>.</p>
+<p>Many potentials correspond to functions implemented in specific scientific articles or
+books. If you use any of these potentials in your work, please include the corresponding
+citations.</p>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.Potential" title="torchani.potentials.Potential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Potential</span></code></a></p></td>
+<td><p>Base class for all atomic potentials</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.DummyPotential" title="torchani.potentials.DummyPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DummyPotential</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.BasePairPotential" title="torchani.potentials.BasePairPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BasePairPotential</span></code></a></p></td>
+<td><p>General base class for all pairwise potentials</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.PairPotential" title="torchani.potentials.PairPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PairPotential</span></code></a></p></td>
+<td><p>User friendly, simple class for pairwise potentials</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.RepulsionXTB" title="torchani.potentials.RepulsionXTB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RepulsionXTB</span></code></a></p></td>
+<td><p>Calculates the xTB repulsion energy terms for a given molecule</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.TwoBodyDispersionD3" title="torchani.potentials.TwoBodyDispersionD3"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TwoBodyDispersionD3</span></code></a></p></td>
+<td><p>Calculates the DFT-D3 dispersion corrections</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.NNPotential" title="torchani.potentials.NNPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NNPotential</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.SeparateChargesNNPotential" title="torchani.potentials.SeparateChargesNNPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SeparateChargesNNPotential</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.MergedChargesNNPotential" title="torchani.potentials.MergedChargesNNPotential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergedChargesNNPotential</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.RepulsionZBL" title="torchani.potentials.RepulsionZBL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RepulsionZBL</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.RepulsionLJ" title="torchani.potentials.RepulsionLJ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RepulsionLJ</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.DispersionLJ" title="torchani.potentials.DispersionLJ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DispersionLJ</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.LennardJones" title="torchani.potentials.LennardJones"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LennardJones</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.potentials.FixedCoulomb" title="torchani.potentials.FixedCoulomb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FixedCoulomb</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.potentials.FixedMNOK" title="torchani.potentials.FixedMNOK"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FixedMNOK</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.Potential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">Potential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#Potential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.Potential" title="Link to this definition">#</a></dt>
+<dd><p>Base class for all atomic potentials</p>
+<p>Potentials may be many-body (3-body, 4-body, …) potentials or 2-body (pair)
+potentials. Subclasses must implement <code class="docutils literal notranslate"><span class="pre">compute</span></code> and may override <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.Potential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#Potential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.Potential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.Potential.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_nums_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#Potential.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.Potential.forward" title="Link to this definition">#</a></dt>
+<dd><p>Outputs energy, as calculated by the potential</p>
+<p>Output shape depends on the value of <code class="docutils literal notranslate"><span class="pre">atomic</span></code>, it is either
+<code class="docutils literal notranslate"><span class="pre">(molecs,</span> <span class="pre">atoms)</span></code> or <code class="docutils literal notranslate"><span class="pre">(molecs,)</span></code></p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.DummyPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">DummyPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#DummyPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.DummyPotential" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.DummyPotential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#DummyPotential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.DummyPotential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.BasePairPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">BasePairPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#BasePairPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.BasePairPotential" title="Link to this definition">#</a></dt>
+<dd><p>General base class for all pairwise potentials</p>
+<p>Subclasses must implement pair_energies, and override init using this template:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="n">symbols</span><span class="p">,</span>
+    <span class="o">...</span><span class="p">,</span> <span class="c1"># User args go here</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+    <span class="n">cutoff_fn</span><span class="o">=</span><span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+    <span class="o">...</span><span class="p">,</span> <span class="c1"># User kwargs go here</span>
+<span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">cutoff_fn</span><span class="p">)</span>
+    <span class="o">...</span> <span class="c1"># User code goes here</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.BasePairPotential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#BasePairPotential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.BasePairPotential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.BasePairPotential.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#BasePairPotential.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.BasePairPotential.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.BasePairPotential.symm">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">symm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#BasePairPotential.symm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.BasePairPotential.symm" title="Link to this definition">#</a></dt>
+<dd><p>Takes an NxN tensor with 0 lower triangle and returns it symmetrized</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.BasePairPotential.to_pair_values">
+<span class="sig-name descname"><span class="pre">to_pair_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#BasePairPotential.to_pair_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.BasePairPotential.to_pair_values" title="Link to this definition">#</a></dt>
+<dd><p>Returns values of elem pairs from a NxN tensor with 0 low triangle</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.PairPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">PairPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/core.html#PairPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.PairPotential" title="Link to this definition">#</a></dt>
+<dd><p>User friendly, simple class for pairwise potentials</p>
+<p>Subclasses must implement <code class="docutils literal notranslate"><span class="pre">pair_energies</span></code> and, if they use
+any parameters or buffers, specify three list of strings:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'tensors'</span></code>: Vectors (all with the same len) or scalars</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'elem_tensors'</span></code>: With shape <code class="docutils literal notranslate"><span class="pre">(num-sym,)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'pair_elem_tensors'</span></code>: With shape <code class="docutils literal notranslate"><span class="pre">(num-sym</span> <span class="pre">*</span> <span class="pre">(num-sym</span> <span class="pre">+</span> <span class="pre">1)</span> <span class="pre">/</span> <span class="pre">2,)</span></code></p></li>
+</ul>
+<p>Usage is better understood by an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchani.potentials</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairPotential</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Square</span><span class="p">(</span><span class="n">PairPotential</span><span class="p">):</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bias&#39;</span><span class="p">]</span>  <span class="c1"># Vectors (all with the same len) or scalars</span>
+    <span class="n">pair_elem_tensors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;eq&quot;</span><span class="p">]</span>  <span class="c1"># shape (num-sym * (num-sym + 1) / 2)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">pair_energies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem_idxs</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">):</span>
+        <span class="n">elem_pairs</span> <span class="o">=</span> <span class="n">elem_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">eq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_pair_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eq</span><span class="p">,</span> <span class="n">elem_pairs</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_pair_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">elem_pairs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">+</span> <span class="n">k</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span> <span class="o">-</span> <span class="n">eq</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+
+<span class="c1">#  Order for the pair elem tensors is HH, HC, HO, CC, CO, ...</span>
+<span class="c1">#  Values for demonstration purpose only</span>
+<span class="n">k</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">eq</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.5</span><span class="p">,)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">Square</span><span class="p">(</span><span class="n">symbols</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">eq</span><span class="o">=</span><span class="n">eq</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="c1"># Or if the constants are trainable:</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">Square</span><span class="p">(</span><span class="n">symbols</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">eq</span><span class="o">=</span><span class="n">eq</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionXTB">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">RepulsionXTB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">krep_hydrogen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">krep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yeff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/xtb.html#RepulsionXTB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionXTB" title="Link to this definition">#</a></dt>
+<dd><p>Calculates the xTB repulsion energy terms for a given molecule</p>
+<p>Potential used is as in work by Grimme:
+<a class="reference external" href="https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176">https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176</a></p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, <code class="docutils literal notranslate"><span class="pre">yeff</span></code> and <code class="docutils literal notranslate"><span class="pre">krep</span></code> parameters are taken from Grimme et. al.</p>
+<p><code class="docutils literal notranslate"><span class="pre">krep_hydrogen</span></code> is only used for H-H repulsive interaction. All other
+interactions use <code class="docutils literal notranslate"><span class="pre">krep</span></code></p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionXTB.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/xtb.html#RepulsionXTB.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionXTB.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.TwoBodyDispersionD3">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">TwoBodyDispersionD3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damp_a1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damp_a2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sqrt_empirical_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covalent_radii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/dftd3.html#TwoBodyDispersionD3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.TwoBodyDispersionD3" title="Link to this definition">#</a></dt>
+<dd><p>Calculates the DFT-D3 dispersion corrections</p>
+<p>Only calculates the 2-body part of the dispersion corrections. Requires a
+damping function for the order-6 and order-8 potential terms.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.TwoBodyDispersionD3.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/dftd3.html#TwoBodyDispersionD3.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.TwoBodyDispersionD3.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.NNPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">NNPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aev_computer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_networks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#NNPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.NNPotential" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.NNPotential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#NNPotential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.NNPotential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.SeparateChargesNNPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">SeparateChargesNNPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aev_computer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_networks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_networks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_normalizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#SeparateChargesNNPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.SeparateChargesNNPotential" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.SeparateChargesNNPotential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#SeparateChargesNNPotential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.SeparateChargesNNPotential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.MergedChargesNNPotential">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">MergedChargesNNPotential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aev_computer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_networks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_normalizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#MergedChargesNNPotential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.MergedChargesNNPotential" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.MergedChargesNNPotential.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghost_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/nnp.html#MergedChargesNNPotential.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.MergedChargesNNPotential.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the energies associated with the potential</p>
+<p>If the potential is an ensemble of multiple models, ensemble_values=True should
+return the individual values of the models, in the first dimension <code class="docutils literal notranslate"><span class="pre">(submodels,</span>
+<span class="pre">...)</span></code>. Otherwise it should <em>disregard</em> <code class="docutils literal notranslate"><span class="pre">ensemble_values</span></code>.</p>
+<p>Must be implemented by subclasses</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionZBL">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">RepulsionZBL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8853</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screen_coeffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screen_exponents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eff_exponent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.23</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eff_atomic_nums</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/zbl.html#RepulsionZBL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionZBL" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionZBL.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/zbl.html#RepulsionZBL.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionZBL.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionLJ">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">RepulsionLJ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#RepulsionLJ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionLJ" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.RepulsionLJ.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#RepulsionLJ.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.RepulsionLJ.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.DispersionLJ">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">DispersionLJ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#DispersionLJ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.DispersionLJ" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.DispersionLJ.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#DispersionLJ.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.DispersionLJ.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.LennardJones">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">LennardJones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#LennardJones"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.LennardJones" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.LennardJones.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/lj.html#LennardJones.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.LennardJones.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.FixedCoulomb">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">FixedCoulomb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dielectric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/fixed_coulomb.html#FixedCoulomb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.FixedCoulomb" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.FixedCoulomb.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/fixed_coulomb.html#FixedCoulomb.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.FixedCoulomb.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.potentials.FixedMNOK">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.potentials.</span></span><span class="sig-name descname"><span class="pre">FixedMNOK</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dielectric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/fixed_coulomb.html#FixedMNOK"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.FixedMNOK" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.potentials.FixedMNOK.pair_energies">
+<span class="sig-name descname"><span class="pre">pair_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/potentials/fixed_coulomb.html#FixedMNOK.pair_energies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.potentials.FixedMNOK.pair_energies" title="Link to this definition">#</a></dt>
+<dd><p>Return energy of all pairs of neighbors</p>
+<p>Returns a Tensor of energies, of shape (‘pairs’,) where ‘pairs’ is
+the number of neighbor pairs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.models.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.cutoffs.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.cutoffs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.Potential"><code class="docutils literal notranslate"><span class="pre">Potential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.Potential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">Potential.compute_from_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.Potential.forward"><code class="docutils literal notranslate"><span class="pre">Potential.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.DummyPotential"><code class="docutils literal notranslate"><span class="pre">DummyPotential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.DummyPotential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">DummyPotential.compute_from_neighbors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.BasePairPotential"><code class="docutils literal notranslate"><span class="pre">BasePairPotential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.BasePairPotential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">BasePairPotential.compute_from_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.BasePairPotential.pair_energies"><code class="docutils literal notranslate"><span class="pre">BasePairPotential.pair_energies()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.BasePairPotential.symm"><code class="docutils literal notranslate"><span class="pre">BasePairPotential.symm()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.BasePairPotential.to_pair_values"><code class="docutils literal notranslate"><span class="pre">BasePairPotential.to_pair_values()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.PairPotential"><code class="docutils literal notranslate"><span class="pre">PairPotential</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionXTB"><code class="docutils literal notranslate"><span class="pre">RepulsionXTB</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionXTB.pair_energies"><code class="docutils literal notranslate"><span class="pre">RepulsionXTB.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.TwoBodyDispersionD3"><code class="docutils literal notranslate"><span class="pre">TwoBodyDispersionD3</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.TwoBodyDispersionD3.pair_energies"><code class="docutils literal notranslate"><span class="pre">TwoBodyDispersionD3.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.NNPotential"><code class="docutils literal notranslate"><span class="pre">NNPotential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.NNPotential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">NNPotential.compute_from_neighbors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.SeparateChargesNNPotential"><code class="docutils literal notranslate"><span class="pre">SeparateChargesNNPotential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.SeparateChargesNNPotential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">SeparateChargesNNPotential.compute_from_neighbors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.MergedChargesNNPotential"><code class="docutils literal notranslate"><span class="pre">MergedChargesNNPotential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.MergedChargesNNPotential.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">MergedChargesNNPotential.compute_from_neighbors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionZBL"><code class="docutils literal notranslate"><span class="pre">RepulsionZBL</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionZBL.pair_energies"><code class="docutils literal notranslate"><span class="pre">RepulsionZBL.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionLJ"><code class="docutils literal notranslate"><span class="pre">RepulsionLJ</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.RepulsionLJ.pair_energies"><code class="docutils literal notranslate"><span class="pre">RepulsionLJ.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.DispersionLJ"><code class="docutils literal notranslate"><span class="pre">DispersionLJ</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.DispersionLJ.pair_energies"><code class="docutils literal notranslate"><span class="pre">DispersionLJ.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.LennardJones"><code class="docutils literal notranslate"><span class="pre">LennardJones</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.LennardJones.pair_energies"><code class="docutils literal notranslate"><span class="pre">LennardJones.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.FixedCoulomb"><code class="docutils literal notranslate"><span class="pre">FixedCoulomb</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.FixedCoulomb.pair_energies"><code class="docutils literal notranslate"><span class="pre">FixedCoulomb.pair_energies()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.FixedMNOK"><code class="docutils literal notranslate"><span class="pre">FixedMNOK</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.potentials.FixedMNOK.pair_energies"><code class="docutils literal notranslate"><span class="pre">FixedMNOK.pair_energies()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

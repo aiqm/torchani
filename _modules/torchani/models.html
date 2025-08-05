@@ -1,454 +1,468 @@
 
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>torchani.models &mdash; TorchANI 2.1.1 documentation</title>
-  
 
-  
-  
-  
-  
 
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+<html lang="en" data-content_root="../../" >
 
-    
-
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.models &#8212; TorchANI v2.6 (dev) Manual</title>
   
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-dataframe.css" type="text/css" />
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/models';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav">
-
-   
-  <div class="wy-grid-for-nav">
-    
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="../../index.html" class="icon icon-home"> TorchANI
-          
-
-          
-          </a>
-
-          
-            
-            
-              <div class="version">
-                2.1.1
-              </div>
-            
-          
-
-          
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-</ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
-</ul>
-
-            
-          
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">TorchANI</a>
-        
-      </nav>
-
-
-      <div class="wy-nav-content">
-        
-        <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
-  <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>torchani.models</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-      </li>
-    
-  </ul>
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
   
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-            
-  <h1>Source code for torchani.models</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;The ANI model zoo that stores public ANI models.</span>
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
-<span class="sd">Currently the model zoo has three models: ANI-1x, ANI-1ccx, and ANI-2x.</span>
-<span class="sd">The classes of these models are :class:`ANI1x`, :class:`ANI1ccx`, and</span>
-<span class="sd">:class:`ANI2x` these are subclasses of :class:`torch.nn.Module`.</span>
-<span class="sd">To use the models just instantiate them and either</span>
-<span class="sd">directly calculate energies or get an ASE calculator. For example:</span>
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for torchani.models</h1><div class="highlight"><pre>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Provides access to all published ANI models.</span>
+
+<span class="sd">Provided models are subclasses of `torchani.arch.ANI`. Some models have been</span>
+<span class="sd">published in previous articles, and some in TorchANI 2. If you use any of these models</span>
+<span class="sd">in your work please cite the corresponding article(s).</span>
+
+<span class="sd">If for a given model you discover a bug, performance problem, or incorrect behavior in</span>
+<span class="sd">some region of chemical space, please open an issue in GitHub. The TorchANI developers</span>
+<span class="sd">will attempt to address and document issues.</span>
+
+<span class="sd">Note that parameters of the ANI models are automatically downloaded and cached the first</span>
+<span class="sd">time they are instantiated. If this is an issue for your application we recommend you</span>
+<span class="sd">pre-download the parameters by instantiating the models once before use.</span>
+
+<span class="sd">The models can be used directly once they are instantiated. Alternatively, they can be</span>
+<span class="sd">converted to an ASE calculator by calling ``ANI.ase``.</span>
+
+<span class="sd">Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), and</span>
+<span class="sd">they output their averaged values. Individual members of these ensembles can be accessed</span>
+<span class="sd">by indexing, and ``len(ANI)`` can be used to query the number of networks in it.</span>
+
+<span class="sd">The models also have three extra entry points for more specific use cases:</span>
+<span class="sd">atomic_energies and energies_qbcs.</span>
+
+<span class="sd">All entrypoints expect a tuple of tensors ``(species, coords)`` as input, together</span>
+<span class="sd">with two optional tensors, ``cell`` and ``pbc``. ``coords`` and ``cell`` should be in</span>
+<span class="sd">units of Angstroms, and the output energies are always in Hartrees</span>
+
+<span class="sd">For more details consult the examples documentation</span>
 
 <span class="sd">.. code-block:: python</span>
 
-<span class="sd">    ani1x = torchani.models.ANI1x()</span>
-<span class="sd">    # compute energy using ANI-1x model ensemble</span>
-<span class="sd">    _, energies = ani1x((species, coordinates))</span>
-<span class="sd">    ani1x.ase()  # get ASE Calculator using this ensemble</span>
-<span class="sd">    # convert atom species from string to long tensor</span>
-<span class="sd">    ani1x.species_to_tensor([&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;])</span>
+<span class="sd">    import torchani</span>
 
-<span class="sd">    model0 = ani1x[0]  # get the first model in the ensemble</span>
-<span class="sd">    # compute energy using the first model in the ANI-1x model ensemble</span>
-<span class="sd">    _, energies = model0((species, coordinates))</span>
-<span class="sd">    model0.ase()  # get ASE Calculator using this model</span>
-<span class="sd">    # convert atom species from string to long tensor</span>
-<span class="sd">    model0.species_to_tensor([&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;])</span>
+<span class="sd">    model = torchani.models.ANI2x()</span>
+
+<span class="sd">    # Batch of molecules</span>
+<span class="sd">    # shape is (molecules, atoms) for atomic_nums and (molecules, atoms, 3) for coords</span>
+<span class="sd">    atomic_nums = torch.tensor([[8, 1, 1]])</span>
+<span class="sd">    coords = torch.tensor([[...], [...], [...]])</span>
+
+<span class="sd">    # Average energies over the ensemble, for all molecules</span>
+<span class="sd">    # Output shape is (molecules,)</span>
+<span class="sd">    energies = model((atomic_nums, coords)).energies</span>
+
+<span class="sd">    # Average atomic energies over the ensemble for the batch</span>
+<span class="sd">    # Output shape is (molecules, atoms)</span>
+<span class="sd">    atomic_energies = model.atomic_energies((atomic_nums, coords)).energies</span>
+
+<span class="sd">    # Individual energies of the members of the ensemble</span>
+<span class="sd">    # Output shape is (ensemble-size, molecules)</span>
+<span class="sd">    energies = model((atomic_nums, coords), ensemble_values=True).energies</span>
+
+<span class="sd">    # QBC factors are used for active learning, shape is (molecules,)</span>
+<span class="sd">    result = model.energies_qbcs((species, coords))</span>
+<span class="sd">    energies = result.energies</span>
+<span class="sd">    qbcs = result.qbcs</span>
+
+<span class="sd">    # Individual submodels of the ensemble can be obtained by indexing, they are also</span>
+<span class="sd">    # subclasses of ``ANI``, with the same functionality</span>
+<span class="sd">    submodel = model[0]</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">io</span>
-<span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">zipfile</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">neurochem</span>
-<span class="kn">from</span> <span class="nn">.nn</span> <span class="kn">import</span> <span class="n">SpeciesConverter</span><span class="p">,</span> <span class="n">SpeciesEnergies</span>
-<span class="kn">from</span> <span class="nn">.aev</span> <span class="kn">import</span> <span class="n">AEVComputer</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">SYMBOLS_2X</span><span class="p">,</span> <span class="n">SYMBOLS_1X</span><span class="p">,</span> <span class="n">SYMBOLS_2X_ZNUM_ORDER</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.electro</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChargeNormalizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.arch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assembler</span><span class="p">,</span> <span class="n">ANI</span><span class="p">,</span> <span class="n">ANIq</span><span class="p">,</span> <span class="n">_fetch_state_dict</span><span class="p">,</span> <span class="n">simple_ani</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeighborlistArg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.annotations</span><span class="w"> </span><span class="kn">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">DType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.nn._internal</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ANINetworksDiscardFirstScalar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.paths</span><span class="w"> </span><span class="kn">import</span> <span class="n">custom_models_dir</span>
 
 
-<span class="k">class</span> <span class="nc">BuiltinModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Private template for the builtin ANI models &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_converter</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span> <span class="n">neural_networks</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">consts</span><span class="p">,</span> <span class="n">sae_dict</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BuiltinModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">species_converter</span> <span class="o">=</span> <span class="n">species_converter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">aev_computer</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span> <span class="o">=</span> <span class="n">neural_networks</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">energy_shifter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_species_to_tensor</span> <span class="o">=</span> <span class="n">species_to_tensor</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">periodic_table_index</span> <span class="o">=</span> <span class="n">periodic_table_index</span>
-
-        <span class="c1"># a bit useless maybe</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">consts</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sae_dict</span> <span class="o">=</span> <span class="n">sae_dict</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_neurochem_resources</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">info_file_path</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="c1"># this is used to load only 1 model (by default model 0)</span>
-        <span class="n">consts</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">,</span> <span class="n">ensemble_prefix</span><span class="p">,</span> <span class="n">ensemble_size</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_parse_neurochem_resources</span><span class="p">(</span><span class="n">info_file_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">model_index</span> <span class="o">&gt;=</span> <span class="n">ensemble_size</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The ensemble size is only </span><span class="si">{}</span><span class="s2">, model </span><span class="si">{}</span><span class="s2"> can&#39;t be loaded&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="n">model_index</span><span class="p">))</span>
-
-        <span class="n">species_converter</span> <span class="o">=</span> <span class="n">SpeciesConverter</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
-        <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
-        <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">sae_dict</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span>
-
-        <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ensemble_prefix</span><span class="p">,</span> <span class="n">model_index</span><span class="p">),</span> <span class="s1">&#39;networks&#39;</span><span class="p">)</span>
-        <span class="n">neural_networks</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">network_dir</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">species_converter</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span> <span class="n">neural_networks</span><span class="p">,</span>
-                   <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">consts</span><span class="p">,</span> <span class="n">sae_dict</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">)</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_parse_neurochem_resources</span><span class="p">(</span><span class="n">info_file_path</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
-
-        <span class="n">resource_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;resources/&#39;</span><span class="p">)</span>
-        <span class="n">local_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/.local/torchani/&#39;</span><span class="p">)</span>
-        <span class="n">repo_name</span> <span class="o">=</span> <span class="s2">&quot;ani-model-zoo&quot;</span>
-        <span class="n">tag_name</span> <span class="o">=</span> <span class="s2">&quot;ani-2x&quot;</span>
-        <span class="n">extracted_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">repo_name</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/aiqm/</span><span class="si">{}</span><span class="s2">/archive/</span><span class="si">{}</span><span class="s2">.zip&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">repo_name</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">info_file_path</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">get_resource</span><span class="p">(</span><span class="n">local_dir</span><span class="p">,</span> <span class="n">info_file_path</span><span class="p">)):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Downloading ANI model parameters ...&#39;</span><span class="p">)</span>
-                <span class="n">resource_res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-                <span class="n">resource_zip</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">resource_res</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">resource_zip</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">resource_path</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
-                    <span class="n">resource_zip</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span>
-                    <span class="n">resource_path</span> <span class="o">=</span> <span class="n">local_dir</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">resource_path</span> <span class="o">=</span> <span class="n">local_dir</span>
-
-            <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">extracted_name</span><span class="p">,</span> <span class="s2">&quot;resources&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
-                <span class="k">except</span> <span class="n">shutil</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
-                    <span class="k">pass</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">extracted_name</span><span class="p">))</span>
-
-        <span class="n">info_file</span> <span class="o">=</span> <span class="n">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">info_file_path</span><span class="p">)</span>
-
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="c1"># const_file: Path to the file with the builtin constants.</span>
-            <span class="c1"># sae_file: Path to the file with the Self Atomic Energies.</span>
-            <span class="c1"># ensemble_prefix: Prefix of the neurochem resource directories.</span>
-            <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()][:</span><span class="mi">4</span><span class="p">]</span>
-            <span class="n">const_file_path</span><span class="p">,</span> <span class="n">sae_file_path</span><span class="p">,</span> <span class="n">ensemble_prefix_path</span><span class="p">,</span> <span class="n">ensemble_size</span> <span class="o">=</span> <span class="n">lines</span>
-            <span class="n">const_file</span> <span class="o">=</span> <span class="n">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">const_file_path</span><span class="p">)</span>
-            <span class="n">sae_file</span> <span class="o">=</span> <span class="n">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">sae_file_path</span><span class="p">)</span>
-            <span class="n">ensemble_prefix</span> <span class="o">=</span> <span class="n">get_resource</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">ensemble_prefix_path</span><span class="p">)</span>
-            <span class="n">ensemble_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ensemble_size</span><span class="p">)</span>
-            <span class="n">consts</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span><span class="p">(</span><span class="n">const_file</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">consts</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">,</span> <span class="n">ensemble_prefix</span><span class="p">,</span> <span class="n">ensemble_size</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_coordinates</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
-                <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesEnergies</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Calculates predicted properties for minibatch of configurations</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            species_coordinates: minibatch of configurations</span>
-<span class="sd">            cell: the cell used in PBC computation, set to None if PBC is not enabled</span>
-<span class="sd">            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            species_energies: energies for the given configurations</span>
-
-<span class="sd">        .. note:: The coordinates, and cell are in Angstrom, and the energies</span>
-<span class="sd">            will be in Hartree.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">periodic_table_index</span><span class="p">:</span>
-            <span class="n">species_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_converter</span><span class="p">(</span><span class="n">species_coordinates</span><span class="p">)</span>
-        <span class="n">species_aevs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">(</span><span class="n">species_coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">)</span>
-        <span class="n">species_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">(</span><span class="n">species_aevs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">(</span><span class="n">species_energies</span><span class="p">)</span>
-
-    <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
-    <span class="k">def</span> <span class="nf">_recast_long_buffers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">species_converter</span><span class="o">.</span><span class="n">conv_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_converter</span><span class="o">.</span><span class="n">conv_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="o">.</span><span class="n">triu_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="o">.</span><span class="n">triu_index</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">species_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert species from strings to tensor.</span>
-
-<span class="sd">        See also :method:`torchani.neurochem.Constant.species_to_tensor`</span>
-
-<span class="sd">        Arguments:</span>
-<span class="sd">            species (:class:`str`): A string of chemical symbols</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            tensor (:class:`torch.Tensor`): A 1D tensor of integers</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># The only difference between this and the &quot;raw&quot; private version</span>
-        <span class="c1"># _species_to_tensor is that this sends the final tensor to the model</span>
-        <span class="c1"># device</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_species_to_tensor</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="o">.</span><span class="n">ShfR</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">ase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get an ASE Calculator using this ANI model</span>
-
-<span class="sd">        Arguments:</span>
-<span class="sd">            kwargs: ase.Calculator kwargs</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            calculator (:class:`int`): A calculator to be used with ASE</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ase</span>
-        <span class="k">return</span> <span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="c1"># Protocol used by factory functions that instantiate ani models, here for reference</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_ModelFactory</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+        <span class="k">pass</span>
 
 
-<span class="k">class</span> <span class="nc">BuiltinEnsemble</span><span class="p">(</span><span class="n">BuiltinModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Private template for the builtin ANI ensemble models.</span>
-
-<span class="sd">    ANI ensemble models form the ANI models zoo are instances of this class.</span>
-<span class="sd">    This class is a torch module that sequentially calculates</span>
-<span class="sd">    AEVs, then energies from a torchani.Ensemble and then uses EnergyShifter</span>
-<span class="sd">    to shift those energies. It is essentially a sequential</span>
-
-<span class="sd">    &#39;AEVComputer -&gt; Ensemble -&gt; EnergyShifter&#39;</span>
-
-<span class="sd">    (periodic_table_index=False), or a sequential</span>
-
-<span class="sd">    &#39;SpeciesConverter -&gt; AEVComputer -&gt; Ensemble -&gt; EnergyShifter&#39;</span>
-
-<span class="sd">    (periodic_table_index=True).</span>
-
-<span class="sd">    .. note::</span>
-<span class="sd">        This class is for internal use only, avoid relying on anything from it</span>
-<span class="sd">        except the public methods, always use ANI1x, ANI1ccx, etc to instance</span>
-<span class="sd">        the models.</span>
-<span class="sd">        Also, don&#39;t confuse this class with torchani.Ensemble, which is only a</span>
-<span class="sd">        container for many ANIModel instances and shouldn&#39;t be used directly</span>
-<span class="sd">        for calculations.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        species_converter (:class:`torchani.nn.SpeciesConverter`): Converts periodic table index to</span>
-<span class="sd">            internal indices. Only present if periodic_table_index is `True`.</span>
-<span class="sd">        aev_computer (:class:`torchani.AEVComputer`): AEV computer with</span>
-<span class="sd">            builtin constants</span>
-<span class="sd">        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with</span>
-<span class="sd">            builtin Self Atomic Energies.</span>
-<span class="sd">        periodic_table_index (bool): Whether to use element number in periodic table</span>
-<span class="sd">            to index species. If set to `False`, then indices must be `0, 1, 2, ..., N - 1`</span>
-<span class="sd">            where `N` is the number of parametrized species.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_converter</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span> <span class="n">neural_networks</span><span class="p">,</span>
-                 <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">consts</span><span class="p">,</span> <span class="n">sae_dict</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BuiltinEnsemble</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">species_converter</span><span class="p">,</span>
-                                              <span class="n">aev_computer</span><span class="p">,</span>
-                                              <span class="n">neural_networks</span><span class="p">,</span>
-                                              <span class="n">energy_shifter</span><span class="p">,</span>
-                                              <span class="n">species_to_tensor</span><span class="p">,</span>
-                                              <span class="n">consts</span><span class="p">,</span>
-                                              <span class="n">sae_dict</span><span class="p">,</span>
-                                              <span class="n">periodic_table_index</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_neurochem_resources</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">info_file_path</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="c1"># this is used to load only 1 model (by default model 0)</span>
-        <span class="n">consts</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">,</span> <span class="n">ensemble_prefix</span><span class="p">,</span> <span class="n">ensemble_size</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_parse_neurochem_resources</span><span class="p">(</span><span class="n">info_file_path</span><span class="p">)</span>
-
-        <span class="n">species_converter</span> <span class="o">=</span> <span class="n">SpeciesConverter</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
-        <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
-        <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">sae_dict</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span>
-        <span class="n">neural_networks</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">load_model_ensemble</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
-                                                        <span class="n">ensemble_prefix</span><span class="p">,</span> <span class="n">ensemble_size</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">species_converter</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span> <span class="n">neural_networks</span><span class="p">,</span>
-                   <span class="n">energy_shifter</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">consts</span><span class="p">,</span> <span class="n">sae_dict</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get a single &#39;AEVComputer -&gt; ANIModel -&gt; EnergyShifter&#39; sequential model</span>
-
-<span class="sd">        Get a single &#39;AEVComputer -&gt; ANIModel -&gt; EnergyShifter&#39; sequential model</span>
-<span class="sd">        or</span>
-<span class="sd">        Indexing allows access to a single model inside the ensemble</span>
-<span class="sd">        that can be used directly for calculations. The model consists</span>
-<span class="sd">        of a sequence AEVComputer -&gt; ANIModel -&gt; EnergyShifter</span>
-<span class="sd">        and can return an ase calculator and convert species to tensor.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            index (:class:`int`): Index of the model</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            ret: (:class:`torchani.models.BuiltinModel`) Model ready for</span>
-<span class="sd">                calculations</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="n">BuiltinModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species_converter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">,</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">_species_to_tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sae_dict</span><span class="p">,</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">periodic_table_index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ret</span>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get the number of networks in the ensemble</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            length (:class:`int`): Number of networks in the ensemble</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="ANI1x"><a class="viewcode-back" href="../../api.html#torchani.models.ANI1x">[docs]</a><span class="k">def</span> <span class="nf">ANI1x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.</span>
+<div class="viewcode-block" id="ANI1x">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANI1x">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANI1x</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.</span>
 
 <span class="sd">    The ANI-1x model is an ensemble of 8 networks that was trained using</span>
 <span class="sd">    active learning on the ANI-1x dataset, the target level of theory is</span>
@@ -461,14 +475,34 @@
 <span class="sd">    .. _Active Learning Paper:</span>
 <span class="sd">        https://aip.scitation.org/doi/abs/10.1063/1.5023802</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">info_file</span> <span class="o">=</span> <span class="s1">&#39;ani-1x_8x.info&#39;</span>
-    <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">BuiltinEnsemble</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">BuiltinModel</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">,</span> <span class="n">model_index</span><span class="p">)</span></div>
+    <span class="n">asm</span> <span class="o">=</span> <span class="n">Assembler</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">SYMBOLS_1X</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_atomic_networks</span><span class="p">(</span><span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_global_cutoff_fn</span><span class="p">(</span><span class="s2">&quot;cosine&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_aev_computer</span><span class="p">(</span><span class="n">angular</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">,</span> <span class="n">radial</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_neighborlist</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_gsaes_as_self_energies</span><span class="p">(</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">ANI</span><span class="p">,</span> <span class="n">asm</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani1x_state_dict.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># TODO: Fix this</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="ANI1ccx"><a class="viewcode-back" href="../../api.html#torchani.models.ANI1ccx">[docs]</a><span class="k">def</span> <span class="nf">ANI1ccx</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.</span>
+
+<div class="viewcode-block" id="ANI1ccx">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANI1ccx">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANI1ccx</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.</span>
 
 <span class="sd">    The ANI-1ccx model is an ensemble of 8 networks that was trained</span>
 <span class="sd">    on the ANI-1ccx dataset, using transfer learning. The target accuracy</span>
@@ -482,19 +516,37 @@
 <span class="sd">    .. _Transfer Learning Paper:</span>
 <span class="sd">        https://doi.org/10.26434/chemrxiv.6744440.v1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">info_file</span> <span class="o">=</span> <span class="s1">&#39;ani-1ccx_8x.info&#39;</span>
-    <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">BuiltinEnsemble</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">BuiltinModel</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">,</span> <span class="n">model_index</span><span class="p">)</span></div>
+    <span class="n">asm</span> <span class="o">=</span> <span class="n">Assembler</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">SYMBOLS_1X</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_global_cutoff_fn</span><span class="p">(</span><span class="s2">&quot;cosine&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_aev_computer</span><span class="p">(</span><span class="n">radial</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">,</span> <span class="n">angular</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_atomic_networks</span><span class="p">(</span><span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani1x&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_neighborlist</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_gsaes_as_self_energies</span><span class="p">(</span><span class="s2">&quot;ccsd(t)star-cbs&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">ANI</span><span class="p">,</span> <span class="n">asm</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani1ccx_state_dict.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="ANI2x"><a class="viewcode-back" href="../../api.html#torchani.models.ANI2x">[docs]</a><span class="k">def</span> <span class="nf">ANI2x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.</span>
 
-<span class="sd">    The ANI-2x model is an ensemble of 8 networks that was trained on the</span>
-<span class="sd">    ANI-2x dataset. The target level of theory is wB97X/6-31G(d). It predicts</span>
-<span class="sd">    energies on HCNOFSCl elements exclusively it shouldn&#39;t be used with other</span>
-<span class="sd">    atom types.</span>
+<div class="viewcode-block" id="ANI2x">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANI2x">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANI2x</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.</span>
+
+<span class="sd">    The ANI-2x model is an ensemble of 8 networks that was trained on the ANI-2x</span>
+<span class="sd">    dataset. The target level of theory is wB97X/6-31G(d). It predicts energies on</span>
+<span class="sd">    HCNOFSCl elements exclusively it shouldn&#39;t be used with other atom types.</span>
 
 <span class="sd">    .. _ANI2x Results on GitHub:</span>
 <span class="sd">        https://github.com/cdever01/ani-2x_results</span>
@@ -502,49 +554,388 @@
 <span class="sd">    .. _ANI2x Paper:</span>
 <span class="sd">        https://doi.org/10.26434/chemrxiv.11819268.v1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">info_file</span> <span class="o">=</span> <span class="s1">&#39;ani-2x_8x.info&#39;</span>
-    <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">BuiltinEnsemble</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">BuiltinModel</span><span class="o">.</span><span class="n">_from_neurochem_resources</span><span class="p">(</span><span class="n">info_file</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="p">,</span> <span class="n">model_index</span><span class="p">)</span></div>
+    <span class="n">asm</span> <span class="o">=</span> <span class="n">Assembler</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">SYMBOLS_2X</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_global_cutoff_fn</span><span class="p">(</span><span class="s2">&quot;cosine&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_aev_computer</span><span class="p">(</span><span class="n">radial</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">angular</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_atomic_networks</span><span class="p">(</span><span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_neighborlist</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">)</span>
+    <span class="c1"># The self energies are overwritten by the state dict</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_gsaes_as_self_energies</span><span class="p">(</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">ANI</span><span class="p">,</span> <span class="n">asm</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani2x_state_dict.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="ANImbis">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANImbis">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANImbis</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANIq</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Experimental ANI-2x model with MBIS charges</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">asm</span> <span class="o">=</span> <span class="n">Assembler</span><span class="p">(</span><span class="bp">cls</span><span class="o">=</span><span class="n">ANIq</span><span class="p">,</span> <span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">SYMBOLS_2X</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_global_cutoff_fn</span><span class="p">(</span><span class="s2">&quot;cosine&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_aev_computer</span><span class="p">(</span><span class="n">radial</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">angular</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_atomic_networks</span><span class="p">(</span><span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_charge_networks</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="o">=</span><span class="n">_ANINetworksDiscardFirstScalar</span><span class="p">,</span>
+        <span class="n">ctor</span><span class="o">=</span><span class="s2">&quot;ani2x&quot;</span><span class="p">,</span>
+        <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;out_dim&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;gelu&quot;</span><span class="p">},</span>
+        <span class="n">normalizer</span><span class="o">=</span><span class="n">ChargeNormalizer</span><span class="o">.</span><span class="n">from_electronegativity_and_hardness</span><span class="p">(</span>
+            <span class="n">asm</span><span class="o">.</span><span class="n">symbols</span><span class="p">,</span> <span class="n">scale_weights_by_charges_squared</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_neighborlist</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">)</span>
+    <span class="c1"># The self energies are overwritten by the state dict</span>
+    <span class="n">asm</span><span class="o">.</span><span class="n">set_gsaes_as_self_energies</span><span class="p">(</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">ANIq</span><span class="p">,</span> <span class="n">asm</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+
+    <span class="n">ani2x_state_dict</span> <span class="o">=</span> <span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani2x_state_dict.pt&quot;</span><span class="p">)</span>
+    <span class="n">energy_nn_state_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;neural_networks.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="n">v</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ani2x_state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;bias&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">aev_state_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;aev_computer.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="n">v</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ani2x_state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;aev_computer&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">shifter_state_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;self_energies&quot;</span><span class="p">:</span> <span class="n">ani2x_state_dict</span><span class="p">[</span><span class="s2">&quot;energy_shifter.self_energies&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+    <span class="n">charge_nn_state_dict</span> <span class="o">=</span> <span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;charge_nn_state_dict.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">shifter_state_dict</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="s2">&quot;nnp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">aev_computer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">aev_state_dict</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="s2">&quot;nnp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">neural_networks</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">energy_nn_state_dict</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="s2">&quot;nnp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">charge_networks</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">charge_nn_state_dict</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="ANI2xr">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANI2xr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANI2xr</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Improved ANI model trained to the 2x dataset</span>
+
+<span class="sd">    Trained to the wB97X level of theory with an added repulsion potential, and smoother</span>
+<span class="sd">    PES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;ANI-2xr is experimental and hasn&#39;t yet been peer yet reviewed. &quot;</span>
+        <span class="s2">&quot;It is subject to change in the near future&quot;</span>
+    <span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">simple_ani</span><span class="p">(</span>
+        <span class="n">lot</span><span class="o">=</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="o">=</span><span class="n">SYMBOLS_2X_ZNUM_ORDER</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">dispersion</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">repulsion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="o">=</span><span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani2xr.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="ANI2dr">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.ANI2dr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ANI2dr</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Improved ANI model trained to the 2x dataset</span>
+
+<span class="sd">    Trained to the B973c level of theory with added repulsion and dispersion potentials,</span>
+<span class="sd">    and smoother PES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;ANI-2xr is experimental and hasn&#39;t yet been peer yet reviewed. &quot;</span>
+        <span class="s2">&quot;It is subject to change in the near future&quot;</span>
+    <span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">simple_ani</span><span class="p">(</span>
+        <span class="n">lot</span><span class="o">=</span><span class="s2">&quot;b973c-def2mtzvp&quot;</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="o">=</span><span class="n">SYMBOLS_2X_ZNUM_ORDER</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">dispersion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">repulsion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="o">=</span><span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;ani2dr.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ANIr2s</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">solvent</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:meta private:&quot;&quot;&quot;</span>
+    <span class="c1"># r&quot;&quot;&quot;The ANI-r2s model, trained to the R2SCAN-3c level of theory</span>
+
+    <span class="c1"># R2SCAN models are trained with the def2-mTZVPP basis set, on the ANI-2x-R2SCAN</span>
+    <span class="c1"># dataset. There are different R2SCAN models trained using different SMD implicit</span>
+    <span class="c1"># solvents that can be accessed with ``solvent=&#39;water&#39;``, ``solvent=&#39;chcl3&#39;``, or</span>
+    <span class="c1"># ``solvent=&#39;ch3cn&#39;``. Alternatively, the models ``ANIr2s_water``, ``ANIr2s_ch3cn``</span>
+    <span class="c1"># and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum</span>
+    <span class="c1"># model is returned.</span>
+    <span class="c1"># &quot;&quot;&quot;</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;_&#39;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">solvent</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">solvent</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="c1"># These models were trained with _AltSmoothCutoff, but difference is negligible</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">simple_ani</span><span class="p">(</span>
+        <span class="n">lot</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;r2scan3c</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">-def2mtzvpp&quot;</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="o">=</span><span class="n">SYMBOLS_2X</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">dispersion</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">repulsion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="o">=</span><span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">,</span>
+        <span class="n">repulsion_cutoff</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">cutoff_fn</span><span class="o">=</span><span class="s2">&quot;smooth&quot;</span><span class="p">,</span>
+        <span class="c1"># Exact reproduction of 2x aev</span>
+        <span class="n">radial_start</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+        <span class="n">angular_start</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+        <span class="n">radial_cutoff</span><span class="o">=</span><span class="mf">5.1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span>
+        <span class="n">_fetch_state_dict</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anir2s</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">_state_dict.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ANIr2s_ch3cn</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:meta private:&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ANIr2s</span><span class="p">(</span>
+        <span class="n">model_index</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">,</span>
+        <span class="n">solvent</span><span class="o">=</span><span class="s2">&quot;ch3cn&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ANIr2s_chcl3</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:meta private:&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ANIr2s</span><span class="p">(</span>
+        <span class="n">model_index</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">,</span>
+        <span class="n">solvent</span><span class="o">=</span><span class="s2">&quot;chcl3&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ANIr2s_water</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:meta private:&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ANIr2s</span><span class="p">(</span>
+        <span class="n">model_index</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">,</span>
+        <span class="n">solvent</span><span class="o">=</span><span class="s2">&quot;water&quot;</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="SnnANI2xr">
+<a class="viewcode-back" href="../../api_autogen/torchani.models.html#torchani.models.SnnANI2xr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SnnANI2xr</span><span class="p">(</span>
+    <span class="n">model_index</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyaev&quot;</span><span class="p">,</span>
+    <span class="n">periodic_table_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ANI</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Improved ANI model trained to the 2x dataset</span>
+
+<span class="sd">    Trained to the wB97X level of theory with an added repulsion potential, and smoother</span>
+<span class="sd">    PES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;ANI-2xr-snn is experimental and hasn&#39;t yet been peer yet reviewed. &quot;</span>
+        <span class="s2">&quot;It is subject to change in the near future&quot;</span>
+    <span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">simple_ani</span><span class="p">(</span>
+        <span class="n">lot</span><span class="o">=</span><span class="s2">&quot;wb97x-631gd&quot;</span><span class="p">,</span>
+        <span class="n">symbols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;Cl&#39;</span><span class="p">],</span>
+        <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">neighborlist</span><span class="o">=</span><span class="n">neighborlist</span><span class="p">,</span>
+        <span class="n">periodic_table_index</span><span class="o">=</span><span class="n">periodic_table_index</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span>
+        <span class="n">container</span><span class="o">=</span><span class="s2">&quot;SingleNN&quot;</span><span class="p">,</span>
+        <span class="n">container_ctor</span><span class="o">=</span><span class="s2">&quot;large&quot;</span><span class="p">,</span>
+        <span class="n">repulsion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">sections</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">_fetch_state_dict</span><span class="p">(</span><span class="s2">&quot;snn-ani2xr.pt&quot;</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<span class="c1"># Custom models</span>
+<span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;__path__&quot;</span><span class="p">:</span>
+        <span class="c1"># This module is not a package</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">custom_models_dir</span><span class="p">()</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">p</span> <span class="o">/</span> <span class="s2">&quot;model.py&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2"> / model.py could not be found&quot;</span><span class="p">)</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
+            <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find custom model </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 
-           </div>
-           
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
           </div>
-          <footer>
-  
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
-  </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
-
-</footer>
-
-        </div>
-      </div>
-
-    </section>
-
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
   </div>
   
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
-
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
-
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
   
-  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
     
-   
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
 
-</body>
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

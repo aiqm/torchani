@@ -1,0 +1,1509 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torchani.neighbors &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/torchani/neighbors';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api_autogen/torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.neighbors</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for torchani.neighbors</h1><div class="highlight"><pre>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Modular neighborlists to improve scaling for large systems&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.csrc</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLIST_IS_INSTALLED</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchani.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">map_to_central</span><span class="p">,</span> <span class="n">cumsum_from_zero</span><span class="p">,</span> <span class="n">fast_masked_select</span>
+
+
+<div class="viewcode-block" id="Neighbors">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.Neighbors">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Neighbors</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Holds pairs of atoms that are neighbors. Result of a neighborlist calculation&quot;&quot;&quot;</span>
+
+    <span class="n">indices</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Long tensor with idxs of neighbor pairs. Shape ``(2, pairs)``</span>
+    <span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: The associated pair distances. Shape is ``(pairs,)``</span>
+    <span class="n">diff_vectors</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: The associated difference vectors. Shape is ``(pairs, 3)``</span></div>
+
+
+
+<div class="viewcode-block" id="Triples">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.Triples">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Triples</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Holds groups of 3 atoms that are neighbors. Result of `neighbors_to_triples`&quot;&quot;&quot;</span>
+
+    <span class="n">central_idxs</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Long tensor with central idxs. Shape ``(triples,)``</span>
+    <span class="n">side_idxs</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Long tensor with side idxs. Shape ``(2, triples)``</span>
+    <span class="n">diff_signs</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Long tensor of diff vector directions. Shape ``(2, triples)``</span>
+    <span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Similar to `Neighbors`, for triples. ``(2, triples)``</span>
+    <span class="n">diff_vectors</span><span class="p">:</span> <span class="n">Tensor</span>  <span class="c1">#: Similar to `Neighbors`, for triples. ``(2, triples, 3)``</span></div>
+
+
+
+<div class="viewcode-block" id="discard_inter_molecule_pairs">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.discard_inter_molecule_pairs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">discard_inter_molecule_pairs</span><span class="p">(</span>
+    <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+    <span class="n">molecule_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Discard neighbors that don&#39;t belong to the same molecule&quot;&quot;&quot;</span>
+    <span class="n">molecule_neighbor_idxs</span> <span class="o">=</span> <span class="n">molecule_idxs</span><span class="p">[</span><span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span>
+    <span class="n">internal_idxs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">molecule_neighbor_idxs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">molecule_neighbor_idxs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">internal_idxs</span><span class="p">)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">internal_idxs</span><span class="p">)</span>
+    <span class="n">diff_vectors</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">diff_vectors</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">internal_idxs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Neighbors</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">diff_vectors</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="discard_outside_cutoff">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.discard_outside_cutoff">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">discard_outside_cutoff</span><span class="p">(</span>
+    <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">,</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Discard neighbors with distances that lie outside of the given cutoff&quot;&quot;&quot;</span>
+    <span class="n">closer_indices</span> <span class="o">=</span> <span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">closer_indices</span><span class="p">)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">closer_indices</span><span class="p">)</span>
+    <span class="n">diff_vectors</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">diff_vectors</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">closer_indices</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Neighbors</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">diff_vectors</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Screen a given neighborlist using a cutoff and return a neighborlist with</span>
+<span class="c1"># atoms that are within that cutoff, for all molecules in a coordinate set.</span>
+<span class="c1"># neighbor_idxs must correctly index flattened coords.view(-1, 3)</span>
+<span class="c1">#</span>
+<span class="c1"># passing an infinite cutoff will only work for non pbc conditions</span>
+<span class="c1"># (shift values must be None)</span>
+<div class="viewcode-block" id="narrow_down">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.narrow_down">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">narrow_down</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">elem_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">neighbor_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">shifts</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Takes a set of potential neighbor idxs and narrows it down to true neighbors&quot;&quot;&quot;</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">elem_idxs</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="c1"># Discard dumy atoms to prevent wasting resources in calculating</span>
+        <span class="c1"># dummy distances</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">non_dummy_pairs</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_dummy_pairs</span><span class="p">)</span>
+        <span class="c1"># shifts can be None when there are no pbc conditions to prevent</span>
+        <span class="c1"># torch from launching kernels with only zeros</span>
+        <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shifts</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_dummy_pairs</span><span class="p">)</span>
+
+    <span class="c1"># Interpret as single molecule</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cutoff</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PBC can&#39;t use an infinite cutoff&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Diff vector and distances need to be calculated to screen unfortunately</span>
+        <span class="c1"># distances need to be recalculated again later, since otherwise torch</span>
+        <span class="c1"># prepares to calculate derivatives of distances that are later discarded</span>
+
+        <span class="c1"># no grad tracking on coords #</span>
+        <span class="n">_coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">_coords0</span> <span class="o">=</span> <span class="n">_coords</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">_coords1</span> <span class="o">=</span> <span class="n">_coords</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">_diff_vectors</span> <span class="o">=</span> <span class="n">_coords0</span> <span class="o">-</span> <span class="n">_coords1</span>
+        <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_diff_vectors</span> <span class="o">+=</span> <span class="n">shifts</span>
+        <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">_diff_vectors</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shifts</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
+        <span class="c1"># ------------------- #</span>
+
+    <span class="n">coords0</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">coords1</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">diff_vectors</span> <span class="o">=</span> <span class="n">coords0</span> <span class="o">-</span> <span class="n">coords1</span>
+    <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">diff_vectors</span> <span class="o">+=</span> <span class="n">shifts</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">diff_vectors</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Neighbors</span><span class="p">(</span><span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">diff_vectors</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_bounding_cell">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.compute_bounding_cell">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_bounding_cell</span><span class="p">(</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">displace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">square</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the rectangular unit cell that minimally bounds a set of coords.</span>
+
+<span class="sd">    Optionally displace the coords so that they fully lie inside the cell. Displacing</span>
+<span class="sd">    the coordinates causes small floating point differences which have a negligible</span>
+<span class="sd">    effect on energies and forces. The ``eps`` value is used to add padding to the cell.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">min_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">eps</span>
+    <span class="n">max_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">eps</span>
+    <span class="n">largest_dist</span> <span class="o">=</span> <span class="n">max_</span> <span class="o">-</span> <span class="n">min_</span>
+    <span class="k">if</span> <span class="n">square</span><span class="p">:</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">largest_dist</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">largest_dist</span>
+    <span class="k">if</span> <span class="n">displace</span><span class="p">:</span>
+        <span class="c1"># Benchmarks show that these assert coords &gt; 0.0 slows things down a bit</span>
+        <span class="k">return</span> <span class="n">coords</span> <span class="o">-</span> <span class="n">min_</span><span class="p">,</span> <span class="n">cell</span>
+    <span class="k">return</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span></div>
+
+
+
+<div class="viewcode-block" id="Neighborlist">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.Neighborlist">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Neighborlist</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for modules that compute pairs of neighbors. Can support PBC.</span>
+
+<span class="sd">    Subclasses *must* override `Neighborlist.forward`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Neighborlist.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.Neighborlist.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate all pairs of atoms that are neighbors, given a cutoff.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cutoff: Cutoff value for the neighborlist. Pairs further away than this</span>
+<span class="sd">                are not included.</span>
+<span class="sd">            species: |elem_idxs|</span>
+<span class="sd">            coords: |coords|</span>
+<span class="sd">            cell: |cell|</span>
+<span class="sd">            pbc: |pbc|</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            `typing.NamedTuple` with all pairs of atoms that are neighbors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Must be implemented by subclasses&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AllPairs">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.AllPairs">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllPairs</span><span class="p">(</span><span class="n">Neighborlist</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute pairs of neighbors. Uses a naive algorithm.</span>
+
+<span class="sd">    This is a naive implementation, with :math:`O(N^2)` scaling. It computes all pairs</span>
+<span class="sd">    and then discards those that are further away from the cutoff. Supports PBC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AllPairs.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.AllPairs.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">all_pairs</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">all_pairs</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+    <span class="n">_validate_inputs</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shift_idxs</span> <span class="o">=</span> <span class="n">_all_pairs_pbc</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="n">shifts</span> <span class="o">=</span> <span class="n">shift_idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">@</span> <span class="n">cell</span>
+        <span class="c1"># Before screening coords, must map to central cell (not need if no PBC)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">map_to_central</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shifts</span><span class="p">)</span>
+    <span class="n">molecs</span><span class="p">,</span> <span class="n">atoms</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># Create a neighborlist for all molecules and all atoms.</span>
+    <span class="c1"># Later screen dummy atoms</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">molecs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">molecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">neighbor_idxs</span> <span class="o">+=</span> <span class="n">atoms</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">molecs</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_all_pairs_pbc</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="n">shifts</span> <span class="o">=</span> <span class="n">_all_pairs_pbc_shifts</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">all_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: center cell</span>
+    <span class="n">p12_center</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">shifts_center</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="n">p12_center</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span>
+
+    <span class="c1"># Step 3: cells with shifts</span>
+    <span class="c1"># shape convention (shift index, molecule index, atom index, 3)</span>
+    <span class="n">num_shifts</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">all_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_shifts</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">prod</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">all_shifts</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+    <span class="n">shift_index</span> <span class="o">=</span> <span class="n">prod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">p12</span> <span class="o">=</span> <span class="n">prod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">shifts_outside</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shift_index</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: combine results for all cells</span>
+    <span class="n">shifts_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">shifts_center</span><span class="p">,</span> <span class="n">shifts_outside</span><span class="p">])</span>
+    <span class="n">all_neighbor_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">p12_center</span><span class="p">,</span> <span class="n">p12</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">all_neighbor_idxs</span><span class="p">,</span> <span class="n">shifts_all</span>
+
+
+<span class="c1"># Compute the shifts of unit cell along the given cell vectors to make it</span>
+<span class="c1"># large enough to contain all pairs of neighbor atoms with PBC under</span>
+<span class="c1"># consideration</span>
+<span class="c1"># Returns a long tensor of shifts. the center cell and symmetric cells are not</span>
+<span class="c1"># included.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_all_pairs_pbc_shifts</span><span class="p">(</span><span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pbc</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">reciprocal_cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+    <span class="n">inv_distances</span> <span class="o">=</span> <span class="n">reciprocal_cell</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cutoff</span> <span class="o">*</span> <span class="n">inv_distances</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pbc</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">,</span> <span class="n">num_repeats</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(()))</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="FastCellList">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.FastCellList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FastCellList</span><span class="p">(</span><span class="n">Neighborlist</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This class is experimental and requires the compiled Cell-List extension&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">CLIST_IS_INSTALLED</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cell list extension is not installed&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FastCellList.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.FastCellList.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cell_list</span><span class="o">.</span><span class="n">cell_list</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Neighbors</span><span class="p">(</span><span class="o">*</span><span class="n">output</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CellList">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.CellList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CellList</span><span class="p">(</span><span class="n">Neighborlist</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute pairs of neighbors using the &#39;Cell List&#39; algorithm.</span>
+
+<span class="sd">    This is a linearly scaling implementation that uses the &#39;cell list&#39; algorithm. It</span>
+<span class="sd">    subdivides space into cells and then computes all pairs within each cell and between</span>
+<span class="sd">    each cell and neighboring cells. and then discards those that are further away from</span>
+<span class="sd">    the cutoff.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CellList.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.CellList.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cell_list</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AdaptiveList">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.AdaptiveList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveList</span><span class="p">(</span><span class="n">Neighborlist</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute pairs of neighbors using the best algorithm for the system size</span>
+
+<span class="sd">    This is a linearly scaling implementation that uses the &#39;cell list&#39; algorithm for</span>
+<span class="sd">    large system sizes and the naive &#39;all pairs&#39; for small sizes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">190</span><span class="p">,</span> <span class="n">threshold_nopbc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1770</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thresh</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thresh_nopbc</span> <span class="o">=</span> <span class="n">threshold_nopbc</span>
+
+<div class="viewcode-block" id="AdaptiveList.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.AdaptiveList.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">adaptive_list</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thresh</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">adaptive_list</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thresh_nopbc</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">adaptive_list</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">190</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+    <span class="n">_validate_inputs</span><span class="p">(</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">,</span>
+        <span class="n">supports_batches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">supports_individual_pbc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Forward directly to all_pairs if below threshold or in the non-pbc case</span>
+    <span class="k">if</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">all_pairs</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+    <span class="c1"># NOTE: This disallows pbc with self interactions, which may or may not be desirable</span>
+    <span class="k">return</span> <span class="n">cell_list</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cell_list</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+    <span class="n">_validate_inputs</span><span class="p">(</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">,</span>
+        <span class="n">supports_batches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">supports_individual_pbc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Coordinates are displaced only in the non-pbc case, in which case the</span>
+    <span class="c1"># displaced coords lie all inside the created cell. otherwise they are</span>
+    <span class="c1"># the same as the input coords, but &quot;detached&quot;</span>
+    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">displ_coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Make cell large enough to deny PBC interaction (fast, not bottleneck)</span>
+        <span class="n">displ_coords</span><span class="p">,</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">compute_bounding_cell</span><span class="p">(</span>
+            <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
+            <span class="n">eps</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cutoff</span> <span class="o">+</span> <span class="mf">1e-3</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># The cell is spanned by a 3D grid of &quot;buckets&quot; or &quot;grid elements&quot;,</span>
+    <span class="c1"># which has grid_shape=(GX, GY, GZ) and grid_numel=G=(GX * GY * GZ)</span>
+    <span class="c1">#</span>
+    <span class="c1"># Set up grid shape each step. Cheap and avoids state in the cls</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="n">setup_grid</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">cutoff</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">grid_shape</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cell is too small to perform pbc calculations&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">grid_shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">,</span> <span class="n">grid_shape</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="n">grid_shape</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="c1"># Since coords will be fractionalized they may lie outside the cell before this</span>
+    <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shift_idxs</span> <span class="o">=</span> <span class="n">_cell_list</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">,</span> <span class="n">displ_coords</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shifts</span> <span class="o">=</span> <span class="n">shift_idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">@</span> <span class="n">cell</span>
+        <span class="c1"># Before the screening step we map the coords to the central cell,</span>
+        <span class="c1"># same as with an all-pairs calculation</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">map_to_central</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">pbc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shifts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cell_list</span><span class="p">(</span>
+    <span class="n">grid_shape</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (3,)</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (C, A, 3)</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (3, 3)</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>  <span class="c1"># shape (3,)</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="c1"># 1) Get location of each atom in the grid, given by a &quot;grid_idx3&quot; (g3) or by a</span>
+    <span class="c1"># single flat &quot;grid_idx&quot; (g).</span>
+    <span class="n">atom_grid_idx3</span> <span class="o">=</span> <span class="n">coords_to_grid_idx3</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">)</span>  <span class="c1"># Shape (M, A, 3)</span>
+    <span class="n">atom_grid_idx</span> <span class="o">=</span> <span class="n">flatten_idx3</span><span class="p">(</span><span class="n">atom_grid_idx3</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">)</span>  <span class="c1"># Shape (M, A)</span>
+
+    <span class="c1"># 2) Get image pairs of atoms WITHIN atoms inside a bucket</span>
+    <span class="c1"># To do this, first calculate:</span>
+    <span class="c1"># - Num atoms in each bucket &quot;count_in_grid[g]&quot;, and the max, (c-max)</span>
+    <span class="c1"># - Cumulative num atoms *before* each bucket &quot;comcount_in_grid[g]&quot;</span>
+    <span class="c1"># Both shapes (G,)</span>
+    <span class="n">count_in_grid</span><span class="p">,</span> <span class="n">cumcount_in_grid</span> <span class="o">=</span> <span class="n">count_atoms_in_buckets</span><span class="p">(</span><span class="n">atom_grid_idx</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">)</span>
+    <span class="n">count_in_grid_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">count_in_grid</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="c1"># Shape (2, within-pairs) &quot;within-pairs aka W&quot;</span>
+    <span class="n">_image_pairs_within</span> <span class="o">=</span> <span class="n">image_pairs_within</span><span class="p">(</span>
+        <span class="n">count_in_grid</span><span class="p">,</span> <span class="n">cumcount_in_grid</span><span class="p">,</span> <span class="n">count_in_grid_max</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 3) Get image pairs BETWEEN atoms inside a bucket and its surrounding buckets</span>
+    <span class="c1">#</span>
+    <span class="c1"># First calc the grid_idx3 associated with the buckets</span>
+    <span class="c1"># surrounding a given atom. &quot;self bucket&quot; not included.</span>
+    <span class="c1">#</span>
+    <span class="c1"># The surrounding buckets will either lie in the central cell or wrap</span>
+    <span class="c1"># around one or more dimensions due to PBC. In the latter case the</span>
+    <span class="c1"># atom_surr_idx3 may be negative, or larger than the corrseponding</span>
+    <span class="c1"># grid_shape dim, which can be used to identify them. The required shift</span>
+    <span class="c1"># is given by the number and value of negative and overflowing</span>
+    <span class="c1"># dimensions.</span>
+    <span class="c1"># surround=N=13 for 1-bucket-per-cutoff</span>
+    <span class="c1"># shape (C, A, N=13, 3) contains negative and overflowing idxs</span>
+    <span class="c1"># NOTE: Casting is necessary for long buffers in C++ due to a LibTorch bug</span>
+    <span class="n">offset_idx3</span> <span class="o">=</span> <span class="n">_offset_idx3</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">atom_surr_idx3</span> <span class="o">=</span> <span class="n">atom_grid_idx3</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset_idx3</span>
+    <span class="c1"># shape (C, A, N=13, 3), note that the -1 is needed here</span>
+    <span class="n">shift_idxs_between</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">atom_surr_idx3</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span><span class="p">)</span>
+    <span class="c1"># Modulo grid_shape is used to get rid of the negative and overflowing idxs</span>
+    <span class="c1"># shape (C, A, surround=13) contains only positive idxs</span>
+    <span class="n">atom_surr_idx</span> <span class="o">=</span> <span class="n">flatten_idx3</span><span class="p">(</span><span class="n">atom_surr_idx3</span> <span class="o">%</span> <span class="n">grid_shape</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">)</span>
+
+    <span class="c1"># 4) Calc upper and lower part of the image_pairs_between.</span>
+    <span class="c1"># The &quot;unpadded&quot; upper part of the pairlist repeats each image idx a</span>
+    <span class="c1"># number of times equal to the number of atoms on the surroundings of</span>
+    <span class="c1"># each atom</span>
+    <span class="c1"># Both shapes (C, A, N=13)</span>
+    <span class="n">count_in_atom_surround</span> <span class="o">=</span> <span class="n">count_in_grid</span><span class="p">[</span><span class="n">atom_surr_idx</span><span class="p">]</span>  <span class="c1"># shp (C, A, N=13)</span>
+    <span class="n">cumcount_in_atom_surround</span> <span class="o">=</span> <span class="n">cumcount_in_grid</span><span class="p">[</span><span class="n">atom_surr_idx</span><span class="p">]</span>  <span class="c1"># shp (C, A, N=13)</span>
+
+    <span class="c1"># Shapes (B,) and (B, 3)</span>
+    <span class="n">lower_between</span><span class="p">,</span> <span class="n">shift_idxs_between</span> <span class="o">=</span> <span class="n">lower_image_pairs_between</span><span class="p">(</span>
+        <span class="n">count_in_atom_surround</span><span class="p">,</span>
+        <span class="n">cumcount_in_atom_surround</span><span class="p">,</span>
+        <span class="n">shift_idxs_between</span><span class="p">,</span>
+        <span class="n">count_in_grid_max</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Total count of all atoms in buckets surrounding a given atom.</span>
+    <span class="c1"># shape (C, A, N=13) -&gt; (C, A) -&gt; (C*A,) (get rid of C with view)</span>
+    <span class="n">total_count_in_atom_surround</span> <span class="o">=</span> <span class="n">count_in_atom_surround</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Both shapes (C*A,)</span>
+    <span class="n">atom_to_image</span><span class="p">,</span> <span class="n">image_to_atom</span> <span class="o">=</span> <span class="n">atom_image_converters</span><span class="p">(</span><span class="n">atom_grid_idx</span><span class="p">)</span>
+
+    <span class="c1"># For each atom we have one image_pair_between associated with each of</span>
+    <span class="c1"># the atoms in its surrounding buckets, so we repeat the image-idx of each</span>
+    <span class="c1"># atom that many times.</span>
+    <span class="c1"># shape (C*A,), (C*A) -&gt; (B,)</span>
+    <span class="n">upper_between</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">atom_to_image</span><span class="p">,</span> <span class="n">total_count_in_atom_surround</span><span class="p">)</span>
+    <span class="c1"># shape (2, B)</span>
+    <span class="n">_image_pairs_between</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">upper_between</span><span class="p">,</span> <span class="n">lower_between</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># 5) Get the necessary shifts. If no PBC is needed also get rid of the</span>
+    <span class="c1"># image_pairs_between that need wrapping</span>
+    <span class="n">shift_idxs_within</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="n">_image_pairs_within</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="mi">3</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">grid_shape</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">shift_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">shift_idxs_between</span><span class="p">,</span> <span class="n">shift_idxs_within</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># 6) Concatenate all image pairs, and convert to atom pairs</span>
+    <span class="n">image_pairs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">_image_pairs_between</span><span class="p">,</span> <span class="n">_image_pairs_within</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="n">image_to_atom</span><span class="p">[</span><span class="n">image_pairs</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shift_idxs</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_offset_idx3</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Get the grid_idx3 offsets for the surrounding buckets of an</span>
+    <span class="c1"># arbitrary bucket (I think this is different from SANDER, not sure why)</span>
+    <span class="c1"># NOTE: This assumes &quot;1-bucket-per-cutoff&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1"># In order to avoid double counting, consider only half of the</span>
+    <span class="c1"># surrounding buckets.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Choose all buckets in the bottom plane, and the lower half of the</span>
+    <span class="c1"># buckets in the same plane, not including the &quot;self&quot; bucket (maybe</span>
+    <span class="c1"># other choices are possible).</span>
+    <span class="c1">#</span>
+    <span class="c1"># Order is reading order: &quot;left-to-right, top-to-bottom&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1"># The selected buckets in the planes are:</span>
+    <span class="c1"># (&quot;x&quot; selected elements, &quot;-&quot; non-selected and &quot;o&quot; reference element)</span>
+    <span class="c1"># top,   same,  bottom,</span>
+    <span class="c1"># |---|  |---|  |xxx|</span>
+    <span class="c1"># |---|  |xo-|  |xxx|</span>
+    <span class="c1"># |---|  |xxx|  |xxx|</span>
+    <span class="c1">#</span>
+    <span class="c1"># shape (surrounding=13, 3)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="c1"># Surrounding buckets in bottom plane (gz-offset = -1)</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># Input shapes are (molecs, atoms, 3) (3, 3) (3,)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">coords_to_grid_idx3</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">grid_shape</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Transform and wrap all coords to be relative to the cell vectors</span>
+    <span class="c1">#</span>
+    <span class="c1"># Fractionalize coords and assign corresponding grid_idx3</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">coords_to_fractional</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span> <span class="o">*</span> <span class="n">grid_shape</span><span class="p">)</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">coords_to_fractional</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Input to this function may have coords outside the box. If the</span>
+    <span class="c1"># coordinate is 0.16 or 3.15 times the cell length, it is turned into 0.16</span>
+    <span class="c1"># or 0.15 respectively.</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">remainder</span><span class="p">(</span><span class="n">coords</span> <span class="o">@</span> <span class="n">cell</span><span class="o">.</span><span class="n">inverse</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">flatten_idx3</span><span class="p">(</span>
+    <span class="n">idx3</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">grid_shape</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Convert a tensor that holds idx3 (all of which lie inside the central</span>
+    <span class="c1"># grid) to one that holds flat idxs (last dimension is removed). For</span>
+    <span class="c1"># row-major flattening the factors needed are: (GY * GZ, GZ, 1)</span>
+    <span class="n">grid_factors</span> <span class="o">=</span> <span class="n">grid_shape</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">grid_factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">grid_factors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">grid_factors</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">idx3</span> <span class="o">*</span> <span class="n">grid_factors</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">atom_image_converters</span><span class="p">(</span><span class="n">grid_idx</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="c1"># NOTE: Since sorting is not stable this may scramble the atoms,</span>
+    <span class="c1"># this is not important for the neighborlist, only the pairs are important,</span>
+    <span class="c1"># and non-stable sorting is marginally faster.</span>
+
+    <span class="c1"># For the &quot;image indices&quot;, (indices that sort atoms in the order of</span>
+    <span class="c1"># the flattened bucket index) only occupied buckets are considered, so</span>
+    <span class="c1"># if a bucket is unoccupied the index is not taken into account.  for</span>
+    <span class="c1"># example if the atoms are distributed as:</span>
+    <span class="c1"># |1 9 8|, |empty|, |3 2 4|, |7|</span>
+    <span class="c1"># where the bars delimit flat buckets, then the image idxs will be:</span>
+    <span class="c1"># |0 1 2|, |empty|, |3 4 5|, |6|</span>
+    <span class="c1">#</span>
+    <span class="c1"># &quot;atom_indices&quot; can be reconstructed from the &quot;image_indices&quot;. The</span>
+    <span class="c1"># pairlist can be built with image indices, and</span>
+    <span class="c1"># image_to_atom[image_neighborlist] = atom_neighborlist</span>
+
+    <span class="n">grid_idx</span> <span class="o">=</span> <span class="n">grid_idx</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># shape (C, A) -&gt; (A,), get rid of C</span>
+    <span class="n">image_to_atom</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">grid_idx</span><span class="p">)</span>
+    <span class="n">atom_to_image</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">image_to_atom</span><span class="p">)</span>
+    <span class="c1"># Both shapes (A,)</span>
+    <span class="k">return</span> <span class="n">atom_to_image</span><span class="p">,</span> <span class="n">image_to_atom</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">count_atoms_in_buckets</span><span class="p">(</span>
+    <span class="n">atom_grid_idx</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (C, A)</span>
+    <span class="n">grid_shape</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="c1"># Return number of atoms in each bucket, and cumulative number of</span>
+    <span class="c1"># atoms before each bucket, as indexed with the flat grid_idx</span>
+    <span class="n">atom_grid_idx</span> <span class="o">=</span> <span class="n">atom_grid_idx</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># shape (A,), get rid of C</span>
+    <span class="n">count_in_grid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">atom_grid_idx</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">grid_shape</span><span class="o">.</span><span class="n">prod</span><span class="p">()))</span>
+    <span class="c1"># Both shape (G,), the total number of &quot;grid elements&quot;|&quot;buckets&quot;</span>
+    <span class="k">return</span> <span class="n">count_in_grid</span><span class="p">,</span> <span class="n">cumsum_from_zero</span><span class="p">(</span><span class="n">count_in_grid</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_grid</span><span class="p">(</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">buckets_per_cutoff</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">extra_space</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Get the shape (GX, GY, GZ) of the grid. Some extra space is used as slack.</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: &quot;buckets_per_cutoff&quot; determines how fine grained the 3D grid is,</span>
+    <span class="c1"># with respect to the distance cutoff, and is currently hardcoded to 1 in</span>
+    <span class="c1"># CellList and VerletCellList, but support for 2 may be possible. This may</span>
+    <span class="c1"># be 2 for SANDER, not sure. If this is changed then the surround_offsets</span>
+    <span class="c1"># must also be changed</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: extra_space is currently hardcoded to be consistent with SANDER</span>
+    <span class="c1">#</span>
+    <span class="c1"># The spherical factor is different from 1 in the case of nonorthogonal</span>
+    <span class="c1"># boxes and accounts for the &quot;spherical protrusion&quot;, which is related</span>
+    <span class="c1"># to the fact that the sphere of radius &quot;cutoff&quot; around an atom needs</span>
+    <span class="c1"># some more room to fit in nonorthogonal boxes.</span>
+
+    <span class="c1"># To get the shape of the grid (number of &quot;buckets&quot; or &quot;grid elements&quot;</span>
+    <span class="c1"># in each direction) calculate first a lower bound, and afterwards</span>
+    <span class="c1"># perform floor division.</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: This is not actually the bucket length used in the grid,</span>
+    <span class="c1"># it is only a lower bound used to calculate the grid size, it is the minimum</span>
+    <span class="c1"># size that spawns a new bucket in the grid.</span>
+    <span class="n">spherical_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span>
+    <span class="p">)</span>  <span class="c1"># TODO: calculate correctly</span>
+    <span class="n">bucket_length_lower_bound</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">spherical_factor</span> <span class="o">*</span> <span class="n">cutoff</span> <span class="o">/</span> <span class="n">buckets_per_cutoff</span>
+    <span class="p">)</span> <span class="o">+</span> <span class="n">extra_space</span>
+
+    <span class="c1"># Lengths of each cell edge are given by norm of each cell basis vector</span>
+    <span class="n">cell_lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># For example, if a cell length is &quot;3 * bucket_length_lower_bound + eps&quot; it</span>
+    <span class="c1"># can be covered with 3 buckets if they are stretched to be slightly larger</span>
+    <span class="c1"># than the lower bound.</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+        <span class="n">cell_lengths</span><span class="p">,</span> <span class="n">bucket_length_lower_bound</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid_shape</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">image_pairs_within</span><span class="p">(</span>
+    <span class="n">count_in_grid</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (G,)</span>
+    <span class="n">cumcount_in_grid</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (G,)</span>
+    <span class="n">count_in_grid_max</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>  <span class="c1"># max number of atoms in any bucket</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">count_in_grid</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># Calc all possible image-idx-pairs within each central bucket (&quot;W&quot; in total)</span>
+    <span class="c1"># Output is shape (2, W)</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: Inside each central bucket there are grid_count[g] num atoms.</span>
+    <span class="c1"># These atoms are indexed with an &quot;image idx&quot;, &quot;i&quot;, different from the &quot;atom idx&quot;</span>
+    <span class="c1"># which indexes the atoms in the coords</span>
+    <span class="c1"># For instance:</span>
+    <span class="c1"># - central bucket g=0 has &quot;image&quot; atoms 0...grid_count[0]</span>
+    <span class="c1"># - central bucket g=1 has &quot;image&quot; atoms grid_count[0]...grid_count[1], etc</span>
+
+    <span class="c1"># 1) Get idxs &quot;g&quot; that have atom pairs inside (&quot;H&quot; in total).</span>
+    <span class="c1"># Index them with &#39;h&#39; using g[h], from this, get count_in_haspairs[h] and</span>
+    <span class="c1"># cumcount_in_haspairs[h].</span>
+    <span class="c1"># shapes are (H,)</span>
+    <span class="n">haspairs_idx_to_grid_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">count_in_grid</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">count_in_haspairs</span> <span class="o">=</span> <span class="n">count_in_grid</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">haspairs_idx_to_grid_idx</span><span class="p">)</span>
+    <span class="n">cumcount_in_haspairs</span> <span class="o">=</span> <span class="n">cumcount_in_grid</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">haspairs_idx_to_grid_idx</span><span class="p">)</span>
+
+    <span class="c1"># 2) Get image pairs pairs assuming every bucket (with pairs) has</span>
+    <span class="c1"># the same num atoms as the fullest one. To do this:</span>
+    <span class="c1"># - Get the image-idx-pairs for the fullest bucket</span>
+    <span class="c1"># - Repeat (view) the image pairs in the fullest bucket H-times,</span>
+    <span class="c1"># - Add to each repeat the cumcount of atoms in all previous buckets.</span>
+    <span class="c1">#</span>
+    <span class="c1"># After this step:</span>
+    <span class="c1"># - There are more pairs than needed</span>
+    <span class="c1"># - Some of the extra pairs may have out-of-bounds idxs</span>
+    <span class="c1"># Screen the incorrect, unneeded pairs in the next step.</span>
+    <span class="c1"># shapes are (2, cp-max) and (2, H*cp-max)</span>
+    <span class="n">image_pairs_in_fullest_bucket</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tril_indices</span><span class="p">(</span>
+        <span class="n">count_in_grid_max</span><span class="p">,</span> <span class="n">count_in_grid_max</span><span class="p">,</span> <span class="n">offset</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+    <span class="p">)</span>
+    <span class="n">_image_pairs_within</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">image_pairs_in_fullest_bucket</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">cumcount_in_haspairs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 3) Get actual number of pairs in each bucket (with pairs), and a</span>
+    <span class="c1"># mask that selects those from the unscreened pairs</span>
+    <span class="c1"># shapes (H,) (cp-max,), (H, cp-max)</span>
+    <span class="n">paircount_in_haspairs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+        <span class="n">count_in_haspairs</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">count_in_haspairs</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="mi">2</span><span class="p">,</span>
+        <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">image_pairs_in_fullest_bucket</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">paircount_in_haspairs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 4) Screen the incorrect, unneeded pairs.</span>
+    <span class="c1"># shape (2, H*cp-max) -&gt; (2, W)</span>
+    <span class="k">return</span> <span class="n">fast_masked_select</span><span class="p">(</span><span class="n">_image_pairs_within</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c1"># Calculate &quot;lower&quot; part of the image_pairs_between buckets</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lower_image_pairs_between</span><span class="p">(</span>
+    <span class="n">count_in_atom_surround</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (C, A, N=13)</span>
+    <span class="n">cumcount_in_atom_surround</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (C, A, N=13)</span>
+    <span class="n">shift_idxs_between</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># shape (C, A, N=13, 3)</span>
+    <span class="n">count_in_grid_max</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>  <span class="c1"># scalar</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">count_in_atom_surround</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">mols</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">neighbors</span> <span class="o">=</span> <span class="n">count_in_atom_surround</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># shape is (c-max)</span>
+    <span class="n">padded_atom_neighbors</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">count_in_grid_max</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># shape (1, 1, 1, c-max)</span>
+    <span class="n">padded_atom_neighbors</span> <span class="o">=</span> <span class="n">padded_atom_neighbors</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># shape (C, A, N=13, c-max)</span>
+    <span class="n">padded_atom_neighbors</span> <span class="o">=</span> <span class="n">padded_atom_neighbors</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">mols</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Create a mask to unpad the padded neighbors</span>
+    <span class="c1"># shape (C, A, N=13, c-max)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">padded_atom_neighbors</span> <span class="o">&lt;</span> <span class="n">count_in_atom_surround</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">padded_atom_neighbors</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">cumcount_in_atom_surround</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Pad the shift idxs</span>
+    <span class="c1"># shape  (C, A, N=13, 1, 3)</span>
+    <span class="n">shift_idxs_between</span> <span class="o">=</span> <span class="n">shift_idxs_between</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># shape  (C, A, N=13, c-max, 3)</span>
+    <span class="n">shift_idxs_between</span> <span class="o">=</span> <span class="n">shift_idxs_between</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">count_in_grid_max</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Apply the mask</span>
+    <span class="c1"># Both shapes (between-pairs,) &quot;between-pairs aka B&quot;</span>
+    <span class="n">lower_between</span> <span class="o">=</span> <span class="n">fast_masked_select</span><span class="p">(</span><span class="n">padded_atom_neighbors</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">shift_idxs_between</span> <span class="o">=</span> <span class="n">fast_masked_select</span><span class="p">(</span><span class="n">shift_idxs_between</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lower_between</span><span class="p">,</span> <span class="n">shift_idxs_between</span>
+
+
+<span class="c1"># TODO: testme</span>
+<div class="viewcode-block" id="VerletCellList">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.VerletCellList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VerletCellList</span><span class="p">(</span><span class="n">CellList</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute pairs of neighbors. Uses a cell-list algorithm with &#39;verlet&#39; skin.&quot;&quot;&quot;</span>
+
+    <span class="n">_prev_shift_idxs</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">_prev_neighbor_idxs</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">_prev_coords</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">_prev_cell_lenghts</span><span class="p">:</span> <span class="n">Tensor</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">skin</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;skin must be a positive float&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skin</span> <span class="o">=</span> <span class="n">skin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;_prev_shift_idxs&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;_prev_neighbor_idxs&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;_prev_coords&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">),</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;_prev_cell&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">),</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_values_are_cached</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="VerletCellList.forward">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.VerletCellList.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighbors</span><span class="p">:</span>
+        <span class="n">_validate_inputs</span><span class="p">(</span>
+            <span class="n">cutoff</span><span class="p">,</span>
+            <span class="n">species</span><span class="p">,</span>
+            <span class="n">coords</span><span class="p">,</span>
+            <span class="n">cell</span><span class="p">,</span>
+            <span class="n">pbc</span><span class="p">,</span>
+            <span class="n">supports_batches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">supports_individual_pbc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">displ_coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Make cell large enough to avoid PBC interaction (fast, not bottleneck)</span>
+            <span class="n">displ_coords</span><span class="p">,</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">compute_bounding_cell</span><span class="p">(</span>
+                <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
+                <span class="n">eps</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cutoff</span> <span class="o">+</span> <span class="mf">1e-3</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="c1"># The grid uses a skin, but the narrowing uses the actual cutoff</span>
+        <span class="n">grid_shape</span> <span class="o">=</span> <span class="n">setup_grid</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">cutoff</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">skin</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">grid_shape</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cell is too small to perform pbc calculations&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grid_shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">,</span> <span class="n">grid_shape</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="n">grid_shape</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_can_use_prev_list</span><span class="p">(</span><span class="n">displ_coords</span><span class="p">,</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()):</span>
+            <span class="c1"># If a cell list is not needed use the old cached values</span>
+            <span class="c1"># NOTE: Cached values should NOT be updated here</span>
+            <span class="c1"># Casting is required due to LibTorch bug</span>
+            <span class="n">neighbor_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_neighbor_idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+            <span class="n">shift_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_shift_idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shift_idxs</span> <span class="o">=</span> <span class="n">_cell_list</span><span class="p">(</span>
+                <span class="n">grid_shape</span><span class="p">,</span> <span class="n">displ_coords</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache_values</span><span class="p">(</span>
+                <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shift_idxs</span><span class="p">,</span> <span class="n">displ_coords</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shifts</span> <span class="o">=</span> <span class="n">shift_idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">@</span> <span class="n">cell</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">map_to_central</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">pbc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">,</span> <span class="n">shifts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">narrow_down</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">neighbor_idxs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cache_values</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">neighbor_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">shift_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_shift_idxs</span> <span class="o">=</span> <span class="n">shift_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_neighbor_idxs</span> <span class="o">=</span> <span class="n">neighbor_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_values_are_cached</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">export</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_cached_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_coords</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_coords</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache_values</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prev_values_are_cached</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_can_use_prev_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_values_are_cached</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">coords</span><span class="o">.</span><span class="n">detach_</span><span class="p">()</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">detach_</span><span class="p">()</span>
+        <span class="c1"># Check if any coordinate moved more than half the skin depth,</span>
+        <span class="c1"># If this happened, then the cell list has to be rebuilt</span>
+        <span class="n">scaling</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prev_cell</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">pbc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># delta needs to be wrt wrapped coordinates, since the shifts may need to be</span>
+        <span class="c1"># updated too</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">map_to_central</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">map_to_central</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prev_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">)</span> <span class="o">*</span> <span class="n">scaling</span>
+        <span class="p">)</span>
+        <span class="n">dist_squared</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">half_skin_squared</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skin</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="n">dist_squared</span> <span class="o">&lt;</span> <span class="n">half_skin_squared</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">())</span></div>
+
+
+
+<span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span>
+    <span class="n">tp</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">&quot;all_pairs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;adaptive&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cell_list&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;verlet_cell_list&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;base&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">Neighborlist</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_neighborlist</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">:</span> <span class="n">NeighborlistArg</span> <span class="o">=</span> <span class="s2">&quot;base&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Neighborlist</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;all_pairs&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">AllPairs</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;cell_list&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">CellList</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">AdaptiveList</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;fast_cell_list&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">FastCellList</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;base&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">Neighborlist</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">neighborlist</span> <span class="o">==</span> <span class="s2">&quot;verlet_cell_list&quot;</span><span class="p">:</span>
+        <span class="n">neighborlist</span> <span class="o">=</span> <span class="n">VerletCellList</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neighborlist</span><span class="p">,</span> <span class="n">Neighborlist</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported neighborlist: </span><span class="si">{</span><span class="n">neighborlist</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">Neighborlist</span><span class="p">,</span> <span class="n">neighborlist</span><span class="p">)</span>
+
+
+<span class="c1"># Used to check the correctness of the cell and pbc inputs for fn and met that take them</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_inputs</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cell</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">pbc</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">supports_batches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">supports_individual_pbc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1"># No validation if compiling or jit-scripting</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">or</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">cutoff</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cutoff must be a strictly positive float&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_batches</span> <span class="ow">and</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This neighborlist doesn&#39;t support batches&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pbc</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;pbc = torch.tensor([False, False, False]) is not supported anymore&quot;</span>
+                <span class="s2">&quot; please use pbc = None&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If pbc is not None, cell should be present&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_individual_pbc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pbc</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;This neighborlist doesn&#39;t support PBC only in some directions&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cell is not supported if not using pbc&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Wrapper because unique_consecutive doesn&#39;t have a dynamic meta kernel asof pytorch 2.5</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_unique_and_counts</span><span class="p">(</span><span class="n">sorted_flat_idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="c1"># Sort compute unique key</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">sorted_flat_idxs</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">sorted_flat_idxs</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1"># NOTE: This function is very complex, please read the following carefully</span>
+<span class="c1"># Input: indices for pairs of atoms that are close to each other. each pair only</span>
+<span class="c1"># appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.</span>
+<span class="c1"># Output: indices for all central atoms and it pairs of neighbors. For example, if</span>
+<span class="c1"># input has pair</span>
+<span class="c1"># (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)</span>
+<span class="c1"># then the output would have central atom 0, 1, 2, 3, 4 and for cental atom 0, its</span>
+<span class="c1"># pairs of neighbors are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)</span>
+<div class="viewcode-block" id="neighbors_to_triples">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.neighbors_to_triples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neighbors_to_triples</span><span class="p">(</span><span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Triples</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts output of a neighborlist calculation into triples of atoms&quot;&quot;&quot;</span>
+    <span class="c1"># convert representation from pair to central-others and sort</span>
+    <span class="n">sorted_flat_idxs</span><span class="p">,</span> <span class="n">rev_idxs</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">unique_central_idxs</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">_unique_and_counts</span><span class="p">(</span><span class="n">sorted_flat_idxs</span><span class="p">)</span>
+
+    <span class="c1"># compute central_idxs</span>
+    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="p">(</span><span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span><span class="p">)</span>
+    <span class="n">pair_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">central_idxs</span> <span class="o">=</span> <span class="n">unique_central_idxs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>  <span class="c1"># Shape (T,)</span>
+
+    <span class="c1"># For each center atom, calculate idxs</span>
+    <span class="c1"># for all pairs of its &#39;local, sorted-order&#39; side-atoms</span>
+    <span class="n">zcounts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">counts</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">counts</span><span class="p">))</span>
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">zcounts</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">counts_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">zcounts</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>  <span class="c1"># Dynamo can&#39;t get past this</span>
+    <span class="n">max_local_pairs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tril_indices</span><span class="p">(</span><span class="n">counts_max</span><span class="p">,</span> <span class="n">counts_max</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">dev</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_local_pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">dev</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pair_sizes</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">sort_local_pairs</span> <span class="o">=</span> <span class="n">max_local_pairs</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pair_sizes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])[:,</span> <span class="n">mask</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">sort_local_pairs</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">zcounts</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>
+
+    <span class="c1"># Convert back from sorted-idxs to atom-idxs</span>
+    <span class="n">local_pairs</span> <span class="o">=</span> <span class="n">rev_idxs</span><span class="p">[</span><span class="n">sort_local_pairs</span><span class="p">]</span>
+
+    <span class="c1"># compute mapping between representation of central-other to pair</span>
+    <span class="n">num_neigh</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># tensor[bool].mul_(2).sub_(1) converts True False -&gt; 1, -1</span>
+    <span class="c1"># Casting to int8 seems to make this operation a tiny bit faster (not sure why)</span>
+    <span class="n">sign12</span> <span class="o">=</span> <span class="p">(</span><span class="n">local_pairs</span> <span class="o">&lt;</span> <span class="n">num_neigh</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">side_idxs</span> <span class="o">=</span> <span class="n">local_pairs</span> <span class="o">%</span> <span class="n">num_neigh</span>
+
+    <span class="n">flat_diff_vectors</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">diff_vectors</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">side_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">diff_vectors</span> <span class="o">=</span> <span class="n">flat_diff_vectors</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sign12</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># (2, T, 3)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">side_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Triples</span><span class="p">(</span><span class="n">central_idxs</span><span class="p">,</span> <span class="n">side_idxs</span><span class="p">,</span> <span class="n">sign12</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">diff_vectors</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Reconstruct the shift values used to calculate the diff vectors</span>
+<div class="viewcode-block" id="reconstruct_shifts">
+<a class="viewcode-back" href="../../api_autogen/torchani.neighbors.html#torchani.neighbors.reconstruct_shifts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reconstruct_shifts</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">:</span> <span class="n">Neighbors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reconstruct shift values used to calculate neighbors&quot;&quot;&quot;</span>
+    <span class="n">coords0</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">coords1</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">unshifted_diff_vectors</span> <span class="o">=</span> <span class="n">coords0</span> <span class="o">-</span> <span class="n">coords1</span>
+    <span class="k">return</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">diff_vectors</span> <span class="o">-</span> <span class="n">unshifted_diff_vectors</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

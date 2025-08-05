@@ -1,0 +1,962 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.aev &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.aev';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.nn" href="torchani.nn.html" />
+    <link rel="prev" title="torchani.neighbors" href="torchani.neighbors.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.arch.html">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.aev</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.aev">
+<span id="torchani-aev"></span><h1>torchani.aev<a class="headerlink" href="#module-torchani.aev" title="Link to this heading">#</a></h1>
+<p>Atomic Environment Vectors (AEVs) are TorchANI’s name for local atomic features,
+calculated from the local chemical environment of each atom. This module contains the
+AEV Computer, 2-body (“radial”), and 3-body (“angular”) AEV terms.</p>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AEVComputer</span></code></a></p></td>
+<td><p>Base class for modules that compute AEVs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.aev.BaseRadial" title="torchani.aev.BaseRadial"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseRadial</span></code></a></p></td>
+<td><p>Base class for 2-body expansions</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.aev.BaseAngular" title="torchani.aev.BaseAngular"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseAngular</span></code></a></p></td>
+<td><p>Base class for 3-body expansions</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.aev.Radial" title="torchani.aev.Radial"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Radial</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.aev.Angular" title="torchani.aev.Angular"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angular</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.aev.ANIRadial" title="torchani.aev.ANIRadial"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIRadial</span></code></a></p></td>
+<td><p>Compute the radial sub-AEV terms given a sequence of atom pair distances</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.aev.ANIAngular" title="torchani.aev.ANIAngular"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIAngular</span></code></a></p></td>
+<td><p>Compute the angular sub-AEV terms of the center atom given neighbor pairs.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">AEVComputer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pyaev'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer" title="Link to this definition">#</a></dt>
+<dd><p>Base class for modules that compute AEVs</p>
+<p>Can be used to compute local atomic features (atomic environment vectors or AEVs),
+given a batch of molecules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>radial</strong> (<em>'ani1x'</em><em> | </em><em>'ani2x'</em><em> | </em><em>'ani1ccx'</em><em> | </em><a class="reference internal" href="#torchani.aev.BaseRadial" title="torchani.aev._terms.BaseRadial"><em>BaseRadial</em></a>) – The module used to compute the radial part of the AEVs</p></li>
+<li><p><strong>angular</strong> (<em>'ani1x'</em><em> | </em><em>'ani2x'</em><em> | </em><em>'ani1ccx'</em><em> | </em><a class="reference internal" href="#torchani.aev.BaseAngular" title="torchani.aev._terms.BaseAngular"><em>BaseAngular</em></a>) – The module used to compute the angular part of the AEVs</p></li>
+<li><p><strong>num_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Final" title="(in Python v3.13)"><em>Final</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – The number of elements this module supports</p></li>
+<li><p><strong>strategy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The AEV computation strategy. Valid values are:
+- ‘cuaev’: Use the hand-coded CUDA cuAEV extension
+- ‘pyaev’: Use pytorch exclusively
+- ‘auto’: Choose the most performant available option</p></li>
+<li><p><strong>cutoff_fn</strong> (<em>'global'</em><em> | </em><em>'dummy'</em><em> | </em><em>'cosine'</em><em> | </em><em>'smooth'</em><em> | </em><a class="reference internal" href="torchani.cutoffs.html#torchani.cutoffs.Cutoff" title="torchani.cutoffs.Cutoff"><em>Cutoff</em></a><em> | </em><em>None</em>) – Cutoff fn to use for the radial and angular terms</p></li>
+<li><p><strong>neighborlist</strong> (<em>'all_pairs'</em><em> | </em><em>'adaptive'</em><em> | </em><em>'cell_list'</em><em> | </em><em>'verlet_cell_list'</em><em> | </em><em>'base'</em><em> | </em><a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><em>Neighborlist</em></a>) – Kind of neighborlist for internal computation.</p></li>
+<li><p><strong>are</strong> (<em>Valid values</em>) – ‘all_pairs’, ‘cell_list’, ‘adaptive’</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>Compute the AEVs from the result of a neighborlist calculation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_idxs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="torchani.nn.html#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>neighbors</strong> (<a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighbors" title="torchani.neighbors.Neighbors"><em>Neighbors</em></a>) – <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">typing.NamedTuple</span></code></a> that contains the output of a
+<a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.neighbors.Neighborlist</span></code></a> calculation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float tensor with local atomic features (AEVs). Shape is
+<code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">num-aev-features)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer.forward" title="Link to this definition">#</a></dt>
+<dd><p>Compute AEVs for a batch of molecules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_idxs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – An int <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> that stores the element indices of a
+batch of molecules, (for example after conversion with
+<a class="reference internal" href="torchani.nn.html#torchani.nn.SpeciesConverter" title="torchani.nn.SpeciesConverter"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.SpeciesConverter</span></code></a>). Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>coords</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A float tensor with the coordinates of a batch of molecules.
+Shape is <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">3)</span></code>. All ANI models use Angstrom.</p></li>
+<li><p><strong>cell</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A float tensor with unit cell vectors in its <em>rows</em>. Only
+use this with PBC. A cell with dimensions 10, 15, 20 (in Angstrom for all ANI
+models) in the x, y, and z directions is given by <code class="docutils literal notranslate"><span class="pre">torch.tensor([[10.,</span> <span class="pre">0.,</span> <span class="pre">0.],[0.,</span>
+<span class="pre">15.,</span> <span class="pre">0.],[0.,</span> <span class="pre">0.,</span> <span class="pre">20.]])</span></code>.</p></li>
+<li><p><strong>pbc</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a><em> | </em><em>None</em>) – A bool tensor that stores whether periodic boundary conditions (PBC)
+are enabled for the x, y, z directions. <code class="docutils literal notranslate"><span class="pre">pbc=torch.tensor([True,</span> <span class="pre">True,</span> <span class="pre">True])</span></code>
+fully enables PBC and <code class="docutils literal notranslate"><span class="pre">pbc=None</span></code> (or <code class="docutils literal notranslate"><span class="pre">torch.tensor([False,</span> <span class="pre">False,</span> <span class="pre">False])</span></code>).
+fully disables it.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float tensor with local atomic features (AEVs). Shape is
+<code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">num-aev-features)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer.from_constants">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_constants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radial_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_zeta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pyaev'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer.from_constants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer.from_constants" title="Link to this definition">#</a></dt>
+<dd><p>Build an AEVComputer with standard radial and angular terms, from constants</p>
+<p>For more detail consult the equations in the original <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI article</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This constructor is not recommended, it is kept for backward compatibility.
+Consider using either the primary <a class="reference internal" href="#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a> constructor,
+<a class="reference internal" href="#torchani.aev.AEVComputer.like_1x" title="torchani.aev.AEVComputer.like_1x"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">AEVComputer.like_1x</span></code></a>, or <a class="reference internal" href="#torchani.aev.AEVComputer.like_2x" title="torchani.aev.AEVComputer.like_2x"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">AEVComputer.like_2x</span></code></a> instead.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>radial_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in eq. (2) when used at eq. (3)</p></li>
+<li><p><strong>angular_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in eq. (2) when used at eq. (4)</p></li>
+<li><p><strong>radial_eta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in eq. (3)</p></li>
+<li><p><strong>radial_shifts</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in eq. (3)</p></li>
+<li><p><strong>angluar_eta</strong> – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in eq. (4)</p></li>
+<li><p><strong>angular_zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\zeta\)</span> in eq. (4)</p></li>
+<li><p><strong>angular_shifts</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in eq. (4)</p></li>
+<li><p><strong>sections</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em>) – The 1D tensor of <span class="math notranslate nohighlight">\(\theta_s\)</span> in eq. (4)</p></li>
+<li><p><strong>num_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Number of supported atom types.</p></li>
+<li><p><strong>strategy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Compute strategy to use.</p></li>
+<li><p><strong>cutoff_fn</strong> (<em>'global'</em><em> | </em><em>'dummy'</em><em> | </em><em>'cosine'</em><em> | </em><em>'smooth'</em><em> | </em><a class="reference internal" href="torchani.cutoffs.html#torchani.cutoffs.Cutoff" title="torchani.cutoffs.Cutoff"><em>Cutoff</em></a>) – The cutoff function used for the calculation.</p></li>
+<li><p><strong>neighborlist</strong> (<em>'all_pairs'</em><em> | </em><em>'adaptive'</em><em> | </em><em>'cell_list'</em><em> | </em><em>'verlet_cell_list'</em><em> | </em><em>'base'</em><em> | </em><a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><em>Neighborlist</em></a>) – The neighborlist usied for the calculation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed <a class="reference internal" href="#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, ready for use.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Self" title="(in Python v3.13)"><em>Self</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer.like_1x">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">like_1x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_species</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pyaev'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_num_sections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer.like_1x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer.like_1x" title="Link to this definition">#</a></dt>
+<dd><p>Build an AEVComputer with standard radial and angular terms</p>
+<p>Uses the same defaults as those in the <a class="reference internal" href="torchani.models.html#torchani.models.ANI1x" title="torchani.models.ANI1x"><code class="xref any py py-func docutils literal notranslate"><span class="pre">torchani.models.ANI1x</span></code></a> model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff_fn</strong> (<em>'global'</em><em> | </em><em>'dummy'</em><em> | </em><em>'cosine'</em><em> | </em><em>'smooth'</em><em> | </em><a class="reference internal" href="torchani.cutoffs.html#torchani.cutoffs.Cutoff" title="torchani.cutoffs.Cutoff"><em>Cutoff</em></a>) – The cutoff function used for the calculation.</p></li>
+<li><p><strong>neighborlist</strong> (<em>'all_pairs'</em><em> | </em><em>'adaptive'</em><em> | </em><em>'cell_list'</em><em> | </em><em>'verlet_cell_list'</em><em> | </em><em>'base'</em><em> | </em><a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><em>Neighborlist</em></a>) – The neighborlist usied for the calculation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed <a class="reference internal" href="#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, ready for use.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Self" title="(in Python v3.13)"><em>Self</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.AEVComputer.like_2x">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">like_2x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_species</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pyaev'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">19.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_num_sections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_computer.html#AEVComputer.like_2x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.AEVComputer.like_2x" title="Link to this definition">#</a></dt>
+<dd><p>Build an AEVComputer with standard radial and angular terms</p>
+<p>Uses the same defaults as those in the <a class="reference internal" href="torchani.models.html#torchani.models.ANI2x" title="torchani.models.ANI2x"><code class="xref any py py-func docutils literal notranslate"><span class="pre">torchani.models.ANI2x</span></code></a> model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff_fn</strong> (<em>'global'</em><em> | </em><em>'dummy'</em><em> | </em><em>'cosine'</em><em> | </em><em>'smooth'</em><em> | </em><a class="reference internal" href="torchani.cutoffs.html#torchani.cutoffs.Cutoff" title="torchani.cutoffs.Cutoff"><em>Cutoff</em></a>) – The cutoff function used for the calculation.</p></li>
+<li><p><strong>neighborlist</strong> (<em>'all_pairs'</em><em> | </em><em>'adaptive'</em><em> | </em><em>'cell_list'</em><em> | </em><em>'verlet_cell_list'</em><em> | </em><em>'base'</em><em> | </em><a class="reference internal" href="torchani.neighbors.html#torchani.neighbors.Neighborlist" title="torchani.neighbors.Neighborlist"><em>Neighborlist</em></a>) – The neighborlist usied for the calculation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed <a class="reference internal" href="#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, ready for use.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Self" title="(in Python v3.13)"><em>Self</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.BaseRadial">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">BaseRadial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#BaseRadial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.BaseRadial" title="Link to this definition">#</a></dt>
+<dd><p>Base class for 2-body expansions</p>
+<p>Client classes should only rely on <code class="docutils literal notranslate"><span class="pre">module(distances)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">compute</span></code> is meant only to be overriden by users.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.BaseRadial.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#BaseRadial.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.BaseRadial.compute" title="Link to this definition">#</a></dt>
+<dd><p>Compute the radial terms. Output shape is: <code class="docutils literal notranslate"><span class="pre">(pairs,</span> <span class="pre">self.num_feats)</span></code></p>
+<p>Subclasses must implement this method</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call,
+<code class="docutils literal notranslate"><span class="pre">module(neighbors.distances)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.BaseAngular">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">BaseAngular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#BaseAngular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.BaseAngular" title="Link to this definition">#</a></dt>
+<dd><p>Base class for 3-body expansions</p>
+<p>Client classes should only rely on <code class="docutils literal notranslate"><span class="pre">module(tri_distances,</span> <span class="pre">tri_vectors)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">compute_*</span></code> functions are meant only to be overriden by users.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.BaseAngular.compute_cos_angles">
+<span class="sig-name descname"><span class="pre">compute_cos_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cos_angles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#BaseAngular.compute_cos_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.BaseAngular.compute_cos_angles" title="Link to this definition">#</a></dt>
+<dd><p>Computes the angular part of the 3-body terms</p>
+<p>This function <em>must</em> be overriden by subclasses</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call, <code class="docutils literal notranslate"><span class="pre">module(triples.distances,</span>
+<span class="pre">triples.diff_vectors)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cos_angles</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – Cosine of the angle for a triple ijk</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> of shape <code class="docutils literal notranslate"><span class="pre">(triples,</span> <span class="pre">feats)</span></code>. By design
+this function does <em>not</em> sum over atoms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.BaseAngular.compute_radial">
+<span class="sig-name descname"><span class="pre">compute_radial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances_ji</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distances_jk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#BaseAngular.compute_radial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.BaseAngular.compute_radial" title="Link to this definition">#</a></dt>
+<dd><p>Computes the radial part of the 3-body terms</p>
+<p>This function <em>must</em> be overriden by subclasses</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call, <code class="docutils literal notranslate"><span class="pre">module(triple_distances,</span>
+<span class="pre">triple_vectors)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>distances_ji</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – Distances from the center atom, ‘j’, to a side atom, ‘i’.</p></li>
+<li><p><strong>distances_jk</strong> – Distances from the center atom, ‘j’, to a side atom, ‘k’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> of shape <code class="docutils literal notranslate"><span class="pre">(triples,</span> <span class="pre">feats)</span></code>. By design
+this function does <em>not</em> sum over atoms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.Radial">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">Radial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#Radial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.Radial" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.Angular">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">Angular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#Angular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.Angular" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.ANIRadial">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">ANIRadial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIRadial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIRadial" title="Link to this definition">#</a></dt>
+<dd><p>Compute the radial sub-AEV terms given a sequence of atom pair distances</p>
+<p>This correspond to equation (3) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>. This function just
+computes the terms. The sum in the equation is not computed.  The input
+tensor has shape (conformations, atoms, N), where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of
+neighbor atoms within the cutoff radius and the output tensor should have
+shape (conformations, atoms, <code class="docutils literal notranslate"><span class="pre">self.num_feats</span></code>)</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.ANIRadial.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIRadial.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIRadial.compute" title="Link to this definition">#</a></dt>
+<dd><p>Computes the ANI terms associated with a group of pairs</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call the module,
+<code class="docutils literal notranslate"><span class="pre">module(distances)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>distances</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – A float tensor with the distances between pairs of atoms in a
+system. Shape is <code class="docutils literal notranslate"><span class="pre">(pairs,)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> of shape <code class="docutils literal notranslate"><span class="pre">(pairs,</span> <span class="pre">shifts)</span></code>. By design
+this function does <em>not</em> sum over atoms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.ANIRadial.cover_linearly">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cover_linearly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">19.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIRadial.cover_linearly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIRadial.cover_linearly" title="Link to this definition">#</a></dt>
+<dd><p>Builds angular terms by linearly dividing space radially up to a cutoff</p>
+<p><code class="docutils literal notranslate"><span class="pre">num_shifts</span></code> are created, starting from <code class="docutils literal notranslate"><span class="pre">start</span></code> until <code class="docutils literal notranslate"><span class="pre">cutoff</span></code>, excluding
+it. This is the way angular and radial shifts were originally created in the
+<a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.aev.ANIAngular">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.aev.</span></span><span class="sig-name descname"><span class="pre">ANIAngular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIAngular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIAngular" title="Link to this definition">#</a></dt>
+<dd><p>Compute the angular sub-AEV terms of the center atom given neighbor pairs.</p>
+<p>This correspond to equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>. This function just
+compute the terms. The sum is not computed.  The input tensor has shape
+(conformations, atoms, N), where N is the number of neighbor atom pairs
+within the cutoff radius and the output tensor should have shape
+(conformations, atoms, <code class="docutils literal notranslate"><span class="pre">self.num_feats</span></code>)</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.ANIAngular.compute_cos_angles">
+<span class="sig-name descname"><span class="pre">compute_cos_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cos_angles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIAngular.compute_cos_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIAngular.compute_cos_angles" title="Link to this definition">#</a></dt>
+<dd><p>Computes the angular part of the ANI 3-body terms</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call,
+<code class="docutils literal notranslate"><span class="pre">module(triples.distances,</span> <span class="pre">triples.diff_vectors)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cos_angles</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – Cosine of the angle for a triple ijk</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> of shape <code class="docutils literal notranslate"><span class="pre">(triples,</span> <span class="pre">feats)</span></code>. By design
+this function does <em>not</em> sum over atoms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.ANIAngular.compute_radial">
+<span class="sig-name descname"><span class="pre">compute_radial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances_ji</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distances_jk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIAngular.compute_radial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIAngular.compute_radial" title="Link to this definition">#</a></dt>
+<dd><p>Computes the radial part of the ANI 3-body terms</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Don’t call this method directly, instead call, <code class="docutils literal notranslate"><span class="pre">module(triple_distances,</span>
+<span class="pre">triple_vectors)</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>distances_ji</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a>) – Distances from the center atom, ‘j’, to a side atom, ‘i’.</p></li>
+<li><p><strong>distances_jk</strong> – Distances from the center atom, ‘j’, to a side atom, ‘k’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A float <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><code class="xref any docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> of shape <code class="docutils literal notranslate"><span class="pre">(triples,</span> <span class="pre">feats)</span></code>. By design
+this function does <em>not</em> sum over atoms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.7)"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.aev.ANIAngular.cover_linearly">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cover_linearly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cosine'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/aev/_terms.html#ANIAngular.cover_linearly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.aev.ANIAngular.cover_linearly" title="Link to this definition">#</a></dt>
+<dd><p>Builds angular terms by dividing angular and radial coords, up to a cutoff</p>
+<p>The divisions are equally spaced “num_shifts” are created, starting from “start”
+until “cutoff”, excluding it. “num_sections” does a similar thing for the
+angles. This is the way angular and radial shifts were originally created in
+ANI.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.neighbors.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.neighbors</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.nn.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.nn</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer"><code class="docutils literal notranslate"><span class="pre">AEVComputer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">AEVComputer.compute_from_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer.forward"><code class="docutils literal notranslate"><span class="pre">AEVComputer.forward()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer.from_constants"><code class="docutils literal notranslate"><span class="pre">AEVComputer.from_constants()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer.like_1x"><code class="docutils literal notranslate"><span class="pre">AEVComputer.like_1x()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.AEVComputer.like_2x"><code class="docutils literal notranslate"><span class="pre">AEVComputer.like_2x()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.BaseRadial"><code class="docutils literal notranslate"><span class="pre">BaseRadial</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.BaseRadial.compute"><code class="docutils literal notranslate"><span class="pre">BaseRadial.compute()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.BaseAngular"><code class="docutils literal notranslate"><span class="pre">BaseAngular</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.BaseAngular.compute_cos_angles"><code class="docutils literal notranslate"><span class="pre">BaseAngular.compute_cos_angles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.BaseAngular.compute_radial"><code class="docutils literal notranslate"><span class="pre">BaseAngular.compute_radial()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.Radial"><code class="docutils literal notranslate"><span class="pre">Radial</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.Angular"><code class="docutils literal notranslate"><span class="pre">Angular</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIRadial"><code class="docutils literal notranslate"><span class="pre">ANIRadial</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIRadial.compute"><code class="docutils literal notranslate"><span class="pre">ANIRadial.compute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIRadial.cover_linearly"><code class="docutils literal notranslate"><span class="pre">ANIRadial.cover_linearly()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIAngular"><code class="docutils literal notranslate"><span class="pre">ANIAngular</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIAngular.compute_cos_angles"><code class="docutils literal notranslate"><span class="pre">ANIAngular.compute_cos_angles()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIAngular.compute_radial"><code class="docutils literal notranslate"><span class="pre">ANIAngular.compute_radial()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.aev.ANIAngular.cover_linearly"><code class="docutils literal notranslate"><span class="pre">ANIAngular.cover_linearly()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

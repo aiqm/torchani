@@ -1,0 +1,716 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>torchani.arch &#8212; TorchANI v2.6 (dev) Manual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css?v=7d3900f4" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8e04c84e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api_autogen/torchani.arch';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="torchani.constants" href="torchani.constants.html" />
+    <link rel="prev" title="torchani.electro" href="torchani.electro.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6 (dev)" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/torchani2-logo-light.svg" class="logo__image only-light" alt="TorchANI v2.6 (dev) Manual - Home"/>
+    <img src="../_static/torchani2-logo-dark.svg" class="logo__image only-dark pst-js-only" alt="TorchANI v2.6 (dev) Manual - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user-guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="torchani.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../publications.html">
+    Publications
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/aiqm/torchani" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.html">torchani</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torchani.neighbors.html">torchani.neighbors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.aev.html">torchani.aev</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.nn.html">torchani.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.grad.html">torchani.grad</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.models.html">torchani.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.potentials.html">torchani.potentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cutoffs.html">torchani.cutoffs</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="torchani.datasets.html">torchani.datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="torchani.datasets.filters.html">torchani.datasets.filters</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.transforms.html">torchani.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.io.html">torchani.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.electro.html">torchani.electro</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">torchani.arch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.constants.html">torchani.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.utils.html">torchani.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.units.html">torchani.units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae.html">torchani.sae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.sae_estimation.html">torchani.sae_estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.cli.html">torchani.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.paths.html">torchani.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.ase.html">torchani.ase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.annotations.html">torchani.annotations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.neurochem.html">torchani.neurochem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torchani.legacy_data.html">torchani.legacy_data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="torchani.html" class="nav-link">torchani</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">torchani.arch</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-torchani.arch">
+<span id="torchani-arch"></span><h1>torchani.arch<a class="headerlink" href="#module-torchani.arch" title="Link to this heading">#</a></h1>
+<p>Construction of ANI-style models and definition of their architecture</p>
+<p>ANI-style models are all subclasses of the <a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANI</span></code></a> base class. They can be either
+constructed directly, or their construction can be managed by a different class, the
+<a class="reference internal" href="#torchani.arch.Assembler" title="torchani.arch.Assembler"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a>. Think of the <a class="reference internal" href="#torchani.arch.Assembler" title="torchani.arch.Assembler"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> as a helpful friend who create the class from all
+the necessary components, in such a way that all parts interact in the correct way and
+there are no compatibility issues among them.</p>
+<p>An ANI-style model consists of:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.aev.AEVComputer</span></code></a> (or subclass)</p></li>
+<li><p>A container for atomic networks (typically <a class="reference internal" href="torchani.nn.html#torchani.nn.ANINetworks" title="torchani.nn.ANINetworks"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.ANINetworks</span></code></a> or subclass)</p></li>
+<li><p>If using the traditional ANINetworks, a <a class="reference internal" href="torchani.nn.html#torchani.nn.AtomicNetwork" title="torchani.nn.AtomicNetwork"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.nn.AtomicNetwork</span></code></a> mapping, for
+example: <code class="docutils literal notranslate"><span class="pre">{&quot;H&quot;:</span> <span class="pre">AtomicNetwork(...),</span> <span class="pre">&quot;C&quot;:</span> <span class="pre">AtomicNetwork(...),</span> <span class="pre">...}</span></code>.</p></li>
+<li><p>A self energies <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><code class="xref any docutils literal notranslate"><span class="pre">dict</span></code></a> (in Hartree): <code class="docutils literal notranslate"><span class="pre">{&quot;H&quot;:</span> <span class="pre">-12.0,</span> <span class="pre">&quot;C&quot;:</span> <span class="pre">-75.0,</span> <span class="pre">...}</span></code></p></li>
+</ul>
+<p>These pieces are combined when the <a class="reference internal" href="#torchani.arch.Assembler.assemble" title="torchani.arch.Assembler.assemble"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">Assembler.assemble</span></code></a> method is called.</p>
+<p>An energy-predicting model may also have one or more <a class="reference internal" href="torchani.potentials.html#torchani.potentials.Potential" title="torchani.potentials.Potential"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.potentials.Potential</span></code></a>
+(<a class="reference internal" href="torchani.potentials.html#torchani.potentials.RepulsionXTB" title="torchani.potentials.RepulsionXTB"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.potentials.RepulsionXTB</span></code></a>, <a class="reference internal" href="torchani.potentials.html#torchani.potentials.TwoBodyDispersionD3" title="torchani.potentials.TwoBodyDispersionD3"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.potentials.TwoBodyDispersionD3</span></code></a>, etc.).</p>
+<p>Each <a class="reference internal" href="torchani.potentials.html#torchani.potentials.Potential" title="torchani.potentials.Potential"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.potentials.Potential</span></code></a> has its own cutoff, and the
+<a class="reference internal" href="torchani.aev.html#torchani.aev.AEVComputer" title="torchani.aev.AEVComputer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">torchani.aev.AEVComputer</span></code></a> has two cutoffs, an angular and a radial one (the radial
+cutoff must be larger than the angular cutoff, and it is recommended that the angular
+cutoff is kept small, 3.5 Ang or less).</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.arch.simple_ani" title="torchani.arch.simple_ani"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simple_ani</span></code></a></p></td>
+<td><p>Flexible builder to create ANI-style models</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.arch.simple_aniq" title="torchani.arch.simple_aniq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simple_aniq</span></code></a></p></td>
+<td><p>Flexible builder to create ANI-style models that output charges</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANI</span></code></a></p></td>
+<td><p>ANI-style neural network interatomic potential</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#torchani.arch.ANIq" title="torchani.arch.ANIq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANIq</span></code></a></p></td>
+<td><p>ANI-style model that can calculate both atomic charges and energies</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchani.arch.Assembler" title="torchani.arch.Assembler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Assembler</span></code></a></p></td>
+<td><p>Assembles an <a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANI</span></code></a> model (or subclass)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.arch.ANI">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.arch.</span></span><span class="sig-name descname"><span class="pre">ANI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aev_computer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_networks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_shifter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">potentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic_table_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANI" title="Link to this definition">#</a></dt>
+<dd><p>ANI-style neural network interatomic potential</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.arch.ANI.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species_coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_molecule_idxs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANI.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANI.forward" title="Link to this definition">#</a></dt>
+<dd><p>Obtain a species-energies tuple from an input species-coords tuple</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.arch.ANI.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANI.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANI.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>This entrypoint supports input from TorchANI neighbors</p>
+<p>Returns a tuple:</p>
+<ul class="simple">
+<li><p>molecular-scalars</p></li>
+<li><p>atomic-scalars</p></li>
+</ul>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.arch.ANIq">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.arch.</span></span><span class="sig-name descname"><span class="pre">ANIq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aev_computer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_networks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_shifter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">potentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic_table_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_networks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_normalizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANIq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANIq" title="Link to this definition">#</a></dt>
+<dd><p>ANI-style model that can calculate both atomic charges and energies</p>
+<p>Charge networks share the input features with the energy networks, and may either be
+fully independent of them, or share weights to some extent.</p>
+<p>The output energies of these models don’t necessarily include a coulombic term, but
+they may.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.arch.ANIq.compute_from_neighbors">
+<span class="sig-name descname"><span class="pre">compute_from_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANIq.compute_from_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANIq.compute_from_neighbors" title="Link to this definition">#</a></dt>
+<dd><p>This entrypoint supports input from TorchANI neighbors</p>
+<p>Returns a tuple:</p>
+<ul class="simple">
+<li><p>molecular-scalars</p></li>
+<li><p>atomic-scalars</p></li>
+</ul>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.arch.ANIq.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species_coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_molecule_idxs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#ANIq.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.ANIq.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchani.arch.Assembler">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchani.arch.</span></span><span class="sig-name descname"><span class="pre">Assembler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols=()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls=&lt;class</span> <span class="pre">'torchani.arch.ANI'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist='all_pairs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic_table_index=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#Assembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.Assembler" title="Link to this definition">#</a></dt>
+<dd><p>Assembles an <a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANI</span></code></a> model (or subclass)</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchani.arch.Assembler.assemble">
+<span class="sig-name descname"><span class="pre">assemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ensemble_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#Assembler.assemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.Assembler.assemble" title="Link to this definition">#</a></dt>
+<dd><p>Construct an <a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANI</span></code></a> model from the passed arguments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ensemble_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – The size of the constructed ensemble</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ANI</span></code></a> model, ready to train.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#torchani.arch.ANI" title="torchani.arch.ANI"><em>ANI</em></a> | <a class="reference internal" href="#torchani.arch.ANIq" title="torchani.arch.ANIq"><em>ANIq</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.arch.simple_ani">
+<span class="sig-prename descclassname"><span class="pre">torchani.arch.</span></span><span class="sig-name descname"><span class="pre">simple_ani</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">19.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repulsion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_ctor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ANINetworks'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gelu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic_table_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repulsion_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#simple_ani"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.simple_ani" title="Link to this definition">#</a></dt>
+<dd><p>Flexible builder to create ANI-style models</p>
+<p>Defaults are similar to ANI-2x, with some improvements.</p>
+<dl class="simple">
+<dt>To reproduce the ANI-2x AEV exactly use the following args:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cutoff_fn='cosine'</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radial_start=0.8</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">angular_start=0.8</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radial_cutoff=5.1</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchani.arch.simple_aniq">
+<span class="sig-prename descclassname"><span class="pre">torchani.arch.</span></span><span class="sig-name descname"><span class="pre">simple_aniq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">19.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angular_zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smooth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repulsion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_ctor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_container_ctor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ANINetworks'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_container</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ANINetworks'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gelu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_charge_networks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_charge_normalizer_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_energies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cuda_ops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic_table_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_pairs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchani/arch.html#simple_aniq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchani.arch.simple_aniq" title="Link to this definition">#</a></dt>
+<dd><p>Flexible builder to create ANI-style models that output charges</p>
+<p>Defaults are similar to ANI-2x, with some improvements.</p>
+<dl class="simple">
+<dt>To reproduce the ANI-2x AEV exactly use the following args:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cutoff_fn='cosine'</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radial_start=0.8</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">angular_start=0.8</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radial_cutoff=5.1</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torchani.electro.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">torchani.electro</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torchani.constants.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">torchani.constants</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANI"><code class="docutils literal notranslate"><span class="pre">ANI</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANI.forward"><code class="docutils literal notranslate"><span class="pre">ANI.forward()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANI.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">ANI.compute_from_neighbors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANIq"><code class="docutils literal notranslate"><span class="pre">ANIq</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANIq.compute_from_neighbors"><code class="docutils literal notranslate"><span class="pre">ANIq.compute_from_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.ANIq.forward"><code class="docutils literal notranslate"><span class="pre">ANIq.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.Assembler"><code class="docutils literal notranslate"><span class="pre">Assembler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.Assembler.assemble"><code class="docutils literal notranslate"><span class="pre">Assembler.assemble()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.simple_ani"><code class="docutils literal notranslate"><span class="pre">simple_ani()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#torchani.arch.simple_aniq"><code class="docutils literal notranslate"><span class="pre">simple_aniq()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Roitberg Group.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
