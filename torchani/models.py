@@ -61,6 +61,7 @@ For more details consult the examples documentation
     submodel = model[0]
 """
 
+import warnings
 import typing as tp
 import importlib
 
@@ -251,31 +252,6 @@ def ANImbis(
     return model
 
 
-def ANIala(
-    model_index: tp.Optional[int] = None,
-    neighborlist: NeighborlistArg = "all_pairs",
-    strategy: str = "pyaev",
-    periodic_table_index: bool = True,
-    device: Device = None,
-    dtype: DType = None,
-) -> ANI:
-    r"""Experimental Model fine tuned to solvated frames of ALA dipeptide"""
-    if model_index is not None:
-        raise ValueError("Model index is not supported for ANIala")
-    asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_2X)
-    asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
-    asm.set_atomic_networks(ctor="aniala")
-    asm.set_neighborlist(neighborlist)
-    asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = tp.cast(ANI, asm.assemble(1))
-    model.load_state_dict(_fetch_state_dict("aniala_state_dict.pt", private=True))
-    model.requires_grad_(False)
-    model.to(device=device, dtype=dtype)
-    return model
-
-
 def ANI2xr(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "all_pairs",
@@ -290,6 +266,10 @@ def ANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
+    warnings.warn(
+        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
+        "It is subject to change in the near future"
+    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -321,6 +301,10 @@ def ANI2dr(
     Trained to the B973c level of theory with added repulsion and dispersion potentials,
     and smoother PES.
     """
+    warnings.warn(
+        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
+        "It is subject to change in the near future"
+    )
     model = simple_ani(
         lot="b973c-def2mtzvp",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -347,15 +331,16 @@ def ANIr2s(
     dtype: DType = None,
     solvent: tp.Optional[str] = None,
 ) -> ANI:
-    r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
+    r""":meta private:"""
+    # r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
 
-    R2SCAN models are trained with the def2-mTZVPP basis set, on the ANI-2x-R2SCAN
-    dataset. There are different R2SCAN models trained using different SMD implicit
-    solvents that can be accessed with ``solvent='water'``, ``solvent='chcl3'``,
-    or ``solvent='ch3cn'``. Alternatively, the models ``ANIr2s_water``,
-    ``ANIr2s_ch3cn`` and ``ANIr2s_chcl3`` can also be instantiated directly. By default
-    the vacuum model is returned.
-    """
+    # R2SCAN models are trained with the def2-mTZVPP basis set, on the ANI-2x-R2SCAN
+    # dataset. There are different R2SCAN models trained using different SMD implicit
+    # solvents that can be accessed with ``solvent='water'``, ``solvent='chcl3'``, or
+    # ``solvent='ch3cn'``. Alternatively, the models ``ANIr2s_water``, ``ANIr2s_ch3cn``
+    # and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum
+    # model is returned.
+    # """
     suffix = f"{'_' + solvent if solvent is not None else ''}"
     # These models were trained with _AltSmoothCutoff, but difference is negligible
     model = simple_ani(
@@ -391,6 +376,7 @@ def ANIr2s_ch3cn(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
+    r""":meta private:"""
     return ANIr2s(
         model_index,
         neighborlist,
@@ -410,6 +396,7 @@ def ANIr2s_chcl3(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
+    r""":meta private:"""
     return ANIr2s(
         model_index,
         neighborlist,
@@ -429,6 +416,7 @@ def ANIr2s_water(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
+    r""":meta private:"""
     return ANIr2s(
         model_index,
         neighborlist,
@@ -448,7 +436,16 @@ def SnnANI2xr(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
-    r"""Custom ANI model"""
+    r"""
+    Improved ANI model trained to the 2x dataset
+
+    Trained to the wB97X level of theory with an added repulsion potential, and smoother
+    PES.
+    """
+    warnings.warn(
+        "ANI-2xr-snn is experimental and hasn't yet been peer yet reviewed. "
+        "It is subject to change in the near future"
+    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=['H', 'C', 'N', 'O', 'F', 'S', 'Cl'],
