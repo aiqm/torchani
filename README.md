@@ -4,66 +4,38 @@
   <img alt="TorchANI 2 logo" src="https://raw.githubusercontent.com/roitberg-group/torchani_model_zoo/master/logos/torchani-2-logo-light.svg">
 </picture>
 
-Metrics: (UNTRACKED FOR PRIVATE REPO)
-
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
+[![conda page](https://img.shields.io/badge/conda--package-page-blue)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
 CI:
 
-[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg)](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
-[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg)](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
+[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
+[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
 
-Deployment: (STOPPED FOR PRIVATE REPO)
+TorchANI 2.0 is an open-source library that supports training, development, and research
+of ANI-style neural network interatomic potentials. It was originally developed and is
+currently maintained by the Roitberg group.
 
-(TODO: PyPI)
-(TODO: anaconda.org)
-(TODO: docs)
-[![conda page](https://img.shields.io/badge/conda--package-page-blue)](
-    https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
+If you were using a previous version of TorchANI, and your code does not work with
+TorchANI 2.0 check out the [documentation](https://aiqm.github.io/torchani-docs/), there
+are very few breaking changes, and most code should work with minimal modifications. If
+you can't figure something out please open a GitHub issue, we are here to help!
 
-TorchANI is a pytorch implementation of ANI. If you find a bug of TorchANI, or have some
-feature request, feel free to open an issue on GitHub, or directly open a pull request.
+If you find a bug of TorchANI, or have some feature request, feel free to open an issue
+on GitHub.
 
-We test TorchANI against the (usually) latest PyTorch version.
+TorchANI 2.0 is currently tested against PyTorch 2.5 and CUDA 12.4
 
 ## Installation
 
-### From the internal Roitberg Group servers, using conda or pip
+### From Anaconda.org, using conda
 
-To install the internal version of TorchANI, hosted in the internal
-roitberg-group servers using conda run:
-
-```bash
-conda create -n ani python=3.11
-conda activate ani
-# The following command is all one line, and channels must be specified in that order
-conda install \
-    -c http://moria.chem.ufl.edu/conda-pkgs \
-    -c pytorch \
-    -c nvidia \
-    -c conda-forge \
-    torchani
-```
-
-Note that this installation currently includes the compiled extensions by default,
-but it doesn't include either the ase module, to use it run also:
-
-```bash
-conda install -c conda-forge ase
-```
-
-To install using pip: currently unavailable
-
-#### From Anaconda.org, using conda
-
-Currently unavailable
+Coming Soon!
 
 ### From PyPI, using pip
 
-Currently unavailable
+Coming Soon!
 
 ### From source (GitHub repo), using conda or pip
 
@@ -122,6 +94,30 @@ pytest -v .
 This process works for most use cases, but for more details regarding building
 the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 
+### From the internal Roitberg Group servers, using conda or pip
+
+To install the internal version of TorchANI, hosted in the internal
+roitberg-group servers using conda run:
+
+```bash
+conda create -n ani python=3.11
+conda activate ani
+# The following command is all one line, and channels must be specified in that order
+conda install \
+    -c http://moria.chem.ufl.edu/conda-pkgs \
+    -c pytorch \
+    -c nvidia \
+    -c conda-forge \
+    torchani
+```
+
+Note that this installation currently includes the compiled extensions by default,
+but it doesn't include either the ase module, to use it run also:
+
+```bash
+conda install -c conda-forge ase
+```
+
 #### From source in macOS
 
 Note that there is no CUDA support on `macOS` and TorchANI is **untested** with
@@ -171,15 +167,6 @@ Please cite the following paper if you use TorchANI:
   create a new branch and submit a PR on GitHub.
 - All the tests on GitHub must pass before your PR can be merged.
 - Code review is required before merging a pull request.
-
-### Documentation (ONLY APPLIES TO PUBLIC REPO)
-
-If you opened a pull request, you could see your generated documents at
-https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed. Keep
-in mind that this repository is only for the purpose of convenience of
-development, and only keeps the latest push. The CI runing for other pull
-requests might overwrite this repository. You could rerun the `docs` check to
-overwrite this repo to your build.
 
 ### Details on the conda packages needed to build cuAEV and MNP
 
