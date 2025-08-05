@@ -14,15 +14,15 @@
 
 TorchANI 2.0 is an open-source library that supports training, development, and research
 of ANI-style neural network interatomic potentials. It was originally developed and is
-currently maintained by the Roitberg group.
+currently maintained by the Roitberg group. For information and examples, please see the
+comprehensive [documentation](https://aiqm.github.io/torchani/).
 
-If you were using a previous version of TorchANI, and your code does not work with
-TorchANI 2.0 check out the [documentation](https://aiqm.github.io/torchani-docs/), there
-are very few breaking changes, and most code should work with minimal modifications. If
+If you were using a previous version of TorchANI and your code does not work with
+TorchANI 2.0 check out the [migration guide](https://aiqm.github.io/torchani/migrating-to-2.html#torchani-migrating), there
+are very few breaking changes, most code should work with minimal modifications. If
 you can't figure something out please open a GitHub issue, we are here to help!
 
-If you find a bug of TorchANI, or have some feature request, feel free to open an issue
-on GitHub.
+If you find a bug of TorchANI, or have some feature request, also feel free to open a GitHub issue.
 
 TorchANI 2.0 is currently tested against PyTorch 2.5 and CUDA 12.4
 
