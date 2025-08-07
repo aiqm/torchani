@@ -177,6 +177,7 @@ class _ANI(torch.nn.Module):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
+        _molecule_idxs: tp.Optional[Tensor] = None,
     ) -> EnergiesScalars:
         r"""This entrypoint supports input from an external neighborlist
 
@@ -184,10 +185,22 @@ class _ANI(torch.nn.Module):
         """
         self._check_inputs(species, coords, charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
+
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
         neighbors = narrow_down(self.cutoff, species, coords, neighbor_idxs, shifts)
+
+        if _molecule_idxs is not None:
+            if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
+                warnings.warn("molecule_idxs is experimental and subject to change")
+            if coords.shape[0] != 1:
+                raise ValueError("molecule_idxs expects only one conformation")
+            if len(_molecule_idxs) != coords.shape[1]:
+                raise ValueError(
+                    "molecule_idxs must be the same length as num atoms, if passed"
+                )
+            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
         return self.compute_from_neighbors(
             elem_idxs, coords, neighbors, charge, atomic, ensemble_values
         )

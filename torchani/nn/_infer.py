@@ -35,15 +35,7 @@ def _check_openmp_threads() -> None:
         raise RuntimeError(f"OMP_NUM_THREADS set to an incorrect value: {num_threads}")
 
 
-@jit_unused_if_no_mnp()
-def _is_same_tensor_optimized(last: Tensor, current: Tensor) -> bool:
-    if torch.jit.is_scripting():
-        return torch.ops.mnp.is_same_tensor(last, current)
-    return last.data_ptr() == current.data_ptr()
-
-
 def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
-    # Potentially, slower fallback if MNP is not installed (until JIT supports data_ptr)
     same_shape = last.shape == current.shape
     if not same_shape:
         return False
@@ -117,12 +109,7 @@ class BmmEnsemble(AtomicContainer):
         assert aevs.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
 
         # Initialize each elem_idxs if it has not been init or the species has changed
-        if self._MNP_IS_INSTALLED:
-            same_elem_idxs = _is_same_tensor_optimized(self._last_species, elem_idxs)
-        else:
-            same_elem_idxs = _is_same_tensor(self._last_species, elem_idxs)
-
-        if not same_elem_idxs:
+        if not _is_same_tensor(self._last_species, elem_idxs):
             self._idx_list = _make_idx_list(elem_idxs, self.num_species, self._idx_list)
         self._last_species = elem_idxs
 
@@ -348,12 +335,7 @@ class MNPNetworks(AtomicContainer):
         assert not atomic, "MNPNetworks doesn't support atomic energies"
         aevs = aevs.flatten(0, 1)
 
-        if self._MNP_IS_INSTALLED:
-            same_species = _is_same_tensor_optimized(self._last_species, elem_idxs)
-        else:
-            same_species = _is_same_tensor(self._last_species, elem_idxs)
-
-        if not same_species:
+        if not _is_same_tensor(self._last_species, elem_idxs):
             self._idx_list = _make_idx_list(elem_idxs, self.num_species, self._idx_list)
         self._last_species = elem_idxs
 
