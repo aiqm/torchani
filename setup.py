@@ -221,16 +221,17 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
 
     # Flags for requesting specific SMs
     sms: tp.Set[str] = set()
+    TORCHANI_BUILD_SMS = os.getenv("TORCHANI_SMS", "").split(",")
     for sm in SUPPORTED_SMS:
-        if f"ext-sm{sm}" in sys.argv:
+        if f"ext-sm{sm}" in sys.argv or sm in TORCHANI_BUILD_SMS:
             sys.argv.remove(f"ext-sm{sm}")
             sms.add(sm)
     # Flag for requesting compatible SMs detection
-    if "ext" in sys.argv:
+    if "ext" in sys.argv or os.getenv("TORCHANI_BUILD_EXT"):
         sys.argv.remove("ext")
         sms.update(collect_compatible_sms())
     # Flag for requesting all sms
-    if "ext-all-sms" in sys.argv:
+    if "ext-all-sms" in sys.argv or os.getenv("TORCHANI_BUILD_ALL_SMS"):
         sys.argv.remove("ext-all-sms")
         sms.update(collect_all_sms())
 

@@ -1,35 +1,132 @@
-name: deploy-pypi
+name: upload-to-pypi
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      version:
+        description: Force version
+      upload-pypi:
+        description: Upload to pypi
+        required: false
+        default: false
+        type: boolean
+      upload-testpypi:
+        description: Upload to test-pypi
+        required: false
+        default: false
+        type: boolean
 
 env:
   PYTHON_VERSION: '3.11'
+  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event.inputs.version }}
+  # cibuildwheel configuration:
+  # Skip py 3.14, 32 bit and musllinux (Alpine) wheels
+  CIBW_SKIP: "cp314-* cp314t-* *-manylinux_i686 *-win32 *-musllinux_*"
+  CIBW_TEST_REQUIRES: pytest
+  CIBW_TEST_COMMAND: pytest -k "cuaev" {project}/tests
+  CIBW_PRERELEASE_PYTHONS: False
+  CIBW_ENVIRONMENT: "SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.version }} TORCHANI_BUILD_ALL_SMS=1"
+  # Build wheels on image that already has pytorch already
+  CIBW_BUILD_FRONTEND: "build; args:--no-isolation"
+  CIBW_MANYLINUX_X86_64_IMAGE: "pytorch/pytorch:2.8.0-cuda12.9-cudnn9-devel"
+  CIBW_BUILD_VERBOSITY: 3
 
 jobs:
-  deploy-pypi:
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      contents: read
-      id-token: write
+  make_sdist:
+    name: make-source-distribution
+    runs-on: [self-hosted, ipickering]
     steps:
       - name: checkout-repo
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: setup-python
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: build
+      - name: install-sdist-deps
         run: |
-          python -m pip install build twine
-          python -m build
+          python -m pip install --upgrade pip
+          pip install build twine
 
-      - name: publish-to-testpypi
+      - name: build-sdist
+        run: python -m build --sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+      - name: validate-sdist-metadata
+        run: twine check dist/*
+
+  build_wheels:
+    name: build-linux-wheels
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: setup-python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: install-wheel-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install cibuildwheel
+
+      - name: build-wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+
+  publish_to_testpypi:
+    needs: [build_wheels, make_sdist]
+    runs-on: [self-hosted, ipickering]
+    if: ${{ github.event.inputs.upload-testpypi == 'true' }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/torchani-dev-test
+    permissions:
+      id-token: write 
+
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+      - name: publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          repository-url: https://test.pypi.org/legacy/
+
+  publish_to_pypi:
+    needs: [build_wheels, make_sdist]
+    runs-on: [self-hosted, ipickering]
+    if: ${{ github.event.inputs.upload-pypi == 'true' }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/torchani
+    permissions:
+      id-token: write 
+
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+      - name: publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
