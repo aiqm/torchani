@@ -50,6 +50,8 @@ class Calculator(ase.calculators.calculator.Calculator):
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
         super().calculate(atoms, properties, system_changes)
+        self.results = {}  # Clear the results from previous calculation
+                      
         cell = torch.tensor(self.atoms.get_cell(complete=True).array,
                             dtype=self.dtype, device=self.device)
         pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
