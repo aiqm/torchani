@@ -25,6 +25,10 @@ class RepulsionXTB(BasePairPotential):
     interactions use ``krep``
     """
 
+    y_ab: Tensor
+    sqrt_alpha_ab: Tensor
+    k_rep_ab: Tensor
+
     def __init__(
         self,
         symbols: tp.Sequence[str],

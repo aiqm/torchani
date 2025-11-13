@@ -66,6 +66,9 @@ class _LJ(BasePairPotential):
     them in production.
     """
 
+    _eps: Tensor
+    _sigma: Tensor
+
     def __init__(
         self,
         symbols: tp.Sequence[str],

@@ -69,7 +69,7 @@ Untitled.ipynb
 /torchani/csrc/build/
 
 # Data downloaded with download.sh
-/download/
+/dev-data/hf-data/
 
 # Dest dir of built conda pkgs
 /conda-pkgs/

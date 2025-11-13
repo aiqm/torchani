@@ -24,6 +24,7 @@ class AtomicOneHot(_Embedding):
         # encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, 0, 0]])
 
     """
+    one_hot: Tensor
 
     def __init__(self, symbols: tp.Sequence[str]) -> None:
         super().__init__(symbols)
@@ -70,6 +71,7 @@ class AtomicContainer(torch.nn.Module):
     num_species: int
     total_members_num: int
     active_members_idxs: tp.List[int]
+    atomic_numbers: Tensor
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         super().__init__()
@@ -150,7 +152,8 @@ class AtomicNetwork(torch.nn.Module):
 
     def extra_repr(self) -> str:
         r""":meta private:"""
-        layer_dims = [layer.in_features for layer in self.layers]
+        # Cast is required due to incorrect upstream torch typing
+        layer_dims = [tp.cast(int, layer.in_features) for layer in self.layers]
         layer_dims.extend([self.final_layer.in_features, self.final_layer.out_features])
         parts = [
             f"layer_dims={tuple(layer_dims)},",

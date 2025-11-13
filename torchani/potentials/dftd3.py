@@ -59,6 +59,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
 
     _a1: Final[float]
     _a2: Final[float]
+    cutoff_radii: Tensor
 
     def __init__(
         self,
@@ -122,6 +123,11 @@ class TwoBodyDispersionD3(BasePairPotential):
     _k1: Final[int]
     _k2: Final[float]
     _k3: Final[int]
+    precalc_coeff6: Tensor
+    sqrt_charge_ab: Tensor
+    precalc_coordnums_a: Tensor
+    precalc_coordnums_b: Tensor
+    covalent_radii: Tensor
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:

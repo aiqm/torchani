@@ -15,6 +15,21 @@ Here we document the most important changes. In many cases code will run as is, 
 warnings are emitted if the old, legacy API is being used, so we also provide
 recommendations to use the new functions when appropriate.
 
+Accessing previous state_dict versions
+--------------------------------------
+
+If you require the old state dicts of ANI models you can access them by calling
+``.legacy_state_dict()`` instead of ``.state_dict()``
+
+.. code-block:: python
+    
+    from torchani.models import ANI1x
+    from torchani.aev import AEVComputer
+
+    legacy_sd = AEVComputer.like_1x().legacy_state_dict()  # old version of dict
+    new_sd = AEVComputer.like_1x().state_dict()  # new version of dict
+
+
 General usage of built-in ANI models
 ------------------------------------
 

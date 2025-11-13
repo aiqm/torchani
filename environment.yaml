@@ -1,6 +1,7 @@
-name: ani-blackwell
+name: ani
 channels:
   - nodefaults
+  - https://conda.anaconda.org/nvidia
   - https://conda.anaconda.org/conda-forge
 dependencies:
   ## Required dependencies to run TorchANI ##
@@ -21,11 +22,14 @@ dependencies:
   - ase
 
   ## cuAEV and MNP ##
-  - setuptools>=64
+  - setuptools>=75.6
   - setuptools-scm>=8
+  - packaging>=25
   - gxx_linux-64=12.2
   - gcc_linux-64=12.2
-  # CUDA Toolkit must be present in host!
+  # (comment the cuda-toolkit line for macOS)
+  # CUDA Toolkit must be present in host, for instance, by installing:
+  - nvidia::cuda-toolkit=12.9
 
   ## Running torchani/tests ##
   - coverage  # code coverage
@@ -43,7 +47,7 @@ dependencies:
 
   ## Running scripts in torchani/tools ##
   - matplotlib
-  - pynvml
+  - nvidia-ml-py
   - jinja2  # Templating engine to build generated code and docs
 
   ## Building torchani/docs ##
@@ -52,6 +56,10 @@ dependencies:
   - sphinx-gallery
   - pydata-sphinx-theme
   - tensorboard
+
+  # Pytorch (using pip)
   - pip:
-    - torch==2.7.1
-    - --index-url https://download.pytorch.org/whl/cu128
+    # (Remove the following line for macOs)
+    - --index-url https://download.pytorch.org/whl/cu129
+    - --extra-index-url https://pypi.python.org/simple
+    - torch==2.8.*

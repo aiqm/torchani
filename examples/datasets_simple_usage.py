@@ -25,11 +25,12 @@ from torchani.datasets import ANIDataset
 
 ###############################################################################
 # For the purposes of this example we will copy and modify two files inside
-# torchani/dataset, which can be downloaded by running the download.sh script
+# torchani/dataset, which can be downloaded by running the download-dev-data.sh script
 file1_path = Path.cwd() / "file1.h5"
 file2_path = Path.cwd() / "file2.h5"
-shutil.copy(Path.cwd() / "../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5", file1_path)
-shutil.copy(Path.cwd() / "../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5", file2_path)
+data_source = Path.cwd().parent / "dev-data" / "hf-data" / "dataset" / "ani1-up_to_gdb4"
+shutil.copy(data_source / "ani_gdb_s01.h5", file1_path)
+shutil.copy(data_source / "ani_gdb_s02.h5", file2_path)
 
 ###############################################################################
 # ANIDataset accepts a path to an h5 file or a list of paths to many files

@@ -4,6 +4,7 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+import os
 from enum import Enum
 import torch
 import shutil
@@ -17,7 +18,7 @@ import typing_extensions as tpx
 import re
 
 import torchani
-from torchani.paths import datasets_dir
+from torchani.paths import datasets_dir, data_dir
 import torchani.datasets
 from torchani.datasets._utils import (
     DatasetIntegrityError,
@@ -92,7 +93,90 @@ def parse_device_and_dtype(
     return _device, _dtype
 
 
-@main.command()
+@main.command("build-extensions")
+def _build_extensions(
+    sms: tpx.Annotated[
+        tp.Optional[tp.List[str]],
+        Option(
+            "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
+        ),
+    ] = None,
+) -> None:
+    r"""Build CUDA and C++ extensions"""
+    import torch
+    from torch.utils.cpp_extension import load
+
+    if sms is not None:
+        os.environ["TORCH_CUDA_ARCH_LIST"] = ",".join(sms)
+
+    nvcc_args = ["--expt-extended-lambda"]
+    nvcc_args.extend(
+        [
+            "-DCUB_NS_QUALIFIER=::cuaev::cub",
+            "-DCUB_NS_PREFIX='namespace cuaev {'",
+            "-DCUB_NS_POSTFIX=}",
+        ]
+    )
+    nvcc_args.extend(["-DTORCHANI_OPT", "-use_fast_math"])
+    this_dir = str(Path(__file__).parent.resolve())
+    include_dirs = torch.utils.cpp_extension.include_paths(device_type="cuda")
+    include_dirs.append(f"{this_dir}/csrc/")
+    if os.getenv("CONDA_PREFIX") and not os.getenv("CUDA_HOME"):
+        # Help load() to detect cuda inside conda environments
+        if Path(
+            f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/include/cuda_runtime_api.h"  # noqa:E501
+        ).is_file():
+            include_dirs.append(
+                f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/include"
+            )
+        os.environ["CUDA_HOME"] = f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/"
+    print("Building cuAEV extension...")
+    build_dir = data_dir().parent.parent / "lib" / "Torchani"
+    build_dir.mkdir(exist_ok=True, parents=True)
+    _ = load(
+        name="cuaev",
+        sources=[f"{this_dir}/csrc/cuaev.cpp", f"{this_dir}/csrc/aev.cu"],
+        extra_include_paths=include_dirs,
+        build_directory=str(build_dir),
+        extra_cuda_cflags=nvcc_args,
+        extra_cflags=["-std=c++17"],
+        with_cuda=True,
+        is_python_module=False,
+    )
+    print("Done!")
+    print()
+    print("Building MNP extension...")
+    _ = load(
+        name="mnp",
+        sources=[f"{this_dir}/csrc/mnp.cpp"],
+        extra_include_paths=include_dirs,
+        build_directory=str(build_dir),
+        extra_cflags=["-std=c++17", "-fopenmp"],
+        with_cuda=True,
+        is_python_module=False,
+    )
+    print("Done!")
+    print()
+    print("Building FastCellList extension (experimental)...")
+    _ = load(
+        name="cell_list",
+        sources=[f"{this_dir}/csrc/cell_list.cpp"],
+        extra_include_paths=include_dirs,
+        build_directory=str(build_dir),
+        extra_cflags=["-std=c++17"],
+        with_cuda=True,
+        is_python_module=False,
+    )
+    print("Done!")
+    print()
+
+    # Cleanup
+    for f in build_dir.iterdir():
+        if f.suffix != ".so":
+            f.unlink()
+
+
+@main.command(hidden=True)
 def opt(
     paths: tpx.Annotated[
         tp.List[Path],

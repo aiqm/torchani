@@ -23,11 +23,11 @@ requirements:
     - conda-forge::python={{ python }}
     - conda-forge::typing_extensions>=4.0.0
     - conda-forge::pip
-    - conda-forge::setuptools>=64
+    - conda-forge::packaging>=25
+    - conda-forge::setuptools>=76
     - conda-forge::setuptools_scm>=8
-    - pytorch::pytorch={{ pytorch }}
-    - pytorch::pytorch-cuda={{ cuda }}
     - conda-forge::numpy={{ numpy }}
+    - conda-forge::pytorch={{ pytorch }}=*cuda{{ '%.2f'|format(cuda)|replace('.', '') }}*generic*py{{ '%.2f'|format(python)|replace('.', '') }}*
   run:
     - conda-forge::python={{ python }}
     - conda-forge::typing_extensions>=4.0.0
@@ -37,8 +37,8 @@ requirements:
     - conda-forge::rich
     - conda-forge::huggingface_hub
     - conda-forge::typer
-    - pytorch::pytorch={{ pytorch }}
-    - pytorch::pytorch-cuda={{ cuda }}
+    - conda-forge::ase
+    - conda-forge::pytorch={{ pytorch }}=*cuda{{ '%.2f'|format(cuda)|replace('.', '') }}*generic*py{{ '%.2f'|format(python)|replace('.', '') }}*
 
 test:
   imports:

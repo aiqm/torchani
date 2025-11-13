@@ -6,6 +6,8 @@ authors = [
     {name = "Jinze Xue", email = "jinzexue@chem.ufl.edu"},
 ]
 description = "PyTorch implementation of the ANI neural network potential family"
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 keywords = [
     "machine-learning",
@@ -15,10 +17,9 @@ keywords = [
     "torch",
     "energy",
 ]
-classifiers = ["License :: OSI Approved :: MIT License"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
-    "torch==2.5.*",
+    "torch>=2.0,<=2.8",
     "numpy",
     "typing_extensions>=4.0.0",
     "h5py",
@@ -39,7 +40,7 @@ repository = "https://github.com/aiqm/torchani"
 # NOTE: If installed with build isolation torch can't be accessed and
 # the CUDA and C++ extensions can't be compiled
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
+requires = ["setuptools>=75.6", "setuptools-scm>=8", "packaging>=25"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]

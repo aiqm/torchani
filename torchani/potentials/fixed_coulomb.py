@@ -11,6 +11,8 @@ from torchani.cutoffs import CutoffArg
 
 # TODO: Trainable?
 class FixedCoulomb(BasePairPotential):
+    _charges: Tensor
+
     def __init__(
         self,
         symbols: tp.Sequence[str],
@@ -43,6 +45,9 @@ class FixedCoulomb(BasePairPotential):
 #
 # Since the charges are fixed this is equivalent to using multiple FixedMNOK
 class FixedMNOK(BasePairPotential):
+    _eta: Tensor
+    _charges: Tensor
+
     def __init__(
         self,
         symbols: tp.Sequence[str],

@@ -47,8 +47,8 @@ try:
 except ImportError:
     PANDAS_AVAILABLE = False
 
-dataset_path = Path(Path(__file__).parent.parent, "dataset", "ani-1x", "sample.h5")
-dataset_path = dataset_path.resolve()
+path = Path(__file__).parent.parent / "dev-data" / "hf-data" / "dataset" / "ani-1x"
+dataset_path = (path / "sample.h5").resolve()
 batch_size = 256
 
 _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import tempfile
 import warnings
 
@@ -8,8 +8,14 @@ from torchani.sae_estimation import exact_saes, approx_saes
 from torchani._testing import TestCase
 from torchani.datasets import create_batched_dataset, ANIBatchedDataset
 
-path = os.path.dirname(os.path.realpath(__file__))
-dataset_path_gdb = os.path.join(path, "../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5")
+path = (
+    Path(__file__).parent.parent
+    / "dev-data"
+    / "hf-data"
+    / "dataset"
+    / "ani1-up_to_gdb4"
+)
+dataset_path_gdb = path / "ani_gdb_s02.h5"
 
 
 class TestEstimationSAE(TestCase):

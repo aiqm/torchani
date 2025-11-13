@@ -142,6 +142,9 @@ class ANIRadial(BaseRadial):
                 state_dict["".join((prefix, "shifts"))] = state_dict.pop(k).view(-1)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
+    shifts: Tensor
+    eta: Tensor
+
     def __init__(
         self,
         eta: float,
@@ -253,6 +256,11 @@ class ANIAngular(BaseAngular):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
+
+    shifts: Tensor
+    eta: Tensor
+    zeta: Tensor
+    sections: Tensor
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:

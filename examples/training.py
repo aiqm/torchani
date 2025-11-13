@@ -20,7 +20,7 @@ from torchani.grad import forces_for_training
 # %%
 # Device and dataset to run the training
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-ds = ANIDataset("../dataset/ani-1x/sample.h5")
+ds = ANIDataset("../dev-data/hf-data/dataset/ani-1x/sample.h5")
 # %%
 # We prebatch the dataset to train with memory efficiency, keeping a good
 # performance.
@@ -90,7 +90,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 latest_training_state_checkpoint_path = Path("./latest_training_state.pt").resolve()
 best_model_state_checkpoint_path = Path("./best_model_state.pt").resolve()
 if latest_training_state_checkpoint_path.exists():
-    checkpoint = torch.load(latest_training_state_checkpoint_path)
+    checkpoint = torch.load(latest_training_state_checkpoint_path, weights_only=True)
     model.load_state_dict(checkpoint["model"])
     scheduler.load_state_dict(checkpoint["scheduler"])
     optimizer.load_state_dict(checkpoint["optimizer"])

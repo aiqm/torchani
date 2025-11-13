@@ -290,8 +290,8 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     for linear, wfile, bfile in zip(
         itertools.chain(network.layers, [network.final_layer]), weight_files, bias_files
     ):
-        _in = linear.in_features
-        _out = linear.out_features
+        _in = tp.cast(int, linear.in_features)
+        _out = tp.cast(int, linear.out_features)
         with open(wfile, mode="rb") as wf:
             _w = struct.unpack("{}f".format(_in * _out), wf.read())
             linear.weight.data = torch.tensor(_w).view(_out, _in)

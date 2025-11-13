@@ -1,0 +1,94 @@
+name: upload-to-pypi
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Force version
+      upload-pypi:
+        description: Upload to PyPI
+        required: false
+        default: false
+        type: boolean
+      upload-testpypi:
+        description: Upload to Test PyPI
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  build_package:
+    name: build-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: setup-python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: install-build-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: build-sdist-and-wheel
+        run: python -m build --sdist --wheel
+
+      - name: upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      - name: validate-package
+        run: twine check dist/*
+
+  publish_to_testpypi:
+    needs: build_package
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.upload-testpypi == 'true' }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/torchani-dev-test
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist
+      - name: publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist
+
+  publish_to_pypi:
+    needs: build_package
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.upload-pypi == 'true' }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/torchani
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist
+      - name: publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          packages-dir: dist

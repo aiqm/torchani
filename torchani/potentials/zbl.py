@@ -12,6 +12,10 @@ from torchani.neighbors import Neighbors
 #  Chapter 2, "Universal screening fn" etc
 # TODO: trainable
 class RepulsionZBL(BasePairPotential):
+    _eff_atomic_nums: Tensor
+    _coeffs: Tensor
+    _exponents: Tensor
+
     def __init__(
         self,
         symbols: tp.Sequence[str],

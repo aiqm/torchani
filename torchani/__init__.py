@@ -10,11 +10,7 @@ are:
 - `torchani.SelfEnergy <torchani.sae.SelfEnergy>`
 """
 
-import os
-import warnings
 from importlib.metadata import version, PackageNotFoundError
-
-import torch
 
 from torchani import (
     nn,
@@ -92,25 +88,6 @@ __all__ = [
     "SelfEnergy",
     "single_point",
 ]
-
-# Disable TF32 since it catastrophically degrades accuracy of ANI models
-# torch.backends.cuda.matmul.allow_tf32 = False
-# torch.backends.cudnn.allow_tf32 = False
-
-# Warn about disabling TF3 only if an Ampere (or newer) GPU is detected
-# (suppressed by setting TORCHANI_NO_WARN_TF32)
-if torch.cuda.is_available():
-    num_devices = torch.cuda.device_count()
-    max_sm_major = max(
-        [torch.cuda.get_device_capability(i)[0] for i in range(num_devices)]
-    )
-    if (max_sm_major >= 8) and os.getenv("TORCHANI_NO_WARN_TF32") != "1":
-        warnings.warn(
-            "TorchANI disables TF32 (supported by your GPU) to prevent accuracy loss."
-            " To suppress warn set the env var TORCHANI_NO_WARN_TF32=1"
-            " For example, if using bash,"
-            " you may add 'export TORCHANI_NO_WARN_TF32=1' to your .bashrc"
-        )
 
 # Optional submodule, depends on ase being available
 try:

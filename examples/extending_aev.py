@@ -1,3 +1,4 @@
+# type: ignore
 r"""
 Extending the local atomic features: AEVs with custom terms and cutoffs
 =======================================================================

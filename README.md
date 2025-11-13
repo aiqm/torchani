@@ -1,4 +1,4 @@
-<div style="text-align: center;">
+<div align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-light.png">
@@ -6,81 +6,122 @@
 </picture>
 </div>
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
-[![conda page](https://img.shields.io/badge/conda--package-page-blue)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
-[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
-[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
+[![CI](https://github.com/aiqm/torchani/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/aiqm/torchani/actions/workflows/ci.yaml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 TorchANI 2.0 is an open-source library that supports training, development, and research
 of ANI-style neural network interatomic potentials. It was originally developed and is
 currently maintained by the Roitberg group. For information and examples, please see the
 comprehensive [documentation](https://aiqm.github.io/torchani/).
 
-If you were using a previous version of TorchANI and your code does not work with
+⚠️  **Important**: If you were using a previous version of TorchANI and your code does not work with
 TorchANI 2.0 check out the [migration guide](https://aiqm.github.io/torchani/migrating-to-2.html#torchani-migrating), there
 are very few breaking changes, most code should work with minimal modifications. If
 you can't figure something out please open a GitHub issue, we are here to help!
+In the meantime, you can pin torchani to version 2.2.4 (pip install 'torchani==2.2.4'), which does not
+have breaking changes. If you require the old state dicts of ANI models you can access
+them by calling `.legacy_state_dict()` instead of `.state_dict()`
 
-If you find a bug of TorchANI, or have some feature request, also feel free to open a GitHub issue.
+If you find a bug in TorchANI 2.0, or have some feature request, also feel free to open
+a GitHub issue. TorchANI 2.0 is currently tested against PyTorch 2.8 and CUDA 12.8
 
-TorchANI 2.0 is currently tested against PyTorch 2.5 and CUDA 12.4
+If you find this work useful please cite the following articles:
+- *TorchANI 2.0: An extensible, high performance library for the design, training, and use of NN-IPs* <br>
+    https://pubs.acs.org/doi/10.1021/acs.jcim.5c01853
+- *TorchANI: A Free and Open Source PyTorch-Based Deep Learning Implementation of the ANI Neural Network Potentials* <br>
+    https://pubs.acs.org/doi/10.1021/acs.jcim.0c00451
+
+To run molecular dynamics (full ML or ML/MM) with [Amber (sander or
+pmemd)](https://ambermd.org/AmberTools.php) check out
+[the TorchANI-Amber interface](https://github.com/roitberg-group/torchani-amber),
+and the relevant publications:
+- *TorchANI-Amber: Bridging neural network potentials and classical biomolecular simulations* <br>
+    https://doi.org/10.1021/acs.jpcb.5c05725 
+- *Advancing Multiscale Molecular Modeling with Machine Learning-Derived Electrostatics* <br>
+    For the ML/MM capabilities: https://pubs.acs.org/doi/10.1021/acs.jctc.4c01792
 
 ## Installation
 
-### From Anaconda.org, using conda
+We recommend installing `torchani` inside a `conda|mamba` environment, or a `venv`.
 
-Coming Soon!
+⚠️  **Important**: *Please install torchani with pip if you want the latest version, even
+if using a conda env since the torchani conda package is currently not maintained.*
 
-### From PyPI, using pip
+We also recommended you first install a specific torch version, with a specific CUDA
+toolkit backend, for example:
 
-Coming Soon!
+```bash
+pip install torch==2.8 --index-url https://download.pytorch.org/whl/cu129
+```
 
-### From source (GitHub repo), using conda or pip
+for the version with CUDA 12.9. This is not strictly required, but is easier if you want
+to control these versions. Note that TorchANI requires PyTorch >= 2.0.
+
+Afterwards:
+
+```bash
+pip install torchani
+```
+
+TorchANI 2.0 provides C++ and CUDA extensions for accelerated computation of descriptors
+and network inference. In order to build the extensions, first install the CUDA Toolkit
+appropriate for your PyTorch version. You can follow the instructions in [the official
+documentation](https://developer.nvidia.com/cuda-toolkit) for your system.
+Alternatively, if you are using a conda environment, you can install the toolkit with
+`conda install nvidia::cuda-toolkit=12.9`
+
+After this, run:
+
+```bash
+ani build-extensions
+```
+
+By default the extensions are built for all detected SMs. If you want to build the
+extensions for specific SMs run for instance:
+
+```bash
+ani build-extensions --sm 8.0 --sm 8.9 
+```
+
+### From source (GitHub repo)
 
 To build and install TorchANI directly from the GitHub repo do the following:
 
 ```bash
 # Clone the repo and cd to the directory
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd ./torchani_sandbox
+git clone https://github.com/aiqm/torchani.git
+cd ./torchani
 
 # Create a conda (or mamba) environment
-# Note that dev_environment.yaml contains many optional dependencies needed to
+# Note that environment.yaml contains many optional dependencies needed to
 # build the compiled extensions, build the documentation, and run tests and tools
 # You can comment these out if you are not planning to do that
-conda env create -f ./dev_environment.yaml
+conda env create -f ./environment.yaml
 ```
 
-Instead of using a `conda` (or `mamba`) environment you can use a python `venv`,
+Instead of using a `conda` environment you can use a python `venv`,
 and install the torchani optional dependencies
 running `pip install -r dev_requirements.txt`.
 
-Now you have two options, depending on whether you want to install the torchani
-compiled extensions. To install torchani with no compiled extensions run:
-
 ```bash
-pip install --no-deps -v .
+pip install --no-deps -v -e .
 ```
 
-To install torchani with the cuAEV and MNP compiled extensions run instead:
+Afterwards you can install the extensions with:
 
 ```bash
-# Use 'ext-all-sms' instead of 'ext' if you want to build for all possible GPUs
-pip install --config-settings=--global-option=ext --no-build-isolation --no-deps -v .
+ani build-extensions
 ```
-
-In both cases you can add the editable, `-e`, flag after the verbose, `-v`,
-flag if you want an editable install (for developers). The `-v` flag can of
-course be omitted, but it is sometimes handy to have some extra information
-about the installation process.
 
 After this you can perform some optional steps if you installed the required
 dev dependencies:
 
 ```bash
 # Download files needed for testing and building the docs (optional)
-bash ./download.sh
+bash ./download-dev-data.sh
 
 # Build the documentation (optional)
 sphinx-build docs/src docs/build
@@ -90,106 +131,28 @@ cd ./tests
 pytest -v .
 ```
 
-This process works for most use cases, but for more details regarding building
+This process works for most use cases, for more details regarding building
 the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
-
-### From the internal Roitberg Group servers, using conda or pip
-
-To install the internal version of TorchANI, hosted in the internal
-roitberg-group servers using conda run:
-
-```bash
-conda create -n ani python=3.11
-conda activate ani
-# The following command is all one line, and channels must be specified in that order
-conda install \
-    -c http://moria.chem.ufl.edu/conda-pkgs \
-    -c pytorch \
-    -c nvidia \
-    -c conda-forge \
-    torchani
-```
-
-Note that this installation currently includes the compiled extensions by default,
-but it doesn't include either the ase module, to use it run also:
-
-```bash
-conda install -c conda-forge ase
-```
 
 #### From source in macOS
 
-Note that there is no CUDA support on `macOS` and TorchANI is **untested** with
-Apple Metal Performance Shaders (MPS). The `dev_environment.yaml` file needs
+There is no CUDA support on `macOS` and TorchANI is **untested** with
+Apple Metal Performance Shaders (MPS). The `environment.yaml` file needs
 slight modifications if installing on `macOS`. Please consult the corresponding
 file and modify it before creating the `conda` environment.
 
 ## GPU support
 
-TorchANI can be run in CUDA-enabled GPUs. This is **highly recommended** unless
-doing simple debugging or tests. If you don't run TorchANI on a GPU, expect
-highly degraded performance. TorchANI is **untested** with AMD GPUs (ROCm |
-HIP).
-
-## CUDA and C++ extensions
-
-A CUDA extension for speeding up AEV calculations and a C++ extension for
-parallelizing networks (MNP or Multi Net Parallel) using OpenMP are compiled by
-default in the conda package. They have to be built manually if installed from
-GitHub.
+TorchANI 2.0 can be run in CUDA-enabled GPUs. This is **highly recommended** unless
+doing simple debugging or tests. If you don't run TorchANI on a GPU, expect degraded
+performance. TorchANI is **untested** with AMD GPUs (ROCm | HIP).
 
 ## Command Line Interface
 
-Torchani provides an executable script, `torchani`, with some utilities. Check
-usage by calling ``torchani --help``.
+TorchANI 2.0 provides an executable script, `ani`, with some utilities. Check usage by
+calling ``torchani --help``.
 
-## Citations
-
-Please cite the following paper if you use TorchANI:
-
-- Xiang Gao, Farhad Ramezanghorbani, Olexandr Isayev, Justin S. Smith, and
-  Adrian E. Roitberg. *TorchANI: A Free and Open Source PyTorch Based Deep
-  Learning Implementation of the ANI Neural Network Potentials*. Journal of
-  Chemical Information and Modeling 2020 60 (7), 3408-3415,
-  [![DOI for Citing](https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg)](
-    https://doi.org/10.1021/acs.jcim.0c00451)
-
-[![JCIM Cover](https://pubs.acs.org/cms/10.1021/jcisd8.2020.60.issue-7/asset/17a630cf-2b17-630c-a2b1-a630cfa2b17a/jcisd8.2020.60.issue-7.largecover.jpg)](
-    https://pubs.acs.org/toc/jcisd8/60/7)
-
-- Refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model
-  references.
-
-## Notes for developers
-
-- Never commit to the master branch directly. If you need to change something,
-  create a new branch and submit a PR on GitHub.
-- All the tests on GitHub must pass before your PR can be merged.
-- Code review is required before merging a pull request.
-
-### Details on the conda packages needed to build cuAEV and MNP
-
-The CUDA libraries specified by the pytorch-cuda metapackage are not enough to
-build the extensions; the `*-dev` versions with the headers are required. We
-also pin the version of `nvcc`, since `pytorch` can't directly compile
-extensions with newer `nvcc`. We also pin the version of `cccl` due to torch's
-usage of thrust. Explicitly specifying `setuptools` and `setuptools-scm` is
-required since extensions have to be built with `--no-build-isolation`.
-Finally, `g++` and `gcc` compilers that support `C++17` are required for
-compilation (compiler version is pinned to ensure reproducibility). The
-required conda pkgs are then (sans the version constraints):
-
-```yaml
-  - setuptools
-  - setuptools-scm
-  - gxx_linux-64
-  - gcc_linux-64
-  - nvidia::cuda-libraries-dev
-  - nvidia::cuda-cccl
-  - nvidia::cuda-nvcc
-```
-
-### Building the TorchANI conda package
+## Building the TorchANI conda package (for developers)
 
 The conda package can be built locally using the recipe in `./recipe`, by running:
 

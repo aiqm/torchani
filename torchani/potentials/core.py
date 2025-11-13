@@ -285,10 +285,10 @@ class PairPotential(BasePairPotential):
             trainable,
         )
         for k in self.elem_tensors:
-            self._validate_elem_seq(k, kwargs.get(k))
+            self._validate_elem_seq(k, kwargs.get(k))  # type: ignore
 
         for k in self.pair_elem_tensors:
-            self._validate_elem_seq(k, kwargs.get(k), pair=True)
+            self._validate_elem_seq(k, kwargs.get(k), pair=True)  # type: ignore
 
         for k, v in kwargs.items():
             tensor = torch.tensor(v)

@@ -11,7 +11,8 @@ neurochem = NeuroChem()
 mol_count = 0
 for i in [1, 2, 3, 4]:
     data_file = os.path.join(
-        path, '../../dataset/ani1-up_to_gdb4/ani_gdb_s0{}.h5'.format(i))
+        path, '../../dev-data/hf-data/dataset/ani1-up_to_gdb4/ani_gdb_s0{}.h5'.format(i)
+    )
     adl = pyanitools.anidataloader(data_file)
     for data in tqdm.tqdm(adl, desc='ANI1: {} heavy atoms'.format(i)):
         coordinates = data['coordinates'][:10, :]

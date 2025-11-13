@@ -1,12 +1,21 @@
 name: ci
 
-on: pull_request
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+  release:
+    type: [published]
 
 env:
   TAG: ani-ci:${{ github.sha }}
   EXT_TAG: ani-ci-with-ext:${{ github.sha }}
   DOCKER_CPU: --gpus '"device=none"' --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
-  DOCKER_GPU: --gpus all --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
+  DOCKER_GPU: --gpus '"device=3"' --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
   DOCKER_COMMON: --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
 
 jobs:
@@ -31,7 +40,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Test extensions on GPU (Quadro RTX 5000, SM75)
-        run: docker run --gpus '"device=3"' ${{ env.DOCKER_COMMON }}  ${{ env.EXT_TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
+        run: docker run ${{ env.DOCKER_GPU }} ${{ env.EXT_TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
   tools:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]

@@ -66,6 +66,7 @@ import typing as tp
 import importlib
 
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
+from torchani.potentials import SeparateChargesNNPotential
 from torchani.electro import ChargeNormalizer
 from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict, simple_ani
 from torchani.neighbors import NeighborlistArg
@@ -243,9 +244,11 @@ def ANImbis(
     }
     charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=False)
     model.energy_shifter.load_state_dict(shifter_state_dict)
-    model.potentials["nnp"].aev_computer.load_state_dict(aev_state_dict)
-    model.potentials["nnp"].neural_networks.load_state_dict(energy_nn_state_dict)
-    model.potentials["nnp"].charge_networks.load_state_dict(charge_nn_state_dict)
+
+    nnp = tp.cast(SeparateChargesNNPotential, model.nnp)
+    nnp.aev_computer.load_state_dict(aev_state_dict)
+    nnp.neural_networks.load_state_dict(energy_nn_state_dict)
+    nnp.charge_networks.load_state_dict(charge_nn_state_dict)
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)

@@ -681,6 +681,39 @@ class AEVComputer(torch.nn.Module):
             state_dict[k] = state_dict.pop(oldk)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
+    def legacy_state_dict(self) -> tp.Any:
+        r"""Get a state dict compatible with old torchani versions"""
+        state_dict = self.state_dict()
+        device = state_dict["radial.shifts"].device
+        dtype = state_dict["radial.shifts"].dtype
+        new_state_dict = {
+            "default_shifts": torch.zeros((0, 3), dtype=torch.int64, device=device),
+            "default_cell": torch.eye(3, dtype=dtype, device=device),
+        }
+        for k, v in state_dict.items():
+            new_key = (
+                k.replace("angular.sections", "ShfZ")
+                .replace("angular.shifts", "ShfA")
+                .replace("radial.shifts", "ShfR")
+                .replace("angular.zeta", "Zeta")
+                .replace("radial.eta", "EtaR")
+                .replace("angular.eta", "EtaA")
+            )
+            if "radial.shifts" in k:
+                v = v.view(1, -1)
+            if "angular.shifts" in k:
+                v = v.view(1, 1, -1, 1)
+            if "angular.sections" in k:
+                v = v.view(1, 1, 1, -1)
+            if "radial.eta" in k:
+                v = v.view(1, 1)
+            if "angular.eta" in k:
+                v = v.view(1, 1, 1, 1)
+            if "zeta" in k:
+                v = v.view(1, 1, 1, 1)
+            new_state_dict[new_key] = v
+        return new_state_dict
+
 
 class AEVComputerForThermoIntegration(AEVComputer):
     def forward_for_ti(

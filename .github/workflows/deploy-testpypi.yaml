@@ -1,0 +1,36 @@
+name: deploy-testpypi
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  deploy-testpypi:
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v5
+
+      - name: setup-python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: build
+        run: |
+          python -m pip install build twine
+          python -m build
+
+      - name: publish-to-testpypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          repository-url: https://test.pypi.org/legacy/

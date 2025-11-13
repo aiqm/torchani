@@ -1,5 +1,7 @@
-# This image has ubuntu 22.0, cuda 11.8, cudnn 9, python 3.11.10, pytorch 2.5.1
-FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
+# This image has ubuntu 22.04.5 (Jammy Jellyfish), cuda 12.9, cudnn 9, python 3.11.13, pytorch 2.8.0
+# NOTE: This pytorch version is currently slightly higher than the pytorch version used
+# in the env
+FROM pytorch/pytorch:2.8.0-cuda12.9-cudnn9-devel
 WORKDIR /repo
 
 # Set cuda env vars
@@ -59,7 +61,7 @@ fi
 # CONDA_TOKEN must be passed as a secret
 ARG PUBLIC_RELEASE=0
 RUN --mount=type=secret,id=CONDA_TOKEN \
-if [ "${PUBLIC_RELEASE}" = "1" ] || [ "${PUBLIC_RELEASE}" = "truej" ]; then \
+if [ "${PUBLIC_RELEASE}" = "1" ] || [ "${PUBLIC_RELEASE}" = "true" ]; then \
     CONDA_TOKEN=`cat /run/secrets/CONDA_TOKEN` \
     && anaconda --token "${CONDA_TOKEN}" \
         upload --user roitberg-group --force ./conda-pkgs/linux-64/*.tar.gz ; \

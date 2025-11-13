@@ -1,7 +1,7 @@
 # type: ignore
 # This file tests legacy API, it should not by type checked
+from pathlib import Path
 import unittest
-import os
 
 import torch
 
@@ -10,8 +10,8 @@ from torchani.utils import EnergyShifter
 from torchani import legacy_data
 
 batch_size = 256
-path = os.path.dirname(os.path.realpath(__file__))
-dataset_path = os.path.join(path, "../dataset/ani-1x/sample.h5")
+path = Path(__file__).parent.parent / "dev-data" / "hf-data" / "dataset" / "ani-1x"
+dataset_path = path / "sample.h5"
 ani1x_sae_dict = {
     "H": -0.60095298,
     "C": -38.08316124,

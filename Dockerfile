@@ -1,7 +1,8 @@
-# This image has ubuntu 22.0, cuda 11.8, cudnn 9, python 3.11.10, pytorch 2.5.1
-FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
+# This image has ubuntu 22.04.5 (Jammy Jellyfish), cuda 12.9, cudnn 9, python 3.11.13, pytorch 2.8.0
+# NOTE: This pytorch version is currently slightly higher than the pytorch version used
+# in the env
+FROM pytorch/pytorch:2.8.0-cuda12.9-cudnn9-devel
 WORKDIR /repo
-
 # Set cuda env vars
 ENV CUDA_HOME=/usr/local/cuda/
 ENV PATH=${CUDA_HOME}/bin:$PATH
@@ -15,8 +16,8 @@ ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 RUN apt update && apt install -y wget git unzip ninja-build rsync clang-format
 
 # Download test data
-COPY ./download.sh .
-RUN ./download.sh
+COPY ./download-dev-data.sh .
+RUN ./download-dev-data.sh
 
 # Copy pip optional dependencies file
 COPY dev_requirements.txt .

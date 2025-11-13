@@ -86,7 +86,7 @@ class BmmEnsemble(AtomicContainer):
             raise TypeError("BmmEnsemble can only take an Ensemble as an input")
         self.atomics = torch.nn.ModuleDict(
             {
-                s: BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])
+                s: BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])  # type: ignore # noqa:E501
                 for s in ensemble.symbols
             }
         )
@@ -224,9 +224,7 @@ class MNPNetworks(AtomicContainer):
 
         # MNP strategy in general is hard to maintain so emit warnings
         if use_mnp:
-            warnings.warn(
-                "MNPNetworks with MNP C++ extension is experimental."
-            )
+            warnings.warn("MNPNetworks with MNP C++ extension is experimental.")
         else:
             warnings.warn(
                 "MNPNetworks with no MNP C++ extension is not optimized."
@@ -243,12 +241,12 @@ class MNPNetworks(AtomicContainer):
         if self._is_bmm:
             self.atomics = torch.nn.ModuleDict(
                 {
-                    s: BmmAtomicNetwork([m.atomics[s] for m in module.members])
+                    s: BmmAtomicNetwork([m.atomics[s] for m in module.members])  # type: ignore # noqa:E501
                     for s in module.symbols
                 }
             )
         else:
-            self.atomics = module.atomics
+            self.atomics = module.atomics  # type: ignore
         self._use_mnp = use_mnp
 
         # Bookkeeping for optimization
@@ -309,15 +307,15 @@ class MNPNetworks(AtomicContainer):
         for atomic in self.atomics.values():
             if not isinstance(atomic.activation, type(activation)):
                 raise ValueError("All atomic networks must have the same activation fn")
-            num_layers.append(len(atomic.layers) + 1)
+            num_layers.append(len(atomic.layers) + 1)  # type: ignore
             if isinstance(atomic, BmmAtomicNetwork):
                 for layer in itertools.chain(atomic.layers, [atomic.final_layer]):
-                    weights.append(layer.weight.clone().detach())
-                    biases.append(layer.bias.clone().detach())
+                    weights.append(layer.weight.clone().detach())  # type: ignore
+                    biases.append(layer.bias.clone().detach())  # type: ignore
             elif isinstance(atomic, AtomicNetwork):
                 for layer in itertools.chain(atomic.layers, [atomic.final_layer]):
-                    weights.append(layer.weight.clone().detach().transpose(0, 1))
-                    biases.append(layer.bias.clone().detach().unsqueeze(0))
+                    weights.append(layer.weight.clone().detach().transpose(0, 1))  # type: ignore  # noqa:E501
+                    biases.append(layer.bias.clone().detach().unsqueeze(0))  # type: ignore  # noqa:E501
             else:
                 raise ValueError(f"Unsupported atomic network {type(atomic)}")
         return weights, biases, num_layers

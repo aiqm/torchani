@@ -487,7 +487,9 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
         raise ValueError("All passed paths must be existing files with state dicts")
     merged_dict: tp.Dict[str, Tensor] = {}
     for j, path in enumerate(sorted(paths)):
-        state_dict = torch.load(path, map_location=torch.device("cpu"))
+        state_dict = torch.load(
+            path, map_location=torch.device("cpu"), weights_only=True
+        )
         # Compatibility with lightning state dicts
         if "state_dict" in state_dict:
             state_dict = {
@@ -620,6 +622,4 @@ def _validate_user_kwargs(
             )
 
     if not set(trainable).issubset(kwargs_set):
-        raise ValueError(
-            f"trainable={trainable} could not be found in {kwargs_set}"
-        )
+        raise ValueError(f"trainable={trainable} could not be found in {kwargs_set}")

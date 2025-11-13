@@ -284,7 +284,7 @@ def check_speedup_error(aev, aev_ref, force_cuaev, force_ref, speed, speed_ref):
 
 
 def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
-    filepath = os.path.join(path, f"../dataset/pdb/{file}")
+    filepath = os.path.join(path, f"../dev-data/pdb_files/{file}")
     mol = read(filepath)
     mol = tp.cast(ase.Atoms, mol)
     species = torch.tensor([mol.get_atomic_numbers()], device=device)

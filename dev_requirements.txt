@@ -2,8 +2,9 @@
 
 # Build system requirements needed to install with 'pip --no-build-isolation'
 # (this is necessary to install the torchani extensions with the pip frontend)
-setuptools>=64
+setuptools>=75.6
 setuptools-scm>=8
+packaging>=25
 
 # Ase interface, used in ase test, ase docs example, tools, in the ase module
 ase
@@ -30,7 +31,7 @@ pydata-sphinx-theme
 tensorboard
 
 # Tools: Utils for running various scripts found in /torchani/tools/
-pynvml
+nvidia-ml-py
 matplotlib
 jinja2
 

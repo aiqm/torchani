@@ -403,6 +403,7 @@ def load(path, additional_properties=()):
 
     def h5_files(path):
         """yield file name of all h5 files in a path"""
+        path = str(path)
         if isdir(path):
             for f in os.listdir(path):
                 f = join(path, f)

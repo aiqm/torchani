@@ -1,6 +1,5 @@
 import tempfile
 from copy import deepcopy
-import os
 from pathlib import Path
 
 import torch
@@ -14,8 +13,8 @@ from torchani.datasets import (
     ANIBatchedDataset,
 )
 
-path = os.path.dirname(os.path.realpath(__file__))
-dataset_path = os.path.join(path, "../dataset/ani-1x/sample.h5")
+path = Path(__file__).parent.parent / "dev-data" / "hf-data" / "dataset" / "ani-1x"
+dataset_path = path / "sample.h5"
 
 
 class TestANIBatchedDataset(TestCase):

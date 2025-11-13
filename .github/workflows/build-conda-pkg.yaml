@@ -4,9 +4,13 @@ name: conda
 # - on pull_requests that contain the word 'conda' in the branch name
 # - on the default branch, at 00:00:00 every day
 on:
+  workflow_dispatch:
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+  release:
+    type: [published]
 
 env:
   TAG: torchani-nightly/conda-pkg:${{ github.sha }}
