@@ -139,9 +139,11 @@ class TestBuiltinModels(ANITestCase):
     def testANI2dr(self):
         self._test_ensemble(ANI2dr().to(self.device))
 
+    @unittest.skipIf(True, "Don't test private models")
     def testANIr2s(self):
         self._test_ensemble(ANIr2s().to(self.device))
 
+    @unittest.skipIf(True, "Don't test private models")
     def testANIr2s_water(self):
         self._test_ensemble(ANIr2s(solvent="water").to(self.device))
 

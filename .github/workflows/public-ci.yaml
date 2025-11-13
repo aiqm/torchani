@@ -1,0 +1,110 @@
+name: ci
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+  release:
+    type: [published]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Download data
+        run: |
+          ./download-dev-data.sh
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip3 install torch==2.8 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r dev_requirements.txt
+          pip install -v .
+
+      - name: Run tests on CPU
+        run: pytest ./tests
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Download data
+        run: |
+          ./download-dev-data.sh
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip3 install torch==2.8 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r dev_requirements.txt
+          pip install -v .
+
+      - name: Build docs
+        run: sphinx-build -W docs/src docs/build
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy
+
+      - name: Run mypy
+        run: mypy --install-types --non-interactive .
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Run flake8
+        run: flake8 .
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run clang-format
+        run: cd ./torchani/csrc && clang-format -Werror -n *.cpp *.cuh *.h *.cu
+
+concurrency:
+  group: ani-ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
