@@ -387,7 +387,7 @@ def ANIr2s_ch3cn(
         periodic_table_index,
         device,
         dtype,
-        solvent="ch3cn"
+        solvent="ch3cn",
     )
 
 
@@ -407,7 +407,7 @@ def ANIr2s_chcl3(
         periodic_table_index,
         device,
         dtype,
-        solvent="chcl3"
+        solvent="chcl3",
     )
 
 
@@ -427,7 +427,7 @@ def ANIr2s_water(
         periodic_table_index,
         device,
         dtype,
-        solvent="water"
+        solvent="water",
     )
 
 
@@ -451,7 +451,7 @@ def SnnANI2xr(
     )
     model = simple_ani(
         lot="wb97x-631gd",
-        symbols=['H', 'C', 'N', 'O', 'F', 'S', 'Cl'],
+        symbols=["H", "C", "N", "O", "F", "S", "Cl"],
         ensemble_size=8,
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
@@ -462,6 +462,46 @@ def SnnANI2xr(
         sections=6,
     )
     model.load_state_dict(_fetch_state_dict("snn-ani2xr.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANI1xnr(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r""" """
+    model = simple_ani(
+        lot="wb97x-631gd",
+        symbols=["H", "C", "N", "O"],
+        radial_start=0.5,
+        angular_start=0.5,
+        radial_cutoff=5.2,
+        angular_cutoff=3.5,
+        radial_precision=65.7,
+        angular_precision=10.1,
+        angular_zeta=14.1,
+        radial_shifts=32,
+        angular_shifts=8,
+        sections=4,
+        cutoff_fn="cosine",
+        container="ANINetworks",
+        container_ctor="like_2x",
+        dispersion=False,
+        repulsion=False,
+        ensemble_size=8,
+        activation="celu",
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        strategy=strategy,
+    )
+    model.load_state_dict(_fetch_state_dict("ani1xnr.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
