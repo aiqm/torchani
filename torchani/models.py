@@ -63,7 +63,7 @@ For more details consult the examples documentation
 
 import warnings
 import typing as tp
-import importlib
+import importlib.util
 
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
 from torchani.potentials import SeparateChargesNNPotential

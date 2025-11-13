@@ -74,6 +74,7 @@ class Calculator(AseCalculator):
 
     def calculate(self, atoms=None, properties=["energy"], system_changes=all_changes):
         super().calculate(atoms, properties, system_changes)
+        self.results = {}  # clear results, added by WardLT
         assert self.atoms is not None  # mypy
         needs_stress = "stress" in properties
         needs_forces = "forces" in properties
