@@ -476,9 +476,9 @@ def ANI1xnr(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
-    r""" """
+    r"""TODO: Add representative docstring"""
     model = simple_ani(
-        lot="wb97x-631gd",
+        lot="wb97x-631gd",  # TODO: is this the correct LoT? Model gives strange E
         symbols=["H", "C", "N", "O"],
         radial_start=0.5,
         angular_start=0.5,
@@ -500,6 +500,7 @@ def ANI1xnr(
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
         strategy=strategy,
+        bias=True,
     )
     model.load_state_dict(_fetch_state_dict("ani1xnr.pt", private=False))
     model = model if model_index is None else model[model_index]
