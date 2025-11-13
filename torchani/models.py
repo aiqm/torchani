@@ -511,6 +511,7 @@ def ANI1xnr(
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
         strategy=strategy,
+        self_energies="zero",  # overwritten by the state dict
         bias=True,
     )
     model.load_state_dict(_fetch_state_dict("ani1xnr.pt", private=False))
