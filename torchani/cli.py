@@ -261,6 +261,7 @@ def sp(
 ) -> None:
     r"""Execute a single point calculation using a TorchANI model"""
     import torchani
+    import torch
     from ase import Atoms
     from ase.io import read as ase_read
     from torchani.utils import _parse_device_and_dtype
