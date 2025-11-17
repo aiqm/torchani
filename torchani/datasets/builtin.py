@@ -368,5 +368,3 @@ def ANI1e(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
