@@ -260,10 +260,10 @@ def ANImbisv(
     model.energy_shifter.load_state_dict(shifter_state_dict)
 
     # TODO: Here the volume_nn_state_dict and volume_shifter_state_dict should be loaded
-    volume_shifter_state_dict: tp.Dict[str, tp.Any] = {}
+    # volume_shifter_state_dict: tp.Dict[str, tp.Any] = {}
     # model.volume_shifter.load_state_dict(volume_shifter_state_dict)
 
-    volume_nn_state_dict: tp.Dict[str, tp.Any] = {}
+    # volume_nn_state_dict: tp.Dict[str, tp.Any] = {}
 
     charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=False)
     nnp = tp.cast(SeparateChargesVolumesNNPotential, model.nnp)
