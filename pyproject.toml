@@ -24,6 +24,7 @@ dependencies = [
     "typing_extensions>=4.0.0",
     "h5py",
     "tqdm",
+    "ninja",
     "typer",
     "rich",
     "ase",
