@@ -354,13 +354,15 @@ class _ANI(torch.nn.Module):
         assert isinstance(nnp, NNPotential)
         return nnp
 
-    # Needed for client classes that depend on accessing aev_computer directly
+    # Needed for client classes that depend on accessing neural_networks directly
+    # NOTE: Not typed since JIT can't deal with inheritance, so it doesn't understand
+    # AtomicContainer
     @property
-    def neural_networks(self) -> AtomicContainer:
+    def neural_networks(self):  # type: ignore
         r""":meta private:"""
         return self.nnp.neural_networks
 
-    # Needed for client classes that depend on accessing neural_networks directly
+    # Needed for client classes that depend on accessing aev_computer directly
     @property
     def aev_computer(self) -> AEVComputer:
         r""":meta private:"""
