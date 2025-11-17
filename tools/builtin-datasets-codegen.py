@@ -38,7 +38,7 @@ env = jinja2.Environment(
     lstrip_blocks=True,
 )
 
-for fname in ("builtin", "__init__"):
+for fname in ("builtin", "__init__", "_builtin_dataset_ids"):
     template = env.get_template(f"{fname}.jinja")
     template_kwargs: tp.Dict[str, tp.List[tp.Any]] = {"datasets": []}
     for k, ds in _DATASETS_SPEC.items():
@@ -71,7 +71,10 @@ for fname in ("builtin", "__init__"):
         set().union(*[set(ds["lot"].keys()) for ds in _DATASETS_SPEC.values()])
     )
     string = template.render(**template_kwargs)
-    builtin_ds_file = datasets_dir / f"{fname}.py"
+    if fname == "_builtin_dataset_ids":
+        builtin_ds_file = datasets_dir.parent / f"{fname}.py"
+    else:
+        builtin_ds_file = datasets_dir / f"{fname}.py"
     builtin_ds_file.touch()
     builtin_ds_file.write_text(string)
 print("Regenerated necessary torchani.datasets files from jinja templates")

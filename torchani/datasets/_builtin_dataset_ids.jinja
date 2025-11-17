@@ -1,0 +1,15 @@
+from enum import Enum
+
+
+class _DatasetId(Enum):
+{% for ds in datasets %}
+    {{ ds.name | upper }} = "{{ ds.name }}"
+{% endfor %}
+
+
+class _LotId(Enum):
+    DEFAULT = "default"
+    ALL = "all"
+{% for lot in lots %}
+    {{ lot | replace("-", "_") | replace("(", "_p") | replace(")", "p_") | upper }} = "{{ lot }}"
+{% endfor %}

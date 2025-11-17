@@ -18,7 +18,7 @@ molecules and batches.
 # To begin with, let's first import the modules we will use:
 import torch
 
-import torchani
+from torchani.models import ANI2x, ANImbis
 from torchani import single_point
 
 ###############################################################################
@@ -63,7 +63,7 @@ coords = torch.tensor(
 # ensemble is recommended, since althought its a bit more costly than using a single
 # model, its significantly more accurate.
 
-model = torchani.models.ANI2x(device=device)
+model = ANI2x(device=device)
 
 ###############################################################################
 # As you can see, similarly to tensors, ``torchani`` models also have a ``device`` and a
@@ -109,7 +109,7 @@ print("Ensemble QBC: \n", qbcs)
 
 ###############################################################################
 # Some models (such as `torchani.models.ANImbis`) can also predict atomic charges
-charge_model = torchani.models.ANImbis(device=device)
+charge_model = ANImbis(device=device)
 result = single_point(
     charge_model, atomic_nums, coords, atomic_energies=True, atomic_charges=True
 )

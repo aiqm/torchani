@@ -39,6 +39,30 @@ __all__ = [
     "SYMBOLS_2X_ZNUM_ORDER",
 ]
 
+
+def _parse_device_and_dtype(
+    device: tp.Optional["str"] = None,
+    dtype: tp.Optional["str"] = None,
+) -> tp.Tuple[Device, DType]:
+
+    if dtype == "f32" or dtype is None:
+        _dtype = torch.float32
+    elif dtype == "f64":
+        _dtype = torch.float64
+    else:
+        raise ValueError("Unknown dtype")
+
+    if device == "cuda":
+        _device = "cuda"
+    elif device == "cpu":
+        _device = "cpu"
+    elif device is None:
+        _device = "cuda" if torch.cuda.is_available() else "cpu"
+    else:
+        raise ValueError("Unknown device")
+    return _device, _dtype
+
+
 # The second dimension of these keys can be assumed to be "number of atoms"
 ATOMIC_KEYS = (
     "species",

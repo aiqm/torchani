@@ -18,7 +18,6 @@ calculations may not properly converge, or may be too costly for some LoT and
 thus are not included.
 """
 import typing as tp
-from enum import Enum
 
 from torchani.paths import datasets_dir
 from torchani.datasets._utils import _fetch_and_create_builtin_dataset
@@ -46,19 +45,8 @@ def {{ ds.name }}(
         skip_check=skip_check,
         suffix=".h5",
     )
+{% if not loop.last %}
 
 
+{% endif %}
 {% endfor %}
-class _DatasetId(Enum):
-{% for ds in datasets %}
-    {{ ds.name | upper }} = "{{ ds.name }}"
-{% endfor %}
-
-
-class _LotId(Enum):
-    DEFAULT = "default"
-    ALL = "all"
-{% for lot in lots %}
-    {{ lot | replace("-", "_") | replace("(", "_p") | replace(")", "p_") | upper }} = "{{ lot }}"
-{% endfor %}
-
