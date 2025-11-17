@@ -44,8 +44,6 @@ def TestData(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def TestDataIons(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
@@ -66,8 +64,6 @@ def TestDataIons(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def TestDataForcesDipoles(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
@@ -88,8 +84,6 @@ def TestDataForcesDipoles(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def IonsVeryHeavy(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
@@ -112,8 +106,6 @@ def IonsVeryHeavy(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def IonsHeavy(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
@@ -136,8 +128,6 @@ def IonsHeavy(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def IonsLight(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
@@ -159,8 +149,6 @@ def IonsLight(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI1q(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -184,8 +172,6 @@ def ANI1q(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI2qHeavy(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -208,8 +194,6 @@ def ANI2qHeavy(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI1ccx(
     lot: str = "ccsd(t)star-cbs",
     verbose: bool = True,
@@ -234,8 +218,6 @@ def ANI1ccx(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI1x(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -258,8 +240,6 @@ def ANI1x(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI2x(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -284,8 +264,6 @@ def ANI2x(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def COMP6v1(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -313,8 +291,6 @@ def COMP6v1(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def COMP6v2(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
@@ -339,8 +315,6 @@ def COMP6v2(
         skip_check=skip_check,
         suffix=".h5",
     )
-
-
 def ANI1e(
     lot: str = "wb97x-631gd",
     verbose: bool = True,

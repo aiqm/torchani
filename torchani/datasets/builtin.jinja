@@ -45,4 +45,8 @@ def {{ ds.name }}(
         skip_check=skip_check,
         suffix=".h5",
     )
+{% if not loop.last %}
+
+
+{% endif %}
 {% endfor %}
