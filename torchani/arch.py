@@ -86,6 +86,7 @@ from torchani.potentials import (
     Potential,
     RepulsionXTB,
     TwoBodyDispersionD3,
+    Coulomb,
 )
 from torchani.sae import SelfEnergy
 
@@ -480,9 +481,9 @@ class ANI(_ANI):
                     first_neighbors,
                     pot.cutoff,  # type: ignore[arg-type]
                 )
-                result = pot.compute_from_neighbors(
-                    elem_idxs, coords, neighbors, charge, atomic, ensemble_values
-                )  # type: ignore[operator]
+                result = pot.compute_from_neighbors(  # type: ignore[operator]
+                    elem_idxs, coords, neighbors, None, charge, atomic, ensemble_values
+                )
                 energies = energies + result.energies
         if self.energy_shifter._enabled:
             energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
@@ -724,6 +725,11 @@ class ANIq(_ANI):
                 _aev_computer, _nn, charge_networks, charge_normalizer
             )
 
+        # Push coulomb potential to the end if it is present, to ensure
+        # charges are calculated before the potential
+        if "coulomb" in self.potentials:
+            self.potentials["coulomb"] = self.potentials.pop("coulomb")
+
     # Entrypoint that uses neighbors
     # For now this assumes that there is only one potential with ensemble values
     @torch.jit.export
@@ -751,12 +757,17 @@ class ANIq(_ANI):
         for k, pot in self.potentials.items():
             if pot._enabled:
                 neighbors = discard_outside_cutoff(
-                    first_neighbors,
-                    pot.cutoff,  # type: ignore[arg-type]
-                )
-                _e, _qs = pot.compute_from_neighbors(
-                    elem_idxs, coords, neighbors, charge, atomic, ensemble_values
-                )  # type: ignore[operator]
+                    first_neighbors, pot.cutoff)  # type: ignore[arg-type]
+                if k == "coulomb":
+                    _e, _qs = pot.compute_from_neighbors(  # type: ignore[operator]
+                        elem_idxs, coords, neighbors,
+                        qs, charge, atomic, ensemble_values
+                    )
+                else:
+                    _e, _qs = pot.compute_from_neighbors(  # type: ignore[operator]
+                        elem_idxs, coords, neighbors,
+                        None, charge, atomic, ensemble_values
+                    )
                 energies = energies + _e
                 if k == "nnp":
                     assert _qs is not None
@@ -1218,6 +1229,8 @@ def simple_aniq(
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
     normalize: bool = True,
+    coulomb: tp.Optional[str] = None,
+    coulomb_cutoff: tp.Optional[float] = None,
     self_energies: tp.Union[
         tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
     ] = None,
@@ -1303,6 +1316,20 @@ def simple_aniq(
         asm.add_potential(
             TwoBodyDispersionD3, name="dispersion_d3", cutoff=8.0, kwargs=extra_kwargs
         )
+    if coulomb == "full":
+        asm.add_potential(Coulomb, name="coulomb")
+    elif coulomb == "erf":
+        coulomb_cutoff = 12.0 if coulomb_cutoff is None else coulomb_cutoff
+        asm.add_potential(
+            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": "erf"}
+        )
+    elif coulomb == "tanh":
+        coulomb_cutoff = 12.0 if coulomb_cutoff is None else coulomb_cutoff
+        asm.add_potential(
+            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": "tanh"}
+        )
+    else:
+        assert coulomb is None
     return tp.cast(ANIq, asm.assemble(ensemble_size))
 
 

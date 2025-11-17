@@ -55,7 +55,13 @@ class TestCustomPotential(ANITestCase):
             elem_tensors = ["pair_bias"]
             pair_elem_tensors = ["k", "eq"]  # shape (num-sym * (num-sym + 1) / 2)
 
-            def pair_energies(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
+            def pair_energies(
+                self,
+                elem_idxs: Tensor,
+                neighbors: Neighbors,
+                scalars: tp.Optional[Tensor] = None,
+            ) -> Tensor:
+                assert scalars is None
                 elem_pairs = elem_idxs.view(-1)[neighbors.indices]
 
                 eq = self.to_pair_values(self.eq, elem_pairs)

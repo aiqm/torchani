@@ -138,6 +138,10 @@ def _parse_cutoff_fn(
         cutoff_fn = CutoffBiweight()
     elif cutoff_fn == "smooth":
         cutoff_fn = CutoffSmooth()
+    elif cutoff_fn == "biweight":
+        cutoff_fn = CutoffBiweight()
+    elif cutoff_fn == "triweight":
+        cutoff_fn = CutoffTriweight()
     elif not isinstance(cutoff_fn, Cutoff):
         raise ValueError(f"Unsupported cutoff fn: {cutoff_fn}")
     return tp.cast(Cutoff, cutoff_fn)

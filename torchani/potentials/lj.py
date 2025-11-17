@@ -118,7 +118,10 @@ class _LJ(BasePairPotential):
 
 
 class DispersionLJ(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: tp.Optional[Tensor] = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
@@ -127,7 +130,10 @@ class DispersionLJ(_LJ):
 
 
 class RepulsionLJ(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: tp.Optional[Tensor] = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
@@ -136,7 +142,10 @@ class RepulsionLJ(_LJ):
 
 
 class LennardJones(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: tp.Optional[Tensor] = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)

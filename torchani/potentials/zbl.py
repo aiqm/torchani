@@ -69,7 +69,13 @@ class RepulsionZBL(BasePairPotential):
         self._k = k
         self._kz = eff_exponent
 
-    def pair_energies(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
+    def pair_energies(
+        self,
+        elem_idxs: Tensor,
+        neighbors: Neighbors,
+        scalars: tp.Optional[Tensor] = None,
+    ) -> Tensor:
+        assert scalars is None
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
