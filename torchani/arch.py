@@ -8,11 +8,13 @@ there are no compatibility issues among them.
 
 An ANI-style model consists of:
 
-- `torchani.aev.AEVComputer` (or subclass)
-- A container for atomic networks (typically `torchani.nn.ANINetworks` or subclass)
-- If using the traditional ANINetworks, a `torchani.nn.AtomicNetwork` mapping, for
-  example: ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``.
-- A self energies `dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
+- `torchani.aev.AEVComputer` (or subclass) which is an atomic featurizer with 2-body
+    and 3-body terms.
+- A container for atomic networks (typically `torchani.nn.ANINetworks`, which takes a
+  dictionary for networks ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``
+  for the mixture-of-experts model).
+- A `torchani.sae.SelfEnergy` which takes a self energies `dict` (in Hartree): ``{"H":
+  -12.0, "C": -75.0, ...}``
 
 These pieces are combined when the `Assembler.assemble` method is called.
 
@@ -144,9 +146,7 @@ class _ANI(torch.nn.Module):
             "aev_computer.default_shifts": torch.zeros(
                 (0, 3), dtype=torch.int64, device=device
             ),
-            "aev_computer.default_cell": torch.eye(
-                3, dtype=dtype, device=device
-            ),
+            "aev_computer.default_cell": torch.eye(3, dtype=dtype, device=device),
         }
         for k, v in state_dict.items():
             if k == "atomic_numbers":
@@ -978,6 +978,7 @@ class Assembler:
         strategy: str = "pyaev",
         aev_computer_cls: AEVComputerCls = AEVComputer,
     ) -> None:
+        r"""Set the `AEVComputer` local atomic featurizer"""
         self._aevcomp = _AEVComputerWrapper(
             aev_computer_cls,
             cutoff_fn=cutoff_fn,
@@ -990,12 +991,14 @@ class Assembler:
         self,
         neighborlist: NeighborlistArg,
     ) -> None:
+        r"""Set the neighborlist the model will use"""
         self._neighborlist = _parse_neighborlist(neighborlist)
 
     def set_global_cutoff_fn(
         self,
         cutoff_fn: CutoffArg,
     ) -> None:
+        r"""Set the default cutoff function for all modules of the model"""
         self._global_cutoff_fn = _parse_cutoff_fn(cutoff_fn)
 
     def add_potential(
@@ -1006,6 +1009,7 @@ class Assembler:
         cutoff_fn: CutoffArg = "global",
         kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
+        r"""Add a potential to the constructed ANI model """
         if name in self._potentials:
             raise ValueError("Potential names must be unique")
         self._potentials[name] = _PotentialWrapper(
@@ -1124,12 +1128,13 @@ def simple_ani(
     strategy: str = "auto",
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
-    repulsion_cutoff: bool = True,
+    repulsion_cutoff: bool | float = True,
+    dispersion_cutoff: float | tp.Literal[False] = 8.0,
     self_energies: tp.Union[
         tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
     ] = None,
 ) -> ANI:
-    r"""Flexible builder to create ANI-style models
+    r"""Flexible builder to create ANI-style models that predict energies
 
     Defaults are similar to ANI-2x, with some improvements.
 
@@ -1181,7 +1186,7 @@ def simple_ani(
         asm.add_potential(
             TwoBodyDispersionD3,
             name="dispersion_d3",
-            cutoff=8.0,
+            cutoff=math.inf if dispersion_cutoff is False else dispersion_cutoff,
             kwargs={"functional": lot.split("-")[0]},
         )
     return tp.cast(ANI, asm.assemble(ensemble_size))
@@ -1218,11 +1223,13 @@ def simple_aniq(
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
     normalize: bool = True,
+    repulsion_cutoff: bool | float = True,
+    dispersion_cutoff: float | tp.Literal[False] = 8.0,
     self_energies: tp.Union[
         tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
     ] = None,
 ) -> ANIq:
-    r"""Flexible builder to create ANI-style models that output charges
+    r"""Flexible builder to create ANI-style models that output charges and energies
 
     Defaults are similar to ANI-2x, with some improvements.
 
@@ -1297,11 +1304,18 @@ def simple_aniq(
     else:
         asm.set_gsaes_as_self_energies(lot)
     if repulsion and not dummy_energies:
-        asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=radial_cutoff)
+        asm.add_potential(
+            RepulsionXTB,
+            name="repulsion_xtb",
+            cutoff=radial_cutoff if repulsion_cutoff else math.inf,
+        )
     if dispersion and not dummy_energies:
         extra_kwargs = {"functional": lot.split("-")[0]}
         asm.add_potential(
-            TwoBodyDispersionD3, name="dispersion_d3", cutoff=8.0, kwargs=extra_kwargs
+            TwoBodyDispersionD3,
+            name="dispersion_d3",
+            cutoff=math.inf if dispersion_cutoff is False else dispersion_cutoff,
+            kwargs=extra_kwargs,
         )
     return tp.cast(ANIq, asm.assemble(ensemble_size))
 
