@@ -62,6 +62,13 @@ class SpeciesEnergiesAtomicCharges(tp.NamedTuple):
     atomic_charges: Tensor
 
 
+class SpeciesEnergiesAtomicChargesAtomicVolumes(tp.NamedTuple):
+    species: Tensor
+    energies: Tensor
+    atomic_charges: Tensor
+    atomic_volumes: Tensor
+
+
 class EnergiesAtomicCharges(tp.NamedTuple):
     energies: Tensor
     atomic_charges: Tensor

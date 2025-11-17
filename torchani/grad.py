@@ -302,6 +302,8 @@ def single_point(
     atomic_energies: bool = False,
     atomic_charges: bool = False,
     atomic_charges_grad: bool = False,
+    atomic_volumes: bool = False,
+    atomic_volumes_grad: bool = False,
     ensemble_values: bool = False,
     keep_vars: bool = False,
 ) -> tp.Dict[str, Tensor]:
@@ -333,7 +335,7 @@ def single_point(
         various result tensors.
     """
     saved_requires_grad = coordinates.requires_grad
-    if forces or hessians or atomic_charges_grad:
+    if forces or hessians or atomic_charges_grad or atomic_volumes_grad:
         coordinates.requires_grad_(True)
     result = model(
         species_coordinates=(species, coordinates),
@@ -353,6 +355,16 @@ def single_point(
             retain = forces or hessians
             out["atomic_charges_grad"] = calc_grads(
                 result.atomic_charges, coordinates, retain_graph=retain
+            )
+
+    if atomic_volumes:
+        if not hasattr(result, "atomic_volumes"):
+            raise ValueError("Model doesn't support atomic volumes")
+        out["atomic_volumes"] = result.atomic_volumes
+        if atomic_volumes_grad:
+            retain = forces or hessians
+            out["atomic_volumes_grad"] = calc_grads(
+                result.atomic_volumes, coordinates, retain_graph=retain
             )
 
     if ensemble_values:

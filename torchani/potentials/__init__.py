@@ -26,6 +26,7 @@ from torchani.potentials.core import (
 from torchani.potentials.nnp import (
     NNPotential,
     SeparateChargesNNPotential,
+    SeparateChargesVolumesNNPotential,
     MergedChargesNNPotential,
 )
 from torchani.potentials.xtb import RepulsionXTB
@@ -44,6 +45,7 @@ __all__ = [
     "TwoBodyDispersionD3",
     "NNPotential",
     "SeparateChargesNNPotential",
+    "SeparateChargesVolumesNNPotential",
     "MergedChargesNNPotential",
     "RepulsionZBL",
     "RepulsionLJ",

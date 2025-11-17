@@ -122,7 +122,7 @@ class Calculator(AseCalculator):
                     neighbors.diff_vectors,
                 )
             result = self.model.compute_from_neighbors(elem_idxs, coords, neighbors)
-            energy = result.energies
+            energy = result["energies"]
         else:
             energy = self.model((species, coords), cell, pbc).energies
         energy = energy * ase.units.Hartree

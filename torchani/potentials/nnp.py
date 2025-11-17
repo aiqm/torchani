@@ -2,7 +2,6 @@ import typing as tp
 
 from torch import Tensor
 
-from torchani.tuples import EnergiesScalars
 from torchani.nn import AtomicContainer
 from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
@@ -26,10 +25,10 @@ class NNPotential(Potential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
-        return EnergiesScalars(energies)
+        return {"energies": energies}
 
 
 # Output of NN is assumed to be of shape (molecules, 2) with
@@ -56,7 +55,7 @@ class MergedChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         # AtomicContainer is assumed to output a tensor with a final dimension "2"
         # which holds energies and charges
@@ -69,7 +68,10 @@ class MergedChargesNNPotential(NNPotential):
         energies, qs = energies_qs.unbind(-1)
         if not atomic:
             energies = energies.sum(dim=-1)
-        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
+        return {
+            "energies": energies,
+            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
+        }
 
 
 class SeparateChargesNNPotential(NNPotential):
@@ -95,8 +97,47 @@ class SeparateChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)
-        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
+        return {
+            "energies": energies,
+            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
+        }
+
+
+class SeparateChargesVolumesNNPotential(NNPotential):
+    def __init__(
+        self,
+        aev_computer: AEVComputer,
+        neural_networks: AtomicContainer,
+        charge_networks: AtomicContainer,
+        volume_networks: AtomicContainer,
+        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+    ):
+        super().__init__(aev_computer, neural_networks)
+        if charge_normalizer is None:
+            charge_normalizer = ChargeNormalizer(self.symbols)
+        self.charge_networks = charge_networks
+        self.volume_networks = volume_networks
+        self.charge_normalizer = charge_normalizer
+
+    def compute_from_neighbors(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+        ghost_flags: tp.Optional[Tensor] = None,
+    ) -> tp.Dict[str, Tensor]:
+        aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
+        energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
+        qs = self.charge_networks(elem_idxs, aevs, atomic=True)
+        return {
+            "energies": energies,
+            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
+            "atomic_volumes": self.volume_networks(elem_idxs, aevs, atomic=True),
+        }

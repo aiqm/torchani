@@ -66,9 +66,19 @@ import typing as tp
 import importlib.util
 
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
-from torchani.potentials import SeparateChargesNNPotential
+from torchani.potentials import (
+    SeparateChargesNNPotential,
+    SeparateChargesVolumesNNPotential,
+)
 from torchani.electro import ChargeNormalizer
-from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict, simple_ani
+from torchani.arch import (
+    Assembler,
+    ANI,
+    ANIq,
+    ANIqv,
+    _fetch_state_dict,
+    simple_ani,
+)
 from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
@@ -195,6 +205,72 @@ def ANI2x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANImbisv(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANIqv:
+    r"""
+    Experimental ANI-2x model with MBIS charges
+    """
+    asm = Assembler(cls=ANIqv, periodic_table_index=periodic_table_index)
+    asm.set_symbols(SYMBOLS_2X)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
+    asm.set_atomic_networks(ctor="ani2x")
+    asm.set_charge_networks(
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
+        normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        ),
+    )
+
+    asm.set_volume_networks()
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = tp.cast(ANIqv, asm.assemble(8))
+
+    ani2x_state_dict = _fetch_state_dict("ani2x_state_dict.pt")
+    energy_nn_state_dict = {
+        k.replace("neural_networks.", ""): v
+        for k, v in ani2x_state_dict.items()
+        if k.endswith("weight") or k.endswith("bias")
+    }
+    aev_state_dict = {
+        k.replace("aev_computer.", ""): v
+        for k, v in ani2x_state_dict.items()
+        if k.startswith("aev_computer")
+    }
+
+    shifter_state_dict = {
+        "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
+    }
+    model.energy_shifter.load_state_dict(shifter_state_dict)
+
+    # TODO: Here the volume_nn_state_dict and volume_shifter_state_dict should be loaded
+    volume_shifter_state_dict: tp.Dict[str, tp.Any] = {}
+    # model.volume_shifter.load_state_dict(volume_shifter_state_dict)
+
+    volume_nn_state_dict: tp.Dict[str, tp.Any] = {}
+
+    charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=False)
+    nnp = tp.cast(SeparateChargesVolumesNNPotential, model.nnp)
+    nnp.aev_computer.load_state_dict(aev_state_dict)
+    nnp.neural_networks.load_state_dict(energy_nn_state_dict)
+    nnp.charge_networks.load_state_dict(charge_nn_state_dict)
+    # nnp.volume_networks.load_state_dict(volume_nn_state_dict)
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
