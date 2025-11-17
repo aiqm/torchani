@@ -98,23 +98,22 @@ atomic_energies = result["atomic_energies"]
 print("Atomic energies: \n", atomic_energies)
 
 ###############################################################################
-# Some models (such as `torchani.models.ANImbis`) can also predict atomic charges
-result = single_point(
-    model, atomic_nums, coords, atomic_energies=True, atomic_charges=True
-)
-
-energy = result["energies"]
-atomic_charges = result["atomic_charges"]
-print("Atomic charges: \n", atomic_charges)
-
-###############################################################################
 # Ensemble statistics are also easily obtained with this function, by passing
 # ensemble_values
-result = single_point(
-    model, atomic_nums, coords, ensemble_values=True
-)
+result = single_point(model, atomic_nums, coords, ensemble_values=True)
 
 ensemble_std = result["ensemble_std"]  # standard deviation of the energy
 qbcs = result["qbcs"]  # QBC (Query-By-Committee) scores
 print("Ensemble energy Std: \n", ensemble_std)
 print("Ensemble QBC: \n", qbcs)
+
+###############################################################################
+# Some models (such as `torchani.models.ANImbis`) can also predict atomic charges
+charge_model = torchani.models.ANImbis(device=device)
+result = single_point(
+    charge_model, atomic_nums, coords, atomic_energies=True, atomic_charges=True
+)
+
+energy = result["energies"]
+atomic_charges = result["atomic_charges"]
+print("Atomic charges: \n", atomic_charges)
