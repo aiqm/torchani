@@ -21,8 +21,8 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}
-  UPLOAD_PYPI: ${{ github.event_name == 'release' && github.event.inputs.upload-pypi || 'true' }}
-  UPLOAD_TESTPYPI: ${{ github.event_name == 'release' && github.event.inputs.upload-testpypi || 'false' }}
+  UPLOAD_PYPI: ${{ github.event_name != 'release' && github.event.inputs.upload-pypi || 'true' }}
+  UPLOAD_TESTPYPI: ${{ github.event_name != 'release' && github.event.inputs.upload-testpypi || 'false' }}
 
 jobs:
   build_package:
