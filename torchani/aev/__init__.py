@@ -4,7 +4,7 @@ calculated from the local chemical environment of each atom. This module contain
 AEV Computer, 2-body ("radial"), and 3-body ("angular") AEV terms.
 """
 
-from torchani.aev._computer import AEVComputer
+from torchani.aev._computer import AEVComputer, AEVComputerForThermoIntegration
 from torchani.aev._terms import (
     BaseRadial,
     BaseAngular,
@@ -18,6 +18,7 @@ from torchani.aev._terms import (
 
 __all__ = [
     "AEVComputer",
+    "AEVComputerForThermoIntegration",
     "BaseRadial",
     "BaseAngular",
     "Radial",

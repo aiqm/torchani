@@ -580,6 +580,14 @@ class EnergyShifter(torch.nn.Module):
         return SpeciesEnergies(species, energies + sae)
 
 
+def flatten_ti_idxs(idxs: Tensor) -> Tensor:
+    non_dummy = idxs > 0
+    displacement_for_flat_idxs = non_dummy.count_nonzero(dim=-1)
+    displacement_for_flat_idxs = cumsum_from_zero(displacement_for_flat_idxs)
+    idxs += displacement_for_flat_idxs.unsqueeze(-1)
+    return torch.masked_select(idxs, non_dummy)
+
+
 # Useful function for simple classes meant as user extension points
 def _validate_user_kwargs(
     clsname: str,

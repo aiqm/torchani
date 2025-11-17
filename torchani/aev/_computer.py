@@ -12,9 +12,11 @@ from torchani.neighbors import (
     _parse_neighborlist,
     neighbors_to_triples,
     discard_outside_cutoff,
+    discard_non_interacting_ti_pairs,
     NeighborlistArg,
     Neighbors,
 )
+from torchani.utils import flatten_ti_idxs
 from torchani.cutoffs import CutoffArg, _parse_cutoff_fn
 from torchani.aev._terms import (
     _parse_angular_term,
@@ -711,3 +713,239 @@ class AEVComputer(torch.nn.Module):
                 v = v.view(1, 1, 1, 1)
             new_state_dict[new_key] = v
         return new_state_dict
+
+
+class AEVComputerForThermoIntegration(AEVComputer):
+    def forward_for_ti(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        # appearing and disappearing idxs can potentially be padded with -1
+        # if in a batch
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,  # (C, max-appearing-atoms,)
+        disappearing_idxs: Tensor,  # (C, max-disappearing-atoms,)
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> Tensor:
+        assert coords is not None
+        # Check input shape correctness and validate cutoffs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+        assert self.angular.cutoff < self.radial.cutoff
+
+        neighbors = self.neighborlist(self.radial.cutoff, elem_idxs, coords, cell, pbc)
+        return self.compute_from_neighbors_for_ti(
+            elem_idxs,
+            coords,
+            neighbors,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+        )
+
+    def compute_from_neighbors_for_ti(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,
+        disappearing_idxs: Tensor,
+    ) -> Tensor:
+        if self._print_aev_branch:
+            print("Executing branch: pyAEV")
+        # Flatten TI idxs in case we are working on a batch
+        appearing_idxs = flatten_ti_idxs(appearing_idxs)
+        disappearing_idxs = flatten_ti_idxs(disappearing_idxs)
+
+        # Filter out non-interacting TI pairs (the ones which have both an "appearing"
+        # and a "disappearing" atom)
+        neighbors = discard_non_interacting_ti_pairs(
+            neighbors, appearing_idxs, disappearing_idxs
+        )
+
+        terms = self.radial(neighbors.distances)  # (pairs, rad)
+
+        # (molecs, atoms, species * rad)
+        radial_aev = self._collect_radial_for_ti(
+            elem_idxs,
+            neighbors.indices,
+            terms,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+        )
+
+        # Discard neighbors outside the (smaller) angular cutoff to improve performance
+        neighbors = discard_outside_cutoff(neighbors, self.angular.cutoff)
+        triples = neighbors_to_triples(neighbors)
+
+        terms = self.angular(triples.distances, triples.diff_vectors)  # (triples, ang)
+        # (molecs, atoms, species-pairs * ang)
+        angular_aev = self._collect_angular_for_ti(
+            elem_idxs,
+            neighbors.indices,
+            triples.central_idxs,
+            triples.side_idxs,
+            triples.diff_signs,
+            terms,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+        )
+        # Shape (molecs, atoms, num-species-pairs * ang + num-species * rad)
+        return torch.cat([radial_aev, angular_aev], dim=-1)
+
+    # Input shapes: (molecs, atoms), (2, pairs), (pairs, rad)
+    # Output shape (molecs, atoms, num_species * rad-feat)
+    def _collect_radial_for_ti(
+        self,
+        elem_idxs: Tensor,
+        neighbor_idxs: Tensor,
+        terms: Tensor,
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,
+        disappearing_idxs: Tensor,
+    ) -> Tensor:
+        num_molecs, num_atoms = elem_idxs.shape
+        neighbor_elem_idxs = elem_idxs.view(-1)[neighbor_idxs]  # shape (2, pairs)
+        # shape (CxAxS, R)
+        radial_aev = terms.new_zeros(
+            (num_molecs * num_atoms * self.num_species, self.radial.num_feats)
+        )
+        # shape (2, P)
+        # index12 determines, for each index of each pair
+        # which is the *neighboring element*
+        index12 = neighbor_idxs * self.num_species + neighbor_elem_idxs.flip(0)
+
+        # terms have to be multiplied as follows:
+        # - If the pair-index corresponds to a non-ti atom, then 1
+        # - If the pair-index corresponds to an appearing atom, then ti_factor
+        # - If the pair-index corresponds to an disappearing atom, then 1 - ti_factor
+        # TODO: Potentially this should / could be done smoother?
+        # This has to be done *only for the non ti atoms* so only for the mixed pairs
+        # Mixed appearing + disappearing don't exist by construction
+
+        # Flip these since they refer to the neighbors
+        # (pairs,)
+        neighbor_in_pair_is_appearing = (
+            (neighbor_idxs.unsqueeze(-1) == appearing_idxs).any(-1)
+        ).flip(0)
+        neighbor_in_pair_is_disappearing = (
+            (neighbor_idxs.unsqueeze(-1) == disappearing_idxs).any(-1)
+        ).flip(0)
+
+        # Xor over the pairs, to only get the mixed pairs
+        appearing_pair_is_mixed = (
+            neighbor_in_pair_is_appearing.count_nonzero(0) % 2 == 1
+        ).unsqueeze(0)
+        disappearing_pair_is_mixed = (
+            neighbor_in_pair_is_disappearing.count_nonzero(0) % 2 == 1
+        ).unsqueeze(0)
+
+        neighbor_in_mixed_pair_is_appearing = (
+            neighbor_in_pair_is_appearing & appearing_pair_is_mixed
+        )
+        neighbor_in_mixed_pair_is_disappearing = (
+            neighbor_in_pair_is_disappearing & disappearing_pair_is_mixed
+        )
+
+        # TODO: Seems inefficient and has a lot of code repetition
+        terms_factor = terms.new_ones((2, terms.size(0)))
+        terms_factor[0, neighbor_in_mixed_pair_is_appearing[0]] = ti_factor
+        terms_factor[0, neighbor_in_mixed_pair_is_disappearing[0]] = 1 - ti_factor
+        terms_factor[1, neighbor_in_mixed_pair_is_appearing[1]] = ti_factor
+        terms_factor[1, neighbor_in_mixed_pair_is_disappearing[1]] = 1 - ti_factor
+        terms_factor = terms_factor.unsqueeze(-1)
+        radial_aev.index_add_(0, index12[0], terms_factor[0] * terms)
+        radial_aev.index_add_(0, index12[1], terms_factor[1] * terms)
+
+        return radial_aev.reshape(num_molecs, num_atoms, self.radial_len)
+
+    # Input shapes: (triples,), (2, triples), (2, triples), (2, ang)
+    # Output shape: (molecs, atoms, num-species-pairs * ang)
+    def _collect_angular_for_ti(
+        self,
+        elem_idxs: Tensor,
+        neighbor_idxs: Tensor,
+        central_idx: Tensor,
+        side_idxs: Tensor,
+        sign12: Tensor,
+        terms: Tensor,
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,
+        disappearing_idxs: Tensor,
+    ) -> Tensor:
+        # NOTE: side idxs are not directly idxs into the coords tensor,
+        # they are idxs into the neighbor_idxs tensor
+        num_molecs, num_atoms = elem_idxs.shape
+        neighbor_elem_idxs = elem_idxs.view(-1)[neighbor_idxs]  # shape (2, pairs)
+
+        # shape (2, 2, T)
+        species12_small = neighbor_elem_idxs[:, side_idxs]
+        # shape (2, T)
+        triple_element_side_idxs = torch.where(
+            sign12 == 1,
+            species12_small[1],
+            species12_small[0],
+        )
+
+        neighbor12_small = neighbor_idxs[:, side_idxs]
+        triple_atom_side_idxs = torch.where(
+            sign12 == 1,
+            neighbor12_small[1],
+            neighbor12_small[0],
+        )
+
+        # shape (CxAxSp, Z)
+        angular_aev = terms.new_zeros(
+            (num_molecs * num_atoms * self.num_species_pairs, self.angular.num_feats)
+        )
+
+        # If the central idx is a TI atom, do nothing
+        # If the central idx is a non-ti atom
+        #  if either of the side_idxs is appearing: times ti_factor
+        #  if either of the side_idxs is disappearing: times 1 - ti_factor
+        # Mixed appearing + disappearing don't exist by construction
+        central_is_not_appearing = ~torch.any(
+            central_idx.unsqueeze(-1) == appearing_idxs, -1
+        )
+        central_is_not_disappearing = ~torch.any(
+            central_idx.unsqueeze(-1) == disappearing_idxs, -1
+        )
+        central_is_non_ti = central_is_not_appearing & central_is_not_disappearing
+
+        side_is_appearing = (
+            (triple_atom_side_idxs.unsqueeze(-1) == appearing_idxs).any(-1)
+        ).any(0)
+
+        side_is_disappearing = (
+            (triple_atom_side_idxs.unsqueeze(-1) == disappearing_idxs).any(-1)
+        ).any(0)
+        terms_factor = terms.new_ones(terms.size(0))
+        terms_factor[
+            central_is_non_ti & (side_is_appearing & ~side_is_disappearing)
+        ] = ti_factor
+        terms_factor[
+            central_is_non_ti & (~side_is_appearing & side_is_disappearing)
+        ] = (1 - ti_factor)
+        # TODO: It is not clear what to do with coupling terms, where the central
+        # atom is TI, and the other 2 atoms are 1 appearing, 1 disappearing
+        # for now they set to 0 always. Clearly for the endpoints they should be 0
+        terms_factor[central_is_non_ti & (side_is_appearing & side_is_disappearing)] = (
+            0.0
+        )
+        # shape (T,)
+        # NOTE: Casting is necessary in C++ due to a LibTorch bug
+        index = central_idx * self.num_species_pairs + self.triu_index[
+            triple_element_side_idxs[0], triple_element_side_idxs[1]
+        ].to(torch.long)
+        angular_aev.index_add_(0, index, terms_factor.unsqueeze(-1) * terms)
+        # shape (C, A, SpxZ)
+        return angular_aev.reshape(num_molecs, num_atoms, self.angular_len)
+
+    def _check_cuaev_avail(self, raise_exc: bool = False) -> bool:
+        if raise_exc:
+            raise ValueError("cuAEV not available in AEVComputerForThermoIntegration")
+        return False

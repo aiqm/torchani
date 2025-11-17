@@ -3,8 +3,8 @@ import typing as tp
 from torch import Tensor
 
 from torchani.tuples import EnergiesScalars
-from torchani.nn import AtomicContainer
-from torchani.aev import AEVComputer
+from torchani.nn import AtomicContainer, ANINetworksForThermoIntegration
+from torchani.aev import AEVComputer, AEVComputerForThermoIntegration
 from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
@@ -29,6 +29,47 @@ class NNPotential(Potential):
     ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
+        return EnergiesScalars(energies)
+
+
+class NNPotentialForThermoIntegration(NNPotential):
+    def __init__(
+        self,
+        aev_computer: AEVComputerForThermoIntegration,
+        neural_networks: ANINetworksForThermoIntegration,
+    ):
+        super().__init__(aev_computer, neural_networks)
+
+    def compute_from_neighbors_for_ti(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,
+        disappearing_idxs: Tensor,
+        charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+        ghost_flags: tp.Optional[Tensor] = None,
+    ) -> EnergiesScalars:
+        aevs = self.aev_computer.compute_from_neighbors_for_ti(
+            elem_idxs,
+            coords,
+            neighbors,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+        )
+        energies = self.neural_networks.forward_for_ti(
+            elem_idxs,
+            aevs,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+            atomic,
+            ensemble_values,
+        )
         return EnergiesScalars(energies)
 
 

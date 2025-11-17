@@ -52,6 +52,7 @@ from torchani.annotations import StressKind
 from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg, CutoffSmooth
 from torchani.aev import (
     AEVComputer,
+    AEVComputerForThermoIntegration,
     ANIAngular,
     ANIRadial,
     RadialArg,
@@ -63,6 +64,7 @@ from torchani.nn import (
     SpeciesConverter,
     AtomicContainer,
     ANINetworks,
+    ANINetworksForThermoIntegration,
     Ensemble,
     parse_activation,
 )
@@ -81,6 +83,7 @@ from torchani.paths import state_dicts_dir
 from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.potentials import (
     NNPotential,
+    NNPotentialForThermoIntegration,
     SeparateChargesNNPotential,
     MergedChargesNNPotential,
     Potential,
@@ -682,6 +685,145 @@ class ANI(_ANI):
         if not ensemble_values:
             mags = mean_mags
         return ForceStdev(species, mags, relative_std, relative_range)
+
+
+class ANIForThermoIntegration(_ANI):
+    def __init__(
+        self,
+        symbols: tp.Sequence[str],
+        aev_computer: AEVComputerForThermoIntegration,
+        neural_networks: ANINetworksForThermoIntegration,
+        energy_shifter: SelfEnergy,
+        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        periodic_table_index: bool = True,
+    ):
+        super().__init__(
+            symbols=symbols,
+            aev_computer=aev_computer,
+            neural_networks=neural_networks,
+            energy_shifter=energy_shifter,
+            potentials=potentials,
+            periodic_table_index=periodic_table_index,
+        )
+
+        _nn = self.potentials["nnp"].neural_networks
+        _aev_computer = self.potentials["nnp"].aev_computer
+        self.potentials["nnp"] = NNPotentialForThermoIntegration(_aev_computer, _nn)
+
+    @classmethod
+    def from_ani_model(cls, model: _ANI, scale_ti_aevs: bool = False) -> tpx.Self:
+
+        symbols = deepcopy(model.symbols)
+        _nn = deepcopy(model.neural_networks)
+        _aev_computer = deepcopy(model.aev_computer)
+        energy_shifter = deepcopy(model.energy_shifter)
+        potentials = dict(deepcopy(model.potentials))
+        potentials.pop("nnp")
+        periodic_table_index = model.periodic_table_index
+        aev_computer = AEVComputerForThermoIntegration(
+            _aev_computer.radial,
+            _aev_computer.angular,
+            num_species=_aev_computer.num_species,
+            neighborlist=_aev_computer.neighborlist,
+        )
+        if not isinstance(_nn, ANINetworks):
+            raise ValueError("Only building from ANINetworks is currently supported")
+        nn = ANINetworksForThermoIntegration(
+            dict(_nn.atomics), scale_ti_aevs=scale_ti_aevs
+        )
+        return cls(
+            symbols, aev_computer, nn, energy_shifter, potentials, periodic_table_index
+        )
+
+    def forward_for_ti(
+        self,
+        species_coordinates: tp.Tuple[Tensor, Tensor],
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,  # (C, max-appearing-atoms,)
+        disappearing_idxs: Tensor,  # (C, max-disappearing-atoms,)
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+        charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+        _molecule_idxs: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        species, coords = species_coordinates
+        self._check_inputs(species, coords, charge)
+        elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
+
+        neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
+
+        # Experimental _molecule_idxs feature
+        # TODO include inside neighborlist if useful
+        if _molecule_idxs is not None:
+            if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
+                warnings.warn("molecule_idxs is experimental and subject to change")
+            if coords.shape[0] != 1:
+                raise ValueError("molecule_idxs expects only one conformation")
+            if len(_molecule_idxs) != coords.shape[1]:
+                raise ValueError(
+                    "molecule_idxs must be the same length as num atoms, if passed"
+                )
+            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+
+        result = self.compute_from_neighbors_for_ti(
+            elem_idxs,
+            coords,
+            neighbors,
+            ti_factor,
+            appearing_idxs,
+            disappearing_idxs,
+            charge,
+            atomic,
+            ensemble_values,
+        )
+        return SpeciesEnergies(elem_idxs, result.energies)
+
+    @torch.jit.export
+    def compute_from_neighbors_for_ti(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        ti_factor: Tensor,
+        appearing_idxs: Tensor,  # (C, max-appearing-atoms,)
+        disappearing_idxs: Tensor,  # (C, max-disappearing-atoms,)
+        charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> EnergiesScalars:
+        self._check_inputs(elem_idxs, coords, charge)
+        # Output shape depends on the atomic and ensemble_values flags
+        energies = coords.new_zeros(elem_idxs.shape[0])
+        if atomic:
+            energies = energies.unsqueeze(1)
+        if ensemble_values:
+            energies = energies.unsqueeze(0)
+        first_neighbors = neighbors
+        for pot in self.potentials.values():
+            if pot._enabled:
+                neighbors = discard_outside_cutoff(first_neighbors, pot.cutoff)
+                if hasattr(pot, "compute_from_neighbors_for_ti"):
+                    result = pot.compute_from_neighbors_for_ti(
+                        elem_idxs,
+                        coords,
+                        neighbors,
+                        ti_factor,
+                        appearing_idxs,
+                        disappearing_idxs,
+                        charge,
+                        atomic,
+                        ensemble_values,
+                    )
+                else:
+                    result = pot.compute_from_neighbors(
+                        elem_idxs, coords, neighbors, charge, atomic, ensemble_values
+                    )
+                energies = energies + result.energies
+        if self.energy_shifter._enabled:
+            energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
+        return EnergiesScalars(energies)
 
 
 class ANIq(_ANI):

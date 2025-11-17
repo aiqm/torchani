@@ -57,6 +57,30 @@ def discard_outside_cutoff(
     return Neighbors(indices, distances, diff_vectors)
 
 
+def discard_non_interacting_ti_pairs(
+    neighbors: Neighbors,
+    appearing_idxs: Tensor,
+    disappearing_idxs: Tensor,
+) -> Neighbors:
+    r"""Discard neighbors with distances that lie outside of the given cutoff"""
+    # TODO: This is recalculated inside AEVComputerForThermoIntegration, which is
+    # inefficient
+    pair_is_appearing = (
+        (neighbors.indices.unsqueeze(-1) == appearing_idxs).any(-1).any(0)
+    )  # (pairs,)
+    pair_is_disappearing = (
+        (neighbors.indices.unsqueeze(-1) == disappearing_idxs).any(-1).any(0)
+    )  # (pairs,)
+
+    interacting_mask = ~(pair_is_appearing & pair_is_disappearing)
+
+    interacting_idxs = interacting_mask.nonzero().view(-1)
+    indices = neighbors.indices.index_select(1, interacting_idxs)
+    distances = neighbors.distances.index_select(0, interacting_idxs)
+    diff_vectors = neighbors.diff_vectors.index_select(0, interacting_idxs)
+    return Neighbors(indices, distances, diff_vectors)
+
+
 # Screen a given neighborlist using a cutoff and return a neighborlist with
 # atoms that are within that cutoff, for all molecules in a coordinate set.
 # neighbor_idxs must correctly index flattened coords.view(-1, 3)
