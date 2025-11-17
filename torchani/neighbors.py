@@ -70,7 +70,12 @@ def narrow_down(
     neighbor_idxs: Tensor,
     shifts: tp.Optional[Tensor] = None,
 ) -> Neighbors:
-    r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors"""
+    r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors
+
+    To do this, all distances between neighbors are recalculated for the passed
+    coordinates, and pairs with distance larger than the cutoff are discarded. The
+    result is a set of "true  neighbors"
+    """
     mask = elem_idxs == -1
     if not torch.compiler.is_compiling() and mask.any():
         # Discard dumy atoms to prevent wasting resources in calculating
@@ -456,7 +461,7 @@ def cell_list(
         grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
 
     # Since coords will be fractionalized they may lie outside the cell before this
-    neighbor_idxs, shift_idxs = _cell_list(grid_shape, displ_coords.detach(), cell, pbc)
+    neighbor_idxs, shift_idxs = _cell_list(grid_shape, displ_coords.detach(), cell)
     if pbc is not None:
         shifts = shift_idxs.to(cell.dtype) @ cell
         # Before the screening step we map the coords to the central cell,
@@ -470,7 +475,6 @@ def _cell_list(
     grid_shape: Tensor,  # shape (3,)
     coords: Tensor,  # shape (C, A, 3)
     cell: Tensor,  # shape (3, 3)
-    pbc: tp.Optional[Tensor],  # shape (3,)
 ) -> tp.Tuple[Tensor, Tensor]:
     # 1) Get location of each atom in the grid, given by a "grid_idx3" (g3) or by a
     # single flat "grid_idx" (g).
@@ -892,7 +896,7 @@ class VerletCellList(CellList):
             shift_idxs = self._prev_shift_idxs.to(torch.long)
         else:
             neighbor_idxs, shift_idxs = _cell_list(
-                grid_shape, displ_coords.detach(), cell, pbc
+                grid_shape, displ_coords.detach(), cell
             )
             self._cache_values(
                 neighbor_idxs, shift_idxs, displ_coords.detach(), cell.detach()
