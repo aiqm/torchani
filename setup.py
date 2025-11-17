@@ -49,9 +49,8 @@ def cuaev_extension_kwargs(
     print(f"Will build cuAEV with support for SMs: {', '.join(sms)}")
 
     nvcc_args = ["--expt-extended-lambda"]
-    # The following defs are required to use CUB safely. For details see:
-    # https://github.com/pytorch/pytorch/pull/55292
-    # https://github.com/pytorch/pytorch/pull/66219
+    # The following defs are not necessarily required to use CUB safely, but are
+    # harmless
     nvcc_args.extend(
         [
             "-DCUB_NS_QUALIFIER=::cuaev::cub",

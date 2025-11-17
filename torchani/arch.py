@@ -351,23 +351,22 @@ class _ANI(torch.nn.Module):
 
     # Needed for typing
     @property
-    @torch.jit.unused
     def nnp(self) -> NNPotential:
         r""":meta private:"""
         nnp = self.potentials["nnp"]
         assert isinstance(nnp, NNPotential)
         return nnp
 
-    # Needed for client classes that depend on accessing aev_computer directly
+    # Needed for client classes that depend on accessing neural_networks directly
+    # NOTE: Not typed since JIT can't deal with inheritance, so it doesn't understand
+    # AtomicContainer
     @property
-    @torch.jit.unused
-    def neural_networks(self) -> AtomicContainer:
+    def neural_networks(self):  # type: ignore
         r""":meta private:"""
         return self.nnp.neural_networks
 
-    # Needed for client classes that depend on accessing neural_networks directly
+    # Needed for client classes that depend on accessing aev_computer directly
     @property
-    @torch.jit.unused
     def aev_computer(self) -> AEVComputer:
         r""":meta private:"""
         return self.nnp.aev_computer
