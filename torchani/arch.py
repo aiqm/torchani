@@ -359,7 +359,7 @@ class _ANI(torch.nn.Module):
 
     # Needed for typing
     @property
-    def nnp(self):  # type: ignore
+    def nnp(self) -> NNPotential:  # type: ignore
         r""":meta private:"""
         nnp = self.potentials["nnp"]
         assert isinstance(nnp, NNPotential)
