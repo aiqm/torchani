@@ -228,7 +228,7 @@ def sp(
     paths: tpx.Annotated[
         tp.List[Path],
         Argument(
-            help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"
+            help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
         ),
     ],
     output_path: tpx.Annotated[

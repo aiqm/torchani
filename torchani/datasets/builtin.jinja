@@ -18,7 +18,6 @@ calculations may not properly converge, or may be too costly for some LoT and
 thus are not included.
 """
 import typing as tp
-from enum import Enum
 
 from torchani.paths import datasets_dir
 from torchani.datasets._utils import _fetch_and_create_builtin_dataset
