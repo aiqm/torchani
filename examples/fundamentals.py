@@ -11,14 +11,15 @@ from the cartesian coordinates of molecules, and it includes tools to deal with 
 datasets in the submodule `torchani.datasets`.
 
 Here introduce the basics of the library, and we show how to use the built-in models to
-useful quantities of single molecules and batches.
+predict useful quantities (such as energies, forces, and ensemble statistics) of single
+molecules and batches.
 """
 
 # To begin with, let's first import the modules we will use:
 import torch
 
 import torchani
-from torchani.grad import energies_and_forces
+from torchani import single_point
 
 ###############################################################################
 # ``torchani`` dependens on the ``torch`` library. Some familiarity with it is helpful,
@@ -35,11 +36,15 @@ atomic_nums = torch.tensor([[6, 1, 1, 1, 1]], device=device)
 
 # The ``dtype`` of this one is ``torch.float32``, its shape is (1, 5, 3)
 coords = torch.tensor(
-    [[[0.03192167, 0.00638559, 0.01301679],
-      [-0.83140486, 0.39370209, -0.26395324],
-      [-0.66518241, -0.84461308, 0.20759389],
-      [0.45554739, 0.54289633, 0.81170881],
-      [0.66091919, -0.16799635, -0.91037834]]],
+    [
+        [
+            [0.03192167, 0.00638559, 0.01301679],
+            [-0.83140486, 0.39370209, -0.26395324],
+            [-0.66518241, -0.84461308, 0.20759389],
+            [0.45554739, 0.54289633, 0.81170881],
+            [0.66091919, -0.16799635, -0.91037834],
+        ]
+    ],
     device=device,
 )
 
@@ -67,8 +72,11 @@ model = torchani.models.ANI2x(device=device)
 # default all models have ``dtype=torch.float32``.
 
 ###############################################################################
-# Now let's compute energy and force:
-energy, force = energies_and_forces(model, atomic_nums, coords)
+# Now let's perform a single point calculation to compute energy and force:
+result = single_point(model, atomic_nums, coords, forces=True)
+
+energy = result["energies"]
+force = result["forces"]
 
 ###############################################################################
 # And print to see the result:
@@ -78,15 +86,35 @@ print("Force (Hartree / Å): \n", force)
 ###############################################################################
 # you can get the atomic energies (WARNING: these have no physical meaning)
 # by calling:
-_, atomic_energies = model.atomic_energies((atomic_nums, coords))
+result = single_point(model, atomic_nums, coords, atomic_energies=True)
+
+energy = result["energies"]
+atomic_energies = result["atomic_energies"]
 
 ###############################################################################
 # this gives you the average (shifted) energies over all models of the ensemble
 # by default, with the same shape as the coordinates.
-# (Dummy atoms, if present, will have an energy of zero.)
-print("Average Atomic energies: \n", atomic_energies)
+# (Dummy atoms, if present, will have an atomic energy of zero.)
+print("Atomic energies: \n", atomic_energies)
 
 ###############################################################################
-# you can access model specific atomic energies too:
-_, atomic_energies = model.atomic_energies((atomic_nums, coords), ensemble_values=True)
-print("Atomic energies of first model: \n", atomic_energies[0, :, :])
+# Some models (such as `torchani.models.ANImbis`) can also predict atomic charges
+result = single_point(
+    model, atomic_nums, coords, atomic_energies=True, atomic_charges=True
+)
+
+energy = result["energies"]
+atomic_charges = result["atomic_charges"]
+print("Atomic charges: \n", atomic_charges)
+
+###############################################################################
+# Ensemble statistics are also easily obtained with this function, by passing
+# ensemble_values
+result = single_point(
+    model, atomic_nums, coords, ensemble_values=True
+)
+
+ensemble_std = result["ensemble_std"]  # standard deviation of the energy
+qbcs = result["qbcs"]  # QBC (Query-By-Committee) scores
+print("Ensemble energy Std: \n", ensemble_std)
+print("Ensemble QBC: \n", qbcs)
