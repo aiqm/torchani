@@ -348,7 +348,6 @@ class _ANI(torch.nn.Module):
 
     # Needed for typing
     @property
-    @torch.jit.unused
     def nnp(self) -> NNPotential:
         r""":meta private:"""
         nnp = self.potentials["nnp"]
@@ -357,14 +356,12 @@ class _ANI(torch.nn.Module):
 
     # Needed for client classes that depend on accessing aev_computer directly
     @property
-    @torch.jit.unused
     def neural_networks(self) -> AtomicContainer:
         r""":meta private:"""
         return self.nnp.neural_networks
 
     # Needed for client classes that depend on accessing neural_networks directly
     @property
-    @torch.jit.unused
     def aev_computer(self) -> AEVComputer:
         r""":meta private:"""
         return self.nnp.aev_computer
