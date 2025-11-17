@@ -38,3 +38,5 @@ jinja2
 # Dev: Utils for linting and type checking
 flake8
 mypy
+
+ninja
