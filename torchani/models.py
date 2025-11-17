@@ -60,7 +60,6 @@ For more details consult the examples documentation
     # subclasses of ``ANI``, with the same functionality
     submodel = model[0]
 """
-
 import warnings
 import typing as tp
 import importlib.util

@@ -10,48 +10,8 @@ are:
 - `torchani.SelfEnergy <torchani.sae.SelfEnergy>`
 """
 
+import importlib
 from importlib.metadata import version, PackageNotFoundError
-
-from torchani import (
-    nn,
-    aev,
-    arch,
-    utils,
-    models,
-    units,
-    datasets,
-    legacy_data,
-    transforms,
-    cli,
-    electro,
-    neighbors,
-    cutoffs,
-    sae,
-    sae_estimation,
-    constants,
-    grad,
-    io,
-    neurochem,
-    annotations,
-    paths,
-)
-
-# Legacy API, don't document
-from torchani.utils import EnergyShifter
-from torchani.nn import ANIModel
-
-# Dump into global namespace for convenience
-from torchani.aev import AEVComputer
-from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
-from torchani.sae import SelfEnergy
-from torchani.grad import single_point
-
-# NOTE: ase is an optional dependency so don't import here
-
-try:
-    __version__ = version("torchani")
-except PackageNotFoundError:
-    pass  # package is not installed
 
 __all__ = [
     "neighbors",
@@ -74,6 +34,7 @@ __all__ = [
     "cli",
     "paths",
     "annotations",
+    "ase",
     # Legacy API
     "neurochem",
     "legacy_data",
@@ -84,16 +45,64 @@ __all__ = [
     "SpeciesConverter",
     "AEVComputer",
     "ANINetworks",
-    "Ensemble",
     "SelfEnergy",
     "single_point",
 ]
 
-# Optional submodule, depends on ase being available
-try:
-    from torchani import ase  # noqa: F401
+# modules that are lazily imported
+_lazy_modules = {
+    "nn",
+    "aev",
+    "arch",
+    "ase",
+    "utils",
+    "models",
+    "units",
+    "datasets",
+    "legacy_data",
+    "transforms",
+    "cli",
+    "electro",
+    "neighbors",
+    "cutoffs",
+    "sae",
+    "sae_estimation",
+    "constants",
+    "grad",
+    "io",
+    "neurochem",
+    "annotations",
+    "paths",
+    "potentials",
+}
 
-    __all__.insert(19, "ase")  # Insert in a nice location for docs
-    ASE_IS_AVAILABLE = True
-except ImportError:
-    ASE_IS_AVAILABLE = False
+_lazy_attributes = {
+    "EnergyShifter": "utils",
+    "ANIModel": "nn",
+    "AEVComputer": "aev",
+    "ANINetworks": "nn",
+    "Ensemble": "nn",
+    "SpeciesConverter": "nn",
+    "SelfEnergy": "sae",
+    "single_point": "grad",
+}
+
+
+def __getattr__(name):
+    if name in _lazy_modules:
+        module = importlib.import_module(f".{name}", __name__)
+        globals()[name] = module
+        return module
+    if name in _lazy_attributes:
+        module_name = _lazy_attributes[name]
+        module = importlib.import_module(f".{module_name}", __name__)
+        attr = getattr(module, name)
+        globals()[name] = attr
+        return attr
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+try:
+    __version__ = version("torchani")
+except PackageNotFoundError:
+    pass  # package is not installed
