@@ -4,7 +4,6 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
-import torch
 import os
 from enum import Enum
 import shutil
