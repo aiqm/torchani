@@ -1,3 +1,4 @@
+import torch
 import typing as tp
 
 from torch import Tensor
@@ -7,6 +8,7 @@ from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
+from torchani.sae import SelfEnergy
 
 
 # Adaptor to use the aev computer as a three body potential
@@ -107,20 +109,20 @@ class SeparateChargesNNPotential(NNPotential):
         }
 
 
-class SeparateChargesVolumesNNPotential(NNPotential):
+class SeparateScalarsNNPotential(NNPotential):
     def __init__(
         self,
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        charge_networks: AtomicContainer,
-        volume_networks: AtomicContainer,
+        scalar_networks: tp.Dict[str, AtomicContainer],
+        scalar_shifters: tp.Dict[str, SelfEnergy],
         charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
             charge_normalizer = ChargeNormalizer(self.symbols)
-        self.charge_networks = charge_networks
-        self.volume_networks = volume_networks
+        self.scalar_networks = torch.nn.ModuleDict(scalar_networks)
+        self.scalar_shifters = torch.nn.ModuleDict(scalar_shifters)
         self.charge_normalizer = charge_normalizer
 
     def compute_from_neighbors(
@@ -135,9 +137,12 @@ class SeparateChargesVolumesNNPotential(NNPotential):
     ) -> tp.Dict[str, Tensor]:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
-        qs = self.charge_networks(elem_idxs, aevs, atomic=True)
-        return {
-            "energies": energies,
-            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
-            "atomic_volumes": self.volume_networks(elem_idxs, aevs, atomic=True),
-        }
+        output = {"energies": energies}
+        for k, networks in self.scalar_networks.items():
+            output[k] = networks(elem_idxs, aevs, atomic=True)
+            if k == "atomic_charges":
+                output[k] = self.charge_normalizer(elem_idxs, output[k], charge)
+
+        for k, shifter in self.scalar_shifters.items():
+            output[k] = output[k] + shifter(elem_idxs, atomic=True)
+        return output

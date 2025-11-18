@@ -348,9 +348,15 @@ def single_point(
     energies = result.energies
     out: tp.Dict[str, Tensor] = {}
     if atomic_charges:
-        if not hasattr(result, "atomic_charges"):
+        if not (
+            hasattr(result, "atomic_charges")
+            or (hasattr(result, "scalars") and "atomic_charges" in result.scalars)
+        ):
             raise ValueError("Model doesn't support atomic charges")
-        out["atomic_charges"] = result.atomic_charges
+        if hasattr(result, "scalars"):
+            out["atomic_charges"] = result.scalars["atomic_charges"]
+        else:
+            out["atomic_charges"] = result.atomic_charges
         if atomic_charges_grad:
             retain = forces or hessians
             out["atomic_charges_grad"] = calc_grads(
@@ -358,9 +364,15 @@ def single_point(
             )
 
     if atomic_volumes:
-        if not hasattr(result, "atomic_volumes"):
+        if not (
+            hasattr(result, "atomic_volumes")
+            or (hasattr(result, "scalars") and "atomic_volumes" in result.scalars)
+        ):
             raise ValueError("Model doesn't support atomic volumes")
-        out["atomic_volumes"] = result.atomic_volumes
+        if hasattr(result, "scalars"):
+            out["atomic_volumes"] = result.scalars["atomic_volumes"]
+        else:
+            out["atomic_volumes"] = result.atomic_volumes
         if atomic_volumes_grad:
             retain = forces or hessians
             out["atomic_volumes_grad"] = calc_grads(
