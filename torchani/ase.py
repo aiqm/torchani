@@ -12,17 +12,8 @@ import warnings
 
 import torch
 from torch import Tensor
-
-try:
-    import ase.units
-    from ase.calculators.calculator import Calculator as AseCalculator, all_changes
-except ImportError:
-    raise ImportError(
-        "Error when trying to import 'torchani.ase':"
-        " The ASE package could not be found. 'torchani.ase' and the '*.ase()' methods"
-        " of models won't be available. Please install ase if you want to use them."
-        " ('conda install ase' or 'pip install ase')"
-    ) from None
+import ase.units
+from ase.calculators.calculator import Calculator as AseCalculator, all_changes
 
 from torchani.annotations import StressKind
 from torchani.neighbors import Neighbors
