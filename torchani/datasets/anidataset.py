@@ -820,10 +820,7 @@ class _ANISubdataset(_ANIDatasetBase):
         """
         self._check_unique_element_key()
         new_ds = _ANISubdataset(
-            "tmp",
-            "by_num_atoms",
-            self._store.backend,
-            verbose=False
+            "tmp", "by_num_atoms", self._store.backend, verbose=False
         )
         try:
             with new_ds.keep_open("r+") as rwds:
@@ -1070,7 +1067,11 @@ class ANIDataset(_ANIDatasetBase):
         self,
         locations: tp.Union[tp.Iterable[StrPath], StrPath],
         names: tp.Optional[tp.Union[tp.Iterable[str], str]] = None,
-        **kwargs,
+        grouping: tp.Optional[Grouping] = None,
+        backend: tp.Optional[Backend] = None,
+        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        verbose: bool = True,
+        lot: str = "unspecified",
     ):
         super().__init__()
         # _datasets is an OrderedDict {name: _ANISubdataset}.
@@ -1084,9 +1085,24 @@ class ANIDataset(_ANIDatasetBase):
         if not len(names) == len(locations):
             raise ValueError("Length of locations and names must be equal")
         self._datasets = OrderedDict(
-            (n, _ANISubdataset(loc, **kwargs)) for n, loc in zip(names, locations)
+            (
+                n,
+                _ANISubdataset(
+                    loc,
+                    grouping=grouping,
+                    backend=backend,
+                    verbose=verbose,
+                    dummy_properties=dummy_properties,
+                ),
+            )
+            for n, loc in zip(names, locations)
         )
         self._update_cache()
+        self._lot = lot
+
+    @property
+    def lot(self) -> str:
+        return self._lot
 
     @classmethod
     def from_dir(cls, dir_: StrPath, **kwargs):
@@ -1270,7 +1286,12 @@ def concatenate(
     if source.grouping not in ["by_formula", "by_num_atoms"]:
         raise ValueError("Please regroup your dataset before concatenating")
 
-    dest = ANIDataset("tmp", backend=backend, grouping=source.grouping, verbose=False)
+    dest = ANIDataset(
+        "tmp",
+        backend=backend,
+        grouping=source.grouping,  # type: ignore
+        verbose=False,
+    )
     try:
         for k, v in tqdm(
             source.numpy_items(),

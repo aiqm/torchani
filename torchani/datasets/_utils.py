@@ -148,6 +148,7 @@ def _fetch_and_create_builtin_dataset(
         names=(tup[0] for tup in filenames_and_paths),
         verbose=verbose,
         dummy_properties=dummy_properties,
+        lot=lot,
     )
     if verbose:
         print(ds)
