@@ -1,0 +1,61 @@
+import typing as tp
+from pathlib import Path
+
+from torchani.annotations import Device, DType
+from torchani.neighbors import NeighborlistArg
+{% if arch_fn == "simple_ani" %}
+from torchani.arch import _fetch_state_dict, simple_ani, ANI
+{% elif arch_fn == "simple_aniq" %}
+from torchani.arch import _fetch_state_dict, simple_aniq, ANIq
+{% else %}
+from torchani.arch import _ANI
+{% endif %}
+
+
+def {{ name }}(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+{% if arch_fn == "simple_ani" %}
+) -> ANI:
+    r"""{{ desc }}"""
+    model = simple_ani(
+{% elif arch_fn == "simple_aniq" %}
+) -> ANIq:
+    r"""{{ desc }}"""
+    model = simple_aniq(
+{% else %}
+) -> _ANI:
+    r"""{{ desc }}"""
+    model = {{ arch_fn }}(
+{% endif %}
+        lot="{{ lot }}",
+        symbols={{ symbols }},
+        ensemble_size={{ ensemble_size }},
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        strategy=strategy,
+        {% for k, v in arch_opts.items() %}
+        {{ k }}={% if v is string %}"{{ v }}"{% else %}{{ v }}{% endif %},
+        {% endfor %}
+    )
+    _dir = Path(__file__).resolve().parent
+    state_dict = _fetch_state_dict(_dir / "model.pt", local=True)
+    {% if ensemble_size == 1 %}
+    state_dict = {
+        k.replace("neural_networks.0.", "neural_networks."): v
+        for k, v in state_dict.items()
+    }
+    if model_index is not None and model_index != 0:
+        raise ValueError("This is a single model, model_index should be None or 0")
+    model.load_state_dict(state_dict)
+    {% else %}
+    model.load_state_dict(state_dict)
+    model = model if model_index is None else model[model_index]
+    {% endif %}
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model

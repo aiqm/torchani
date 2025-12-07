@@ -4,20 +4,30 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+import sys
+from copy import deepcopy
+import warnings
 import os
+import uuid
 from enum import Enum
 import shutil
 import typing as tp
+from typing import Annotated
 import json
 import tarfile
 import csv
+import subprocess
 from typer import Argument, Option, Typer, Abort
 from pathlib import Path
-import typing_extensions as tpx
 import re
+
+import jinja2
+from rich.console import Console
 
 from ._builtin_dataset_ids import _DatasetId, _LotId
 
+
+console = Console()
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
 
@@ -68,7 +78,7 @@ class DeviceKind(Enum):
 
 @main.command("build-extensions")
 def _build_extensions(
-    sms: tpx.Annotated[
+    sms: Annotated[
         tp.Optional[tp.List[str]],
         Option(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
@@ -152,31 +162,31 @@ def _build_extensions(
 
 @main.command(hidden=True)
 def opt(
-    paths: tpx.Annotated[
+    paths: Annotated[
         tp.List[Path],
         Argument(),
     ],
-    output_path: tpx.Annotated[
+    output_path: Annotated[
         tp.Optional[Path],
         Option("-o", "--output", show_default=False),
     ] = None,
-    model_key: tpx.Annotated[
+    model_key: Annotated[
         str,
         Option("-m", "--model"),
     ] = "ANI2x",
-    device: tpx.Annotated[
+    device: Annotated[
         tp.Optional[DeviceKind],
         Option("-d", "--device"),
     ] = None,
-    dtype: tpx.Annotated[
+    dtype: Annotated[
         tp.Optional[DTypeKind],
         Option("-t", "--dtype"),
     ] = None,
-    forces: tpx.Annotated[
+    forces: Annotated[
         bool,
         Option("-f/-F", "--forces/--no-forces"),
     ] = False,
-    hessians: tpx.Annotated[
+    hessians: Annotated[
         bool,
         Option("-s/-S", "--hessians/--no-hessians"),
     ] = False,
@@ -224,37 +234,37 @@ def opt(
 
 @main.command()
 def sp(
-    paths: tpx.Annotated[
+    paths: Annotated[
         tp.List[Path],
         Argument(
             help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
         ),
     ],
-    output_path: tpx.Annotated[
+    output_path: Annotated[
         tp.Optional[Path],
         Option("-o", "--output", show_default=False),
     ] = None,
-    model_key: tpx.Annotated[
+    model_key: Annotated[
         str,
         Option("-m", "--model"),
     ] = "ANI2x",
-    device: tpx.Annotated[
+    device: Annotated[
         tp.Optional[DeviceKind],
         Option("-d", "--device"),
     ] = None,
-    dtype: tpx.Annotated[
+    dtype: Annotated[
         tp.Optional[DTypeKind],
         Option("-t", "--dtype"),
     ] = None,
-    atomic_charges: tpx.Annotated[
+    atomic_charges: Annotated[
         bool,
         Option("-q/-Q", "--charges/--no-charges"),
     ] = False,
-    forces: tpx.Annotated[
+    forces: Annotated[
         bool,
         Option("-f/-F", "--forces/--no-forces"),
     ] = False,
-    hessians: tpx.Annotated[
+    hessians: Annotated[
         bool,
         Option("-s/-S", "--hessians/--no-hessians"),
     ] = False,
@@ -326,15 +336,165 @@ def sp(
         print(json.dumps(output))
 
 
+@data_app.command("batch")
+def data_batch(
+    src_ds: Annotated[
+        tp.List[str],
+        Argument(
+            help="Built-in ANI ds name(s) to src from (format is 'name:lot')"
+            " or paths to on-disk datasets",
+        ),
+    ],
+    out_name: Annotated[
+        str,
+        Option("-n", "--out-name", help="Name of output batched dataset"),
+    ] = "",
+    out_lot: Annotated[
+        str,
+        Option(
+            "-l",
+            "--out-lot",
+            help="LoT of the output batched dataset."
+            " By default it is set to the lot of the builtin datasets."
+            " If there is a mismatch, or if no built-in datasets are specified, "
+            " it must be explicitly passed",
+        ),
+    ] = "",
+    properties: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-p", "--property", help="Properties to batch. All by default"),
+    ] = None,
+    batch_size: Annotated[
+        int,
+        Option("--batch-size", help="Batch size"),
+    ] = 2560,
+    folds: Annotated[
+        tp.Optional[int],
+        Option("--folds", help="Num. of folds. Useful for training ensembles"),
+    ] = None,
+    train_frac: Annotated[
+        float, Option("--tf", "--train-frac", help="Training set fraction")
+    ] = 0.9,
+    divs_seed: Annotated[
+        int, Option("--divs-seed", help="Seed for divisions (train, validation, etc)")
+    ] = 1234,
+    batch_seed: Annotated[
+        int,
+        Option("--shuffle-seed", help="Seed for shuffling divisions before batching"),
+    ] = 1234,
+    allow_lot_mismatch: Annotated[
+        bool,
+        Option(
+            "--allow-ds-lot-mismatch/ ",
+            help="Allow built-in ds with different LoT",
+            hidden=True,
+        ),
+    ] = False,
+    max_batches_per_packet: Annotated[
+        int,
+        Option("--max-batches-per-packet"),
+    ] = 100,
+) -> None:
+    r"""Generate a pre-batched dataset from one or more ANI datasets"""
+    from torchani import datasets
+    from torchani.train.config import DatasetConfig
+
+    src_paths = []
+    src_builtins = []
+    for ds in src_ds:
+        if Path(ds).exists():
+            src_paths.append(ds)
+        else:
+            src_builtins.append(ds)
+
+    # Make order-independent
+    src_paths = sorted(src_paths)
+    src_builtins = sorted(src_builtins)
+
+    # Concatenate the source paths of all datasets into a list, since they will be
+    # loaded as a *single* ANIDataset
+    all_src_paths = deepcopy(src_paths)
+    in_lots = set()
+    for i, builtin in enumerate(src_builtins):
+        if ":" in builtin:
+            ds_name, ds_lot = builtin.split(":")
+            ds = getattr(datasets, ds_name)(
+                skip_check=True,
+                lot=ds_lot,
+            )
+        else:
+            ds_name = builtin
+            ds = getattr(datasets, ds_name)(skip_check=True)
+        in_lots.add(ds.lot)
+        if not out_name and i == 0:
+            out_name = f"{ds_name}:{ds.lot}"
+        all_src_paths.extend(ds.store_locations)
+    all_src_paths = sorted(set(all_src_paths))
+
+    if len(in_lots) > 1:
+        if not allow_lot_mismatch or not out_lot:
+            console.print(
+                "One or more of the specified built-in ds have different LoT"
+                "If intended use --allow-lot-mismatch and --out-lot",
+                style="red",
+            )
+            raise Abort()
+    elif len(in_lots) == 0:
+        if not out_lot:
+            warnings.warn("Output LoT unspecified")
+        out_lot = "unspecified"
+    else:
+        if out_lot:
+            warnings.warn(
+                "Specified custom output LoT different from LoT"
+                f" present in datasets, which is {list(in_lots)[0]}"
+            )
+        else:
+            out_lot = list(in_lots)[0]
+
+    # TODO: Allow concatenating datasets with different properties
+    ani_ds = datasets.ANIDataset(locations=all_src_paths)
+
+    if properties is None:
+        properties = sorted(ani_ds.tensor_properties)
+
+    config = DatasetConfig(
+        label=out_name,
+        lot=out_lot,
+        data_names=src_builtins,
+        properties=sorted(properties),
+        raw_src_paths=sorted(src_paths),
+        batch_size=batch_size,
+        fold_idx=-1,
+        folds=folds,
+        validation_frac=round(1.0 - train_frac, 5),
+        train_frac=train_frac,
+        batch_seed=batch_seed,
+        divs_seed=divs_seed,
+    )
+
+    datasets.create_batched_dataset(
+        src=ani_ds,
+        max_batches_per_packet=max_batches_per_packet,
+        dest_path=config.path,
+        batch_size=config.batch_size,
+        divs_seed=config.divs_seed,
+        batch_seed=config.batch_seed,
+        properties=set(config.properties) | {"species", "coordinates"},
+        **config.split_spec,  # type: ignore
+    )
+    config.to_json_file(config.path / "ds_config.json")
+
+
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
-    names: tpx.Annotated[
+    names: Annotated[
         tp.Optional[tp.List[_DatasetId]],
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
-    lots: tpx.Annotated[
+    lots: Annotated[
         tp.Optional[tp.List[_LotId]],
         Option(
             "-l",
@@ -346,7 +506,7 @@ def data_pull(
             " are available for a given dataset run ``ani data info <dataset-name>``",
         ),
     ] = None,
-    ds_dir: tpx.Annotated[
+    ds_dir: Annotated[
         tp.Optional[Path],
         Option(
             "-d",
@@ -355,11 +515,11 @@ def data_pull(
             help="Datasets are downloaded to <datasets-dir>/<dataset-name>",
         ),
     ] = None,
-    verbose: tpx.Annotated[
+    verbose: Annotated[
         bool,
         Option("-v/-V", "--verbose/--no-verbose"),
     ] = True,
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = True,
@@ -444,8 +604,8 @@ def data_clean() -> None:
 
 @data_app.command("rm", help="Remove a downloaded dataset")
 def data_rm(
-    name: tpx.Annotated[_DatasetId, Argument()],
-    lot: tpx.Annotated[
+    name: Annotated[_DatasetId, Argument()],
+    lot: Annotated[
         tp.Optional[_LotId],
         Option("-l", "--lot"),
     ] = None,
@@ -468,7 +628,7 @@ def data_rm(
 
 @data_app.command("ls", help="List downloaded built-in datasets")
 def data_ls(
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = False,
@@ -494,12 +654,12 @@ def data_ls(
 
 @data_app.command("info", help="Display info regarding downloaded built-in datasets")
 def data_info(
-    name: tpx.Annotated[_DatasetId, Argument()],
-    lot: tpx.Annotated[
+    name: Annotated[_DatasetId, Argument()],
+    lot: Annotated[
         tp.Optional[_LotId],
         Option("-l", "--lot"),
     ] = None,
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = True,
@@ -530,11 +690,11 @@ def data_info(
     hidden=True,
 )
 def data_pack(
-    src_dir: tpx.Annotated[Path, Argument()],
-    dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
-    name: tpx.Annotated[str, Option("-n", "--name")] = "",
-    lot: tpx.Annotated[str, Option("-l", "--lot")] = "",
-    suffix: tpx.Annotated[
+    src_dir: Annotated[Path, Argument()],
+    dest: Annotated[tp.Optional[Path], Option("-o")] = None,
+    name: Annotated[str, Option("-n", "--name")] = "",
+    lot: Annotated[str, Option("-l", "--lot")] = "",
+    suffix: Annotated[
         str,
         Option("-s", "--suffix"),
     ] = ".h5",
@@ -600,3 +760,495 @@ def data_pack(
     # Write json
     with open(json_path, "wt", encoding="utf-8") as fj:
         json.dump(data_dict, fj)
+
+
+# HUGE training function
+@main.command(help="Train from scratch or finetune an ANI-style model")
+def train(
+    batch_id: Annotated[str, Argument(help="Name|idx of the batched dataset")],
+    fold_idx: Annotated[
+        tp.Optional[int],
+        Option(
+            "-i",
+            "--fold-idx",
+            help="Idx to use if training from folds",
+            show_default=False,
+        ),
+    ] = None,
+    name: Annotated[str, Option("-n", "--run-name", help="Name of run")] = "run",
+    slurm: Annotated[
+        str,
+        Option("--slurm"),
+    ] = "",
+    slurm_gpu: Annotated[
+        str,
+        Option("--slurm-gpu"),
+    ] = "",
+    num_workers: Annotated[
+        int,
+        Option("--num-workers", help="Num workers for Dataloader"),
+    ] = 1,
+    allow_lot_mismatch: Annotated[
+        bool,
+        Option(
+            "--allow-ds-model-lot-mismatch/ ",
+            help="Allow model lot to differ from ds lot. Useful for transfer learning.",
+            hidden=True,
+        ),
+    ] = False,
+    auto_restart: Annotated[
+        bool,
+        Option("--auto-restart/ ", help="Auto restart runs that match a prev run"),
+    ] = False,
+    max_epochs: Annotated[
+        int, Option("--max-epochs", help="Max epochs to train")
+    ] = 1000,
+    early_stop_patience: Annotated[
+        int,
+        Option(
+            "--early-stop-patience",
+            help="Max epochs without improving monitor metric before early stopping",
+        ),
+    ] = 50,
+    # From-scratch specific config
+    symbols: Annotated[
+        str,
+        Option(
+            "--symbols",
+            help="Chemical symbols the model will support."
+            " The default is 'all present in the dataset'."
+            " If specified, it should be a single string"
+            " with symbols separated by commas. e.g. '--symbols H,C,N,O,F,S'",
+            show_default=False,
+            rich_help_panel="Arch",
+        ),
+    ] = "",
+    lot: Annotated[
+        str,
+        Option(
+            "--lot",
+            help="LoT of the model. Default is 'dataset lot'.",
+            show_default=False,
+            rich_help_panel="Arch",
+        ),
+    ] = "",
+    device: Annotated[
+        tp.Optional[DeviceKind],
+        Option("-d", "--device", case_sensitive=False),
+    ] = None,
+    arch_fn: Annotated[
+        str,
+        Option(
+            "-a",
+            "--arch",
+            help="Callable that creates the model",
+            rich_help_panel="Arch",
+        ),
+    ] = "simple_ani",
+    arch_options: Annotated[
+        tp.Optional[tp.List[str]],
+        Option(
+            "--ao",
+            "--arch-opt",
+            help="Options for arch fn, key=val fmt",
+            rich_help_panel="Arch",
+            show_default=False,
+        ),
+    ] = None,
+    # LrSched config
+    lrsched: Annotated[
+        str,
+        Option(
+            "-s", "--sched", help="Type of lr-scheduler", rich_help_panel="LR scheduler"
+        ),
+    ] = "Plateau",
+    lrsched_opts: Annotated[
+        tp.Optional[tp.List[str]],
+        Option(
+            "--so",
+            "--sched-opt",
+            help="Options for lr-scheduler, key=val fmt",
+            rich_help_panel="LR scheduler",
+            show_default=False,
+        ),
+    ] = None,
+    # Optimizer config
+    optim: Annotated[
+        str,
+        Option("-o", "--optim", help="Type of optimizer", rich_help_panel="Optimizer"),
+    ] = "AdamW",
+    optim_opts: Annotated[
+        tp.Optional[tp.List[str]],
+        Option(
+            "--oo",
+            "--optim-opt",
+            rich_help_panel="Optimizer",
+            help="Options for optim, key=val fmt (lr, wd are separate)",
+            show_default=False,
+        ),
+    ] = None,
+    wd: Annotated[
+        float,
+        Option("--wd", help="Weight decay for optim", rich_help_panel="Optimizer"),
+    ] = 1e-7,
+    lr: Annotated[
+        float,
+        Option(
+            "--lr",
+            help="Initial lr. If ftune, used for the 'head'",
+            rich_help_panel="Optimizer",
+        ),
+    ] = 5e-4,
+    # Loss config
+    xc: Annotated[
+        bool, Option("--xc/ ", help="Train to XC energies", rich_help_panel="Loss")
+    ] = False,
+    no_sqrt_atoms: Annotated[
+        bool,
+        Option(
+            "--no-sqrt-atoms/ ",
+            help="Divide energy loss by atoms instead of sqrt(atoms)",
+            rich_help_panel="Loss",
+        ),
+    ] = False,
+    energies: Annotated[
+        float, Option("-e", "--energies", help="Energy factor", rich_help_panel="Loss")
+    ] = 1.0,
+    forces: Annotated[
+        float, Option("-f", "--forces", help="Force factor", rich_help_panel="Loss")
+    ] = 0.0,
+    dipoles: Annotated[
+        float, Option("-m", "--dipoles", help="Dipole factor", rich_help_panel="Loss")
+    ] = 0.0,
+    atomic_volumes: Annotated[
+        float,
+        Option(
+            "-V",
+            "--atomic-volumes",
+            help="Atomic volumes factor",
+            rich_help_panel="Loss",
+        ),
+    ] = 0.0,
+    atomic_charges: Annotated[
+        float,
+        Option(
+            "-q",
+            "--atomic-charges",
+            help="Atomic charges factor",
+            rich_help_panel="Loss",
+        ),
+    ] = 0.0,
+    total_charge: Annotated[
+        float,
+        Option("--total-q", help="Total charge factor", rich_help_panel="Loss"),
+    ] = 0.0,
+    monitor: Annotated[
+        str,
+        Option(
+            "--monitor",
+            help="Loss label to monitor during training."
+            " Format is 'valid/rmse_energies', 'train/rmse_forces', etc."
+            " If a single loss term is present, it is the valid/rmse_'loss-term'."
+            " Otherwise, if 'forces' is a loss term, it is valid/rmse_forces."
+            " Otherwise it must be explicitly specified.",
+            rich_help_panel="Loss",
+            show_default=False,
+        ),
+    ] = "valid/rmse_default",
+    # Finetuning specific config
+    dummy_ftune: Annotated[
+        bool,
+        Option("--dummy-ftune/--no-dummy-ftune", rich_help_panel="Finetuning"),
+    ] = False,
+    ftune_from: Annotated[
+        str,
+        Option(
+            "--ftune-from",
+            help="Name|idx of pretrain run. ani1x:idx, ... also supported",
+            rich_help_panel="Finetuning",
+            show_default=False,
+        ),
+    ] = "",
+    num_head_layers: Annotated[
+        tp.Optional[int],
+        Option(
+            "--num-head",
+            help="If fine-tuning, num. of head layers. Defaults to 1",
+            rich_help_panel="Finetuning",
+            show_default=False,
+        ),
+    ] = None,
+    backbone_lr: Annotated[
+        tp.Optional[float],
+        Option(
+            "--backbone-lr",
+            help="If fine-tuning, lr for backbone. Defaults to 0",
+            rich_help_panel="Finetuning",
+            show_default=False,
+        ),
+    ] = None,
+    # Debug and profiling specific config
+    debug: Annotated[
+        bool,
+        Option(
+            "-g/ ", "--debug/ ", help="Run in debug config", rich_help_panel="Debug"
+        ),
+    ] = False,
+    profiler: Annotated[
+        tp.Optional[str],
+        Option(
+            "--prof",
+            help="Profiler, 'simple', 'advanced', or 'pytorch'",
+            rich_help_panel="Debug",
+            show_default=False,
+        ),
+    ] = None,
+    limit: Annotated[
+        tp.Optional[int],
+        Option(
+            "--lim",
+            help="Limit num batches or percent",
+            rich_help_panel="Debug",
+            show_default=False,
+        ),
+    ] = None,
+    deterministic: Annotated[
+        bool,
+        Option(
+            "--deterministic/ ",
+            help="Deterministic training",
+            rich_help_panel="Debug",
+        ),
+    ] = False,
+    detect_anomaly: Annotated[
+        bool,
+        Option(
+            "--detect-anomaly/ ",
+            help="Detect anomalies during training",
+            rich_help_panel="Debug",
+        ),
+    ] = False,
+    verbose: Annotated[
+        bool, Option("-v/ ", "--verbose/ ", rich_help_panel="Debug")
+    ] = False,
+) -> None:
+
+    import torch
+    from torchani.train.paths import DataKind, select_subdirs
+    from torchani.train._lit_training import train_lit_model
+    from torchani.train.config import (
+        FinetuneConfig,
+        TrainConfig,
+        DatasetConfig,
+        AccelConfig,
+        ModelConfig,
+        LossConfig,
+        OptimizerConfig,
+        SchedulerConfig,
+    )
+    from torchani.train.defaults import (
+        resolve_options,
+        parse_scheduler_str,
+        parse_optimizer_str,
+    )
+
+    if device is None:
+        device = DeviceKind.CUDA if torch.cuda.is_available() else DeviceKind.CPU
+
+    batched_dataset_path = select_subdirs((batch_id,), kind=DataKind.BATCH)[0]
+    ds_config_path = batched_dataset_path / "ds_config.json"
+    ds_config = DatasetConfig.from_json_file(ds_config_path)
+    ds_config.fold_idx = "train" if fold_idx is None else fold_idx
+
+    if fold_idx is not None:
+        if not name:
+            name = "train" if not ftune_from else "ftune"
+        name = f"{str(fold_idx).zfill(2)}-{name}"
+
+    with open(ds_config.path / "creation_log.json", mode="rt") as f:
+        ds_symbols = json.load(f)["symbols"]
+
+    if debug:
+        console.print("Debugging enabled:")
+        if name == "train":
+            _uuid = uuid.uuid4().hex[:8]
+            console.print(f"    - Name set to 'debug-{_uuid}'")
+            name = f"debug-{_uuid}"
+        if max_epochs == 1000:
+            max_epochs = 3
+            console.print(f"    - Max epochs set to {max_epochs}")
+        if limit is None:
+            limit = 3
+            console.print(f"    - Batch limit set to {limit}")
+        console.print("    - Verbosity increased")
+        verbose = True
+        console.print("    - Deterministic mode set")
+        deterministic = True
+        console.print("    - Anomaly detection mode set")
+        detect_anomaly = True
+
+    terms_and_factors: tp.Dict[str, float] = {}
+    if energies > 0.0:
+        label = "EnergiesXC" if xc else "Energies"
+        terms_and_factors[label if no_sqrt_atoms else f"{label}SqrtAtoms"] = energies
+    if forces > 0.0:
+        terms_and_factors["Forces"] = forces
+    if dipoles > 0.0:
+        terms_and_factors["Dipoles"] = dipoles
+    if atomic_charges > 0.0:
+        terms_and_factors["AtomicCharges"] = atomic_charges
+    if atomic_volumes > 0.0:
+        terms_and_factors["AtomicVolumes"] = atomic_volumes
+    if total_charge > 0.0:
+        terms_and_factors["TotalCharge"] = total_charge
+
+    lrsched = parse_scheduler_str(lrsched)
+    optim = parse_optimizer_str(optim)
+    lrsched_opts = lrsched_opts or []
+    optim_opts = (optim_opts or []) + [f"lr={lr}", f"weight_decay={wd}"]
+
+    if lr <= 0.0:
+        console.print("lr must be strictly positive", style="red")
+        raise Abort()
+
+    # Finetune config
+    if ftune_from:
+        if arch_fn != "simple_ani" or arch_options or symbols:
+            console.print(
+                "Don't specify 'arch', 'arch-opts' or 'symbols' for ftune", style="red"
+            )
+            raise Abort()
+        backbone_lr = backbone_lr or 0.0
+        num_head_layers = num_head_layers or 1
+        # Validation
+        if backbone_lr < 0.0:
+            console.print("backbone lr must be >= 0", style="red")
+            raise Abort()
+        if backbone_lr > lr:
+            console.print("Backbone lr must be <= head lr", style="red")
+            raise Abort()
+        if num_head_layers < 1:
+            console.print("There must be at least one head layer", style="red")
+            raise Abort()
+        # Create finetune and model configs
+        if ftune_from.split(":")[0] in ("ani1x", "ani2x", "ani1ccx", "anidr", "aniala"):
+            ptrain_name = ftune_from
+            model_config = ModelConfig.from_builtin(ftune_from)
+            raw_ptrain_state_dict_path = ""
+        else:
+            try:
+                _path = select_subdirs((ftune_from,), kind=DataKind.TRAIN)[0]
+            except Exception:
+                _path = select_subdirs((ftune_from,), kind=DataKind.FTUNE)[0]
+
+            ptrain_name = _path.name
+            model_config = TrainConfig.from_json_file(_path / "config.json").model
+            raw_ptrain_state_dict_path = str(Path(_path, "best-model", "best.ckpt"))
+
+            if not Path(raw_ptrain_state_dict_path).is_file():
+                console.print(
+                    f"{raw_ptrain_state_dict_path} is not a valid ckpt", style="red"
+                )
+                raise Abort()
+        ftune_config = FinetuneConfig(
+            pretrained_name=ptrain_name,
+            raw_state_dict_path=raw_ptrain_state_dict_path,
+            num_head_layers=num_head_layers,
+            backbone_lr=backbone_lr,
+            dummy_ftune=dummy_ftune,
+        )
+    else:
+        ftune_config = None
+        model_config = ModelConfig(
+            lot=lot or ds_config.lot,
+            symbols=symbols.split(",") if symbols else ds_symbols,
+            arch_fn=arch_fn,
+            options=resolve_options(arch_options or (), arch_fn),
+        )
+    if not allow_lot_mismatch and model_config.lot != ds_config.lot:
+        console.print(
+            "Model LoT must match dataset LoT unless --allow-ds-model-lot-mismatch",
+            style="red",
+        )
+        raise Abort()
+
+    if not set(model_config.symbols).issubset(ds_symbols):
+        console.print(
+            f"Not all ds symbols {ds_symbols} are supported by the model."
+            f"Model supports {model_config.symbols}",
+            style="red",
+        )
+        raise Abort()
+
+    config = TrainConfig(
+        name=name,
+        debug=debug,
+        ds=ds_config,
+        monitor_label=monitor,
+        ftune=ftune_config,
+        model=model_config,
+        loss=LossConfig(terms_and_factors=terms_and_factors),
+        optim=OptimizerConfig(resolve_options(optim_opts, optim), optim),
+        scheduler=SchedulerConfig(resolve_options(lrsched_opts, lrsched), lrsched),
+        accel=AccelConfig(
+            device=device.value,
+            limit=limit,
+            deterministic=deterministic,
+            detect_anomaly=detect_anomaly,
+            max_epochs=max_epochs,
+            early_stop_patience=early_stop_patience,
+            profiler=profiler,
+            num_workers=num_workers,
+        ),
+    )
+
+    # Re-run everything after the train config has been set up, to prevent potential
+    # issues
+    if slurm:
+        if slurm == "moria":
+            assert slurm_gpu in ["v100", "gp100", "titanv", "gtx1080ti", ""]
+        elif slurm == "hpg":
+            assert slurm_gpu in ["b200", "l4", ""]
+        else:
+            console.print(f"Unknown cluster {slurm}", style="red")
+            raise Abort()
+        slurm_gpu = f"{slurm_gpu}:1" if slurm_gpu else "1"
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates/"),
+            undefined=jinja2.StrictUndefined,
+            autoescape=jinja2.select_autoescape(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        arg_list = sys.argv[1:]
+        for j, arg in enumerate(deepcopy(arg_list)):
+            # re-introduce quotes in strings
+            if arg in ["--prof", "--ftune-from", "--monitor", "--lot"]:
+                arg_list[j + 1] = f"'{arg_list[j + 1]}'"
+            if arg == "--slurm":
+                arg_list[j] = ""
+                arg_list[j + 1] = ""
+            if arg == "--slurm-gpu":
+                arg_list[j] = ""
+                arg_list[j + 1] = ""
+        args = " ".join(arg_list)
+        tmpl = env.get_template(f"{slurm}.slurm.sh.jinja").render(
+            num_workers=num_workers,
+            name=str(config.path.name),
+            gpu=slurm_gpu,
+            args=args,
+        )
+        unique_id = config.path.name.split("-")[-1]
+        j = 0
+        input_dir = Path(Path.home(), "IO", "ani", f"{unique_id}_v{j}")
+        while input_dir.is_dir():
+            j += 1
+            input_dir = Path(Path.home(), "IO", "ani", f"{unique_id}_v{j}")
+        input_dir.mkdir(exist_ok=False, parents=True)
+        input_fpath = input_dir / f"{slurm}.slurm.sh"
+        input_fpath.write_text(tmpl)
+        console.print("Launching slurm script ...")
+        subprocess.run(["sbatch", str(input_fpath)], cwd=input_dir, check=True)
+        sys.exit(0)
+    train_lit_model(config, allow_restart=auto_restart, verbose=verbose)
