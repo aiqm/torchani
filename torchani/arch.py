@@ -90,6 +90,7 @@ from torchani.potentials import (
     TwoBodyDispersionD3,
 )
 from torchani.sae import SelfEnergy
+from torchani.schnet import SchNet
 
 
 class _ANI(torch.nn.Module):
@@ -1009,7 +1010,7 @@ class Assembler:
         cutoff_fn: CutoffArg = "global",
         kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
-        r"""Add a potential to the constructed ANI model """
+        r"""Add a potential to the constructed ANI model"""
         if name in self._potentials:
             raise ValueError("Potential names must be unique")
         self._potentials[name] = _PotentialWrapper(
@@ -1102,6 +1103,18 @@ class Assembler:
             periodic_table_index=self.periodic_table_index,
             **kwargs,
         )
+
+
+def simple_schnet(
+    symbols: tp.Sequence[str],
+    lot: str,  # method-basis
+    ensemble_size: int = 1,
+    strategy: str = "auto",
+    neighborlist: NeighborlistArg = "all_pairs",
+) -> SchNet:
+    # strategy is a no-op
+    assert ensemble_size == 1
+    return SchNet(symbols, neighborlist=neighborlist)
 
 
 def simple_ani(
