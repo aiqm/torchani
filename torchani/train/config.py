@@ -282,7 +282,7 @@ class AccelConfig(Config):
     deterministic: bool = False
     detect_anomaly: bool = False
     profiler: tp.Optional[str] = None
-    early_stop_patience: int = 50
+    early_stop_patience: int = -1
 
     @property
     def log_interval(self) -> tp.Optional[int]:

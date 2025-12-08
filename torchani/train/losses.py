@@ -209,3 +209,31 @@ class MultiTaskLoss(torch.nn.Module):
             losses[term.label] = mean_error
             losses["loss"] += mean_error * term.factor
         return losses
+
+
+def build_loss_terms_and_factors(
+    energies: float,
+    forces: float,
+    dipoles: float,
+    atomic_charges: float,
+    atomic_volumes: float,
+    total_charge: float,
+    no_sqrt_atoms: bool = False,
+    xc: bool = False,
+) -> dict[str, float]:
+    # Set terms and factors required to build the loss function
+    terms_and_factors: tp.Dict[str, float] = {}
+    if energies > 0.0:
+        label = "EnergiesXC" if xc else "Energies"
+        terms_and_factors[label if no_sqrt_atoms else f"{label}SqrtAtoms"] = energies
+    if forces > 0.0:
+        terms_and_factors["Forces"] = forces
+    if dipoles > 0.0:
+        terms_and_factors["Dipoles"] = dipoles
+    if atomic_charges > 0.0:
+        terms_and_factors["AtomicCharges"] = atomic_charges
+    if atomic_volumes > 0.0:
+        terms_and_factors["AtomicVolumes"] = atomic_volumes
+    if total_charge > 0.0:
+        terms_and_factors["TotalCharge"] = total_charge
+    return terms_and_factors

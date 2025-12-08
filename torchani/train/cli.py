@@ -196,13 +196,6 @@ def restart(
         float,
         Option("--total-q", help="Total charge factor", rich_help_panel="Loss"),
     ] = 0.0,
-    swa: tpx.Annotated[
-        bool,
-        Option(
-            "--swa/--no-swa",
-            help="Perform SWA for the remaining epochs instead of normal training",
-        ),
-    ] = False,
     verbose: Annotated[bool, Option("-v/ ", "--verbose/ ")] = False,
 ) -> None:
     r"""Continue a checkpointed run"""

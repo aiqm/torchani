@@ -263,8 +263,12 @@ def train_lit_model(
     wandb_entity: str = "nnip",
     wandb_project: str = "ani",
     log_wandb: bool = False,
-) -> None:
-    r"""Train an ANI-style neural network potential using PyTorch Lightning"""
+    print_model: bool = True,
+) -> float:
+    r"""Train an ANI-style neural network potential using PyTorch Lightning
+
+    Returns the final learning rate
+    """
 
     if not restart and loss_terms_and_factors is not None:
         raise ValueError("Loss terms and factors only valid for restarts")
@@ -403,12 +407,6 @@ def train_lit_model(
 
     # Build all callbacks required for training
     lr_monitor = NoLogLRMonitor()
-    early_stopping = EarlyStopping(
-        monitor=lit_model.monitor_label,
-        strict=True,
-        mode="min",
-        patience=config.accel.early_stop_patience,
-    )
     best_model_ckpt = ModelCheckpointWithMetrics(
         dirpath=config.path / "best-model",
         filename="best",
@@ -428,11 +426,18 @@ def train_lit_model(
     save_model_config = SaveConfig(config)
     callbacks = [
         lr_monitor,
-        early_stopping,
         best_model_ckpt,
         latest_model_ckpt,
         save_model_config,
     ]
+    if config.accel.early_stop_patience != -1:
+        early_stopping = EarlyStopping(
+            monitor=lit_model.monitor_label,
+            strict=True,
+            mode="min",
+            patience=config.accel.early_stop_patience,
+        )
+        callbacks.append(early_stopping)
 
     # Finetuning configuration, "dummy ftune" just performs normal training
     if config.ftune is not None and not config.ftune.dummy_ftune:
@@ -483,7 +488,7 @@ def train_lit_model(
         logger=loggers,
         callbacks=callbacks,
     )
-    if verbose:
+    if verbose and print_model:
         print(lit_model.model)
 
     with warnings.catch_warnings():
@@ -496,3 +501,4 @@ def train_lit_model(
             val_dataloaders=validation,
             ckpt_path=ckpt_path if ckpt_path.is_file() else None,
         )
+    return trainer.optimizers[0].param_groups[0]["lr"]

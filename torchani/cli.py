@@ -16,7 +16,6 @@ from typing import Annotated
 import json
 import tarfile
 import csv
-import subprocess
 from typer import Argument, Option, Typer, Abort
 from pathlib import Path
 import re
@@ -774,7 +773,7 @@ def train(
             show_default=False,
         ),
     ] = None,
-    name: Annotated[str, Option("-n", "--run-name", help="Name of run")] = "run",
+    name: Annotated[str, Option("-n", "--run-name", help="Name of run")] = "",
     slurm: Annotated[
         str,
         Option("--slurm"),
@@ -806,9 +805,9 @@ def train(
         int,
         Option(
             "--early-stop-patience",
-            help="Max epochs without improving monitor metric before early stopping",
+            help="Max epochs without improving monitor metric before early stopping. No early stopping by default",
         ),
-    ] = 50,
+    ] = -1,
     # From-scratch specific config
     symbols: Annotated[
         str,
@@ -1044,14 +1043,27 @@ def train(
         str,
         Option("--wandb-project", rich_help_panel="Wandb"),
     ] = "ani",
+    phases_config: Annotated[
+        tp.Optional[list[str]],
+        Option(
+            "--phase-config",
+            hidden=True,
+            help="Phase configuration strings."
+            " Format is epochs:<num>,lr:<factor>,energies:<factor>,forces:<factor>,atomic_charges:<factor>,...",  # noqa
+        ),
+    ] = None,
 ) -> None:
 
-    import jinja2
     import torch
     from torchani.paths import DataKind, select_subdirs
     from torchani.train._lit_training import train_lit_model
+    from torchani.train._sched import send_to_scheduler
+    from torchani.train._finetune import (
+        validate_ftune_options,
+        setup_finetune_and_model_config,
+    )
+    from torchani.train.losses import build_loss_terms_and_factors
     from torchani.train.config import (
-        FinetuneConfig,
         TrainConfig,
         DatasetConfig,
         AccelConfig,
@@ -1074,14 +1086,16 @@ def train(
     ds_config = DatasetConfig.from_json_file(ds_config_path)
     ds_config.fold_idx = "train" if fold_idx is None else fold_idx
 
-    if fold_idx is not None:
-        if not name:
-            name = "train" if not ftune_from else "ftune"
-        name = f"{str(fold_idx).zfill(2)}-{name}"
-
     with open(ds_config.path / "creation_log.json", mode="rt") as f:
         ds_symbols = json.load(f)["symbols"]
 
+    # Set name of the run
+    if not name:
+        name = "train" if not ftune_from else "ftune"
+    if fold_idx is not None:
+        name = f"{str(fold_idx).zfill(2)}-{name}"
+
+    # Override options with debug options
     if debug:
         console.print("Debugging enabled:")
         if name == "train":
@@ -1101,83 +1115,37 @@ def train(
         console.print("    - Anomaly detection mode set")
         detect_anomaly = True
 
-    terms_and_factors: tp.Dict[str, float] = {}
-    if energies > 0.0:
-        label = "EnergiesXC" if xc else "Energies"
-        terms_and_factors[label if no_sqrt_atoms else f"{label}SqrtAtoms"] = energies
-    if forces > 0.0:
-        terms_and_factors["Forces"] = forces
-    if dipoles > 0.0:
-        terms_and_factors["Dipoles"] = dipoles
-    if atomic_charges > 0.0:
-        terms_and_factors["AtomicCharges"] = atomic_charges
-    if atomic_volumes > 0.0:
-        terms_and_factors["AtomicVolumes"] = atomic_volumes
-    if total_charge > 0.0:
-        terms_and_factors["TotalCharge"] = total_charge
+    # Set terms and factors required to build the loss function
+    terms_and_factors = build_loss_terms_and_factors(
+        energies,
+        forces,
+        dipoles,
+        atomic_charges,
+        atomic_volumes,
+        total_charge,
+        no_sqrt_atoms,
+        xc,
+    )
 
     lrsched = parse_scheduler_str(lrsched)
     optim = parse_optimizer_str(optim)
     lrsched_opts = lrsched_opts or []
     optim_opts = (optim_opts or []) + [f"lr={lr}", f"weight_decay={wd}"]
 
-    if lr <= 0.0:
-        console.print("lr must be strictly positive", style="red")
-        raise Abort()
-
-    # Finetune config
+    # Set up the model and finetune configurations
     if ftune_from:
         if arch_fn != "simple_ani" or arch_options or symbols:
             console.print(
                 "Don't specify 'arch', 'arch-opts' or 'symbols' for ftune", style="red"
             )
             raise Abort()
+
         backbone_lr = backbone_lr or 0.0
         num_head_layers = num_head_layers or 1
-        # Validation
-        if backbone_lr < 0.0:
-            console.print("backbone lr must be >= 0", style="red")
-            raise Abort()
-        if backbone_lr > lr:
-            console.print("Backbone lr must be <= head lr", style="red")
-            raise Abort()
-        if num_head_layers < 1:
-            console.print("There must be at least one head layer", style="red")
-            raise Abort()
-        # Create finetune and model configs
-        if ftune_from.split(":")[0] in (
-            "ani1x",
-            "ani2x",
-            "ani2xr",
-            "ani2dr",
-            "ani1ccx",
-            "anidr",
-            "aniala",
-        ):
-            ptrain_name = ftune_from
-            model_config = ModelConfig.from_builtin(ftune_from)
-            raw_ptrain_state_dict_path = ""
-        else:
-            try:
-                _path = select_subdirs((ftune_from,), kind=DataKind.TRAIN)[0]
-            except Exception:
-                _path = select_subdirs((ftune_from,), kind=DataKind.FTUNE)[0]
 
-            ptrain_name = _path.name
-            model_config = TrainConfig.from_json_file(_path / "config.json").model
-            raw_ptrain_state_dict_path = str(Path(_path, "best-model", "best.ckpt"))
-
-            if not Path(raw_ptrain_state_dict_path).is_file():
-                console.print(
-                    f"{raw_ptrain_state_dict_path} is not a valid ckpt", style="red"
-                )
-                raise Abort()
-        ftune_config = FinetuneConfig(
-            pretrained_name=ptrain_name,
-            raw_state_dict_path=raw_ptrain_state_dict_path,
-            num_head_layers=num_head_layers,
-            backbone_lr=backbone_lr,
-            dummy_ftune=dummy_ftune,
+        validate_ftune_options(backbone_lr, lr, num_head_layers)
+        ftune_config, model_config = setup_finetune_and_model_config(
+            ftune_from, backbone_lr, num_head_layers, dummy_ftune
         )
     else:
         ftune_config = None
@@ -1187,6 +1155,8 @@ def train(
             arch_fn=arch_fn,
             options=resolve_options(arch_options or (), arch_fn),
         )
+
+    # Check if lot matches
     if not allow_lot_mismatch and model_config.lot != ds_config.lot:
         console.print(
             "Model LoT must match dataset LoT unless --allow-ds-model-lot-mismatch",
@@ -1194,6 +1164,7 @@ def train(
         )
         raise Abort()
 
+    # Check if supported elements match
     if not set(ds_symbols).issubset(model_config.symbols):
         console.print(
             f"Not all ds symbols {ds_symbols} are supported by the model."
@@ -1224,56 +1195,15 @@ def train(
         ),
     )
 
-    # Re-run everything after the train config has been set up, to prevent potential
-    # issues
+    # Re-run everything after the train config has been set up, so the script fails
+    # early
     if slurm:
-        if slurm == "moria":
-            assert slurm_gpu in ["v100", "gp100", "titanv", "gtx1080ti", ""]
-        elif slurm == "hpg":
-            assert slurm_gpu in ["b200", "l4", ""]
-        else:
-            console.print(f"Unknown cluster {slurm}", style="red")
-            raise Abort()
-        slurm_gpu = f"{slurm_gpu}:1" if slurm_gpu else "1"
-
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates/"),
-            undefined=jinja2.StrictUndefined,
-            autoescape=jinja2.select_autoescape(),
-            trim_blocks=True,
-            lstrip_blocks=True,
-        )
-        arg_list = sys.argv[1:]
-        for j, arg in enumerate(deepcopy(arg_list)):
-            # re-introduce quotes in strings
-            if arg in ["--prof", "--ftune-from", "--monitor", "--lot"]:
-                arg_list[j + 1] = f"'{arg_list[j + 1]}'"
-            if arg == "--slurm":
-                arg_list[j] = ""
-                arg_list[j + 1] = ""
-            if arg == "--slurm-gpu":
-                arg_list[j] = ""
-                arg_list[j + 1] = ""
-        args = " ".join(arg_list)
-        tmpl = env.get_template(f"{slurm}.slurm.sh.jinja").render(
-            num_workers=num_workers,
-            name=str(config.path.name),
-            gpu=slurm_gpu,
-            args=args,
-        )
-        unique_id = config.path.name.split("-")[-1]
-        j = 0
-        input_dir = Path(Path.home(), "IO", "ani", f"{unique_id}_v{j}")
-        while input_dir.is_dir():
-            j += 1
-            input_dir = Path(Path.home(), "IO", "ani", f"{unique_id}_v{j}")
-        input_dir.mkdir(exist_ok=False, parents=True)
-        input_fpath = input_dir / f"{slurm}.slurm.sh"
-        input_fpath.write_text(tmpl)
-        console.print("Launching slurm script ...")
-        subprocess.run(["sbatch", str(input_fpath)], cwd=input_dir, check=True)
+        send_to_scheduler(slurm_gpu, slurm, num_workers, config.path.name)
         sys.exit(0)
-    train_lit_model(
+    if phases_config:
+        console.print("Starting phase 0 training")
+        console.print(f"Run name: {config.name}")
+    final_lr = train_lit_model(
         config,
         allow_restart=auto_restart,
         verbose=verbose,
@@ -1281,3 +1211,64 @@ def train(
         wandb_entity=wandb_entity,
         log_wandb=log_wandb,
     )
+    if phases_config:
+        for j, phase_str in enumerate(phases_config, 1):
+            ftune_config, model_config = setup_finetune_and_model_config(
+                ftune_from=config.name, dummy_ftune=True
+            )
+            config.ftune = ftune_config
+            config.model = model_config
+
+            # Default new weights
+            phase_config = {
+                "epochs": 0.0,
+                "lr": 1.0,
+                "energies": 0.0,
+                "forces": 0.0,
+                "dipoles": 0.0,
+                "atomic_volumes": 0.0,
+                "atomic_charges": 0.0,
+                "total_charge": 0.0,
+            }
+            parts = phase_str.split(",")
+            # Override weights
+            for p in parts:
+                k, v = p.split(":")
+                phase_config[k] = float(v)
+
+            if phase_config["epochs"] != 0.0:
+                config.accel.max_epochs = int(phase_config["epochs"])
+
+            terms_and_factors = build_loss_terms_and_factors(
+                phase_config["energies"],
+                phase_config["forces"],
+                phase_config["dipoles"],
+                phase_config["atomic_charges"],
+                phase_config["atomic_volumes"],
+                phase_config["total_charge"],
+                no_sqrt_atoms,
+                xc,
+            )
+
+            # Overwrite values in config for new phases
+            for key, val in terms_and_factors.items():
+                config.loss.terms_and_factors[key] = val
+            config.optim.options["lr"] = final_lr * phase_config["lr"]
+            if "phase" not in config.name:
+                config.name = f"{config.name}-phase{j}"
+            else:
+                config.name = f"{'-'.join(config.name.split('-')[:-1])}-phase{j}"
+            console.print(f"Starting phase {j} training")
+            console.print(f"Run name: {config.name}")
+            console.print(f"Final lr of previous phase: {final_lr}")
+            console.print(f"Initial lr for this phase: {final_lr * phase_config['lr']}")
+            console.print(f"New loss weights for phase: {terms_and_factors}")
+            final_lr = train_lit_model(
+                config,
+                allow_restart=auto_restart,
+                verbose=verbose,
+                wandb_project=wandb_project,
+                wandb_entity=wandb_entity,
+                log_wandb=log_wandb,
+                print_model=False,
+            )
