@@ -1143,7 +1143,15 @@ def train(
             console.print("There must be at least one head layer", style="red")
             raise Abort()
         # Create finetune and model configs
-        if ftune_from.split(":")[0] in ("ani1x", "ani2x", "ani1ccx", "anidr", "aniala"):
+        if ftune_from.split(":")[0] in (
+            "ani1x",
+            "ani2x",
+            "ani2xr",
+            "ani2dr",
+            "ani1ccx",
+            "anidr",
+            "aniala",
+        ):
             ptrain_name = ftune_from
             model_config = ModelConfig.from_builtin(ftune_from)
             raw_ptrain_state_dict_path = ""
@@ -1184,7 +1192,7 @@ def train(
         )
         raise Abort()
 
-    if not set(model_config.symbols).issubset(ds_symbols):
+    if not set(ds_symbols).issubset(model_config.symbols):
         console.print(
             f"Not all ds symbols {ds_symbols} are supported by the model."
             f"Model supports {model_config.symbols}",

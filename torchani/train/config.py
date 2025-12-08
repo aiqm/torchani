@@ -209,20 +209,21 @@ class ModelConfig(FnConfig):
     @classmethod
     def from_builtin(cls, name_or_idx: str) -> tpx.Self:
         name, idx = name_or_idx.split(":")
+        name = name.lower()
         symbols = ["H", "C", "N", "O"]
         lot = {
             "ani1x": "wb97x-631gd",
-            "ani2x": "wb97x-631gd",
-            "aniala": "wb97x-631gd",
-            "anidr": "b973c-def2mtzvp",
             "ani1ccx": "ccsd(t)star-cbs",
+            "ani2x": "wb97x-631gd",
+            "ani2xr": "wb97x-631gd",
+            "ani2dr": "b973c-def2mtzvp",
             "animbis": "wb97x-631gd",
         }
         if not (("1x" in name) or ("1ccx" in name)):
             symbols.extend(["S", "F", "Cl"])
         return cls(
             builtin=True,
-            arch_fn=name,
+            arch_fn=name.replace("ani", "ANI"),
             options={"model_index": int(idx)},
             symbols=symbols,
             lot=lot[name],
