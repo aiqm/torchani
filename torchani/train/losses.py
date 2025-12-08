@@ -47,7 +47,7 @@ def Forces(factor: float = 1.0) -> LossTerm:
         label="forces",
         grad_of_label="energies",
         is_vec3=True,
-        is_extensive=True,
+        is_extensive=False,
         factor=factor,
         negative_grad=True,
     )
