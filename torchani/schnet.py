@@ -1,3 +1,4 @@
+r"""Implementation of the SchNet model"""
 import math
 import typing as tp
 import torch
@@ -9,7 +10,6 @@ from torchani.cutoffs import CutoffArg
 from torchani.tuples import SpeciesEnergies
 
 
-# Activation used in schnet
 class ShiftedSoftplus(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -149,7 +149,7 @@ class SchNet(torch.nn.Module):
         elem_idxs = self._species_converter(species)
         neighbors = self._neighborlist(self._cutoff, elem_idxs, coords, cell, pbc)
         features = self._embedding(elem_idxs + 1)  # shape (N A)
-        # Pre-calculate the expansion for efficiency
+        # Pre-calculate expansion for efficiency
         expansion = self._interaction_blocks[0].expand(  # type: ignore[operator]
             neighbors.distances
         )
