@@ -64,3 +64,5 @@ dependencies:
     - --index-url https://download.pytorch.org/whl/cu129
     - --extra-index-url https://pypi.python.org/simple
     - torch==2.8.*
+    - lightning
+    - torchmetrics

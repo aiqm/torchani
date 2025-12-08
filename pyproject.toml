@@ -32,6 +32,8 @@ dependencies = [
     "pyarrow",
     "zarr<3",
     "huggingface_hub",
+    "lightning",
+    "torchmetrics",
 ]
 dynamic = ["version"]
 

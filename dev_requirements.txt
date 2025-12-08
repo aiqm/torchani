@@ -40,3 +40,5 @@ flake8
 mypy
 
 ninja
+lightning
+torchmetrics
