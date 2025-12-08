@@ -958,7 +958,9 @@ def train(
     # Finetuning specific config
     dummy_ftune: Annotated[
         bool,
-        Option("--dummy-ftune/--no-dummy-ftune", rich_help_panel="Finetuning"),
+        Option(
+            "--dummy-ftune/--no-dummy-ftune", rich_help_panel="Finetuning", hidden=True
+        ),
     ] = False,
     ftune_from: Annotated[
         str,
