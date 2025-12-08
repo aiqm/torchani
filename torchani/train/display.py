@@ -372,7 +372,7 @@ def ls(
                         else "error"
                     ),
                     f"{config.optim.weight_decay:.0e}",
-                    f"{config.optim.lr:.0e}|{(config.ftune.backbone_lr if config.ftune is not None else 0.0):.0e}",
+                    f"{config.optim.lr:.0e}|{(config.ftune.backbone_lr if config.ftune is not None else 0.0):.0e}",  # noqa
                     f"{epoch}({best_epoch})",
                 ]
                 if optim_detail:
