@@ -21,7 +21,6 @@ from typer import Argument, Option, Typer, Abort
 from pathlib import Path
 import re
 
-import jinja2
 from rich.console import Console
 
 from ._builtin_dataset_ids import _DatasetId, _LotId
@@ -1047,6 +1046,7 @@ def train(
     ] = "ani",
 ) -> None:
 
+    import jinja2
     import torch
     from torchani.paths import DataKind, select_subdirs
     from torchani.train._lit_training import train_lit_model
