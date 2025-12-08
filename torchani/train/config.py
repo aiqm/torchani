@@ -8,7 +8,7 @@ from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
 from torchani.annotations import PyScalar
-from torchani.train.paths import BATCH_PATH, FTUNE_PATH, TRAIN_PATH
+from torchani.paths import batched_data_dir, ftune_dir, train_dir
 
 
 def load_state_dict(path: Path) -> tp.Dict[str, tp.Any]:
@@ -175,7 +175,7 @@ class DatasetConfig(Config):
         state = sorted((k, v) for k, v in dict_.items())
         hasher = hashlib.shake_128()
         hasher.update(str(state).encode())
-        _path = BATCH_PATH / f"{self.name}-{hasher.hexdigest(4)}"
+        _path = batched_data_dir() / f"{self.name}-{hasher.hexdigest(4)}"
         return _path
 
 
@@ -316,7 +316,7 @@ class TrainConfig(Config):
     @property
     def path(self) -> Path:
         dict_ = asdict(self)
-        root = FTUNE_PATH if self.ftune is not None else TRAIN_PATH
+        root = ftune_dir() if self.ftune is not None else train_dir()
 
         dict_.pop("debug")
         dict_.pop("accel")

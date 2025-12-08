@@ -1031,10 +1031,22 @@ def train(
     verbose: Annotated[
         bool, Option("-v/ ", "--verbose/ ", rich_help_panel="Debug")
     ] = False,
+    log_wandb: Annotated[
+        bool,
+        Option("--wandb/--no-wandb", rich_help_panel="Wandb"),
+    ] = False,
+    wandb_entity: Annotated[
+        str,
+        Option("--wandb-entity", rich_help_panel="Wandb"),
+    ] = "nnip",
+    wandb_project: Annotated[
+        str,
+        Option("--wandb-project", rich_help_panel="Wandb"),
+    ] = "ani",
 ) -> None:
 
     import torch
-    from torchani.train.paths import DataKind, select_subdirs
+    from torchani.paths import DataKind, select_subdirs
     from torchani.train._lit_training import train_lit_model
     from torchani.train.config import (
         FinetuneConfig,
@@ -1251,4 +1263,11 @@ def train(
         console.print("Launching slurm script ...")
         subprocess.run(["sbatch", str(input_fpath)], cwd=input_dir, check=True)
         sys.exit(0)
-    train_lit_model(config, allow_restart=auto_restart, verbose=verbose)
+    train_lit_model(
+        config,
+        allow_restart=auto_restart,
+        verbose=verbose,
+        wandb_project=wandb_project,
+        wandb_entity=wandb_entity,
+        log_wandb=log_wandb,
+    )

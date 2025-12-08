@@ -6,12 +6,7 @@ from rich.table import Table
 from rich.console import Console
 
 from torchani.train.config import DatasetConfig, TrainConfig, SrcConfig
-from torchani.train.paths import (
-    TRAIN_PATH,
-    FTUNE_PATH,
-    BATCH_PATH,
-    MODELS_PATH,
-)
+from torchani.paths import train_dir, ftune_dir, batched_data_dir, custom_models_dir
 
 console = Console()
 
@@ -126,10 +121,10 @@ def ls(
         arch_detail = True
         optim_detail = True
         scheduler_detail = True
-    batch = sorted(BATCH_PATH.iterdir())
-    train = sorted(TRAIN_PATH.iterdir())
-    ftune = sorted(FTUNE_PATH.iterdir())
-    ensemble = sorted(MODELS_PATH.iterdir())
+    batch = sorted(batched_data_dir().iterdir())
+    train = sorted(train_dir().iterdir())
+    ftune = sorted(ftune_dir().iterdir())
+    ensemble = sorted(custom_models_dir().iterdir())
     if batch:
         table = Table(title="Batched datasets", box=None)
         table.add_column("", style="magenta")
