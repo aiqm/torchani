@@ -9,8 +9,13 @@ from enum import Enum
 
 import torch
 from torch import Tensor
+from typer import Abort
+from rich.console import Console
 
 from torchani.annotations import PyScalar
+
+
+console = Console()
 
 
 class Penalty(Enum):
@@ -186,6 +191,11 @@ class MultiTaskLoss(torch.nn.Module):
             0.0, dtype=torch.float, device=targ["species"].device
         )
         for term in self.terms:
+            if term.label not in pred:
+                console.print(
+                    f"Loss has {term.label} but model doesn't predict it", style="red"
+                )
+                raise Abort()
             if term.penalty is Penalty.SQUARE:
                 error = (pred[term.label] - targ[term.targ_label]).pow(2)
             elif term.penalty is Penalty.ABS:

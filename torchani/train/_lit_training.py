@@ -9,6 +9,7 @@ import itertools
 
 from rich.prompt import Confirm
 from rich.console import Console
+from typer import Abort
 import torch
 from torch import Tensor
 import lightning
@@ -18,6 +19,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import EarlyStopping, BackboneFinetuning
 
 import torchani
+from torchani.electro import DipoleComputer
 from torchani.arch import _ANI
 from torchani.units import hartree2kcalpermol
 from torchani.annotations import PyScalar
@@ -26,6 +28,8 @@ from torchani.train._lit_callbacks import (
     SaveConfig,
     ModelCheckpointWithMetrics,
     NoLogLRMonitor,
+    EMA,
+    PhaseChange,
 )
 from torchani.datasets import ANIBatchedDataset
 from torchani.train.config import TrainConfig
@@ -58,12 +62,15 @@ class LitModel(lightning.LightningModule):
         scheduler_cls: str = "ReduceLROnPlateau",
         uncertainty_weighted: bool = False,
         num_head_layers: int = 0,
+        assume_neutral: bool = True,
     ) -> None:
         super().__init__()
         self.optimizer_options = optimizer_options
         self.scheduler_options = scheduler_options
         self.optimizer_cls = optimizer_cls
         self.scheduler_cls = scheduler_cls
+        # Assume molecules are neutral if total charge is not provided
+        self._assume_neutral = assume_neutral
 
         loss_terms = tuple(
             getattr(losses, name)(factor=factor)
@@ -101,36 +108,19 @@ class LitModel(lightning.LightningModule):
                 module_list.extend(list(all_layers)[:-num_head_layers])
         self.backbone = module_list
 
-    def set_loss(
-        self,
-        loss_terms_and_factors: tp.Dict[str, float],
-        monitor_label: tp.Optional[str] = None,
-        uncertainty_weighted: tp.Optional[bool] = None,
-    ) -> None:
-        loss_terms = tuple(
-            getattr(losses, name)(factor=factor)
-            for name, factor in loss_terms_and_factors.items()
+        # Auxiliary module to compute dipoles if required
+        # mypy complains but this is valid, too lazy to type correctly
+        self._dipole_computer = DipoleComputer(
+            device=self.device, dtype=self.dtype  # type: ignore
         )
-        metrics: tp.Dict[str, tp.Union[Metric, MetricCollection]] = {}
-        for term in loss_terms:
-            for div in ("valid", "train"):
-                # MeanSquaredError(squared=False) is directly the RMSE
-                metrics[f"{div}/rmse_{term.label}"] = MeanSquaredError(squared=False)
-                metrics[f"{div}/mae_{term.label}"] = MeanAbsoluteError()
-        self.metrics = MetricCollection(metrics)
 
-        if monitor_label is not None:
-            if len(loss_terms) == 1 and monitor_label == "valid/rmse_default":
-                monitor_label = f"valid/rmse_{loss_terms[0].label}"
-            elif any(term.label == "forces" for term in loss_terms):
-                monitor_label = "valid/rmse_forces"
-            elif not any(monitor_label.endswith(term.label) for term in loss_terms):
-                raise ValueError("Monitor label must be one of the enabled loss terms")
-            self.monitor_label = monitor_label
-        if uncertainty_weighted is not None:
-            self.loss = losses.MultiTaskLoss(loss_terms, uncertainty_weighted)
-        else:
-            self.loss = losses.MultiTaskLoss(loss_terms)
+    def set_loss_factors(self, terms_and_factors: tp.Dict[str, float]) -> None:
+        for label, factor in terms_and_factors.items():
+            if not self.loss.is_enabled(label):
+                if factor > 0.0:
+                    raise ValueError("Can only modify already enabled terms")
+                continue
+            self.loss.term(label).factor = factor
 
     def on_train_start(self) -> None:
         # Log hyperparameters to tensorboard events file (only a single time)
@@ -167,7 +157,20 @@ class LitModel(lightning.LightningModule):
             if not k.startswith(f"{div}/"):
                 continue
             label = "_".join(k.split("_")[1:])
-            v.update(pred[label], batch[self.loss.term(label).targ_label])
+            if label not in pred:
+                console.print(
+                    f"Loss has {label} but model doesn't predict it", style="red"
+                )
+                console.print(f"Predicted labels are: {pred.keys()}", style="red")
+                raise Abort()
+            targ_label = self.loss.term(label).targ_label
+            if targ_label not in batch:
+                console.print(
+                    f"Loss has {targ_label} but dataset doesn't provide it", style="red"
+                )
+                console.print(f"Provided labels are: {batch.keys()}", style="red")
+                raise Abort()
+            v.update(pred[label], batch[targ_label])
 
     # Metrics are logged at the end of each validation epoch only
     # This is only correct if check_val_every_n_epochs=1
@@ -192,10 +195,6 @@ class LitModel(lightning.LightningModule):
         self.log_dict(results)
 
     def batch_eval(self, batch: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-        for term in self.loss.grad_terms:
-            # e.g. batch["coordinates"].requires_grad_(True)
-            batch[term.grad_wrt_targ_label].requires_grad_(True)
-
         # Rename common synonyms
         if "energy" in batch:
             batch["energies"] = batch.pop("energy").view(-1)
@@ -203,10 +202,16 @@ class LitModel(lightning.LightningModule):
             batch["forces"] = batch.pop("force")
         if "coords" in batch:
             batch["coordinates"] = batch.pop("coords")
+        if "total_charges" in batch:
+            batch["total_charge"] = batch.pop("total_charges")
+
+        for term in self.loss.grad_terms:
+            # e.g. batch["coordinates"].requires_grad_(True)
+            batch[term.grad_wrt_targ_label].requires_grad_(True)
 
         if "cell" in batch:
             # Periodic
-            # TODO: Remove float casts
+            # TODO: Remove float casts?
             pred = self.model(
                 (batch["species"], batch["coordinates"].float()),
                 cell=batch["cell"].view(3, 3).float(),
@@ -219,6 +224,34 @@ class LitModel(lightning.LightningModule):
                 (batch["species"], batch["coordinates"].float())
             )._asdict()
         pred.pop("species")
+
+        # Generate dipoles and total charge if needed
+        if self.loss.is_enabled("dipoles") and "dipoles" not in pred:
+            if "atomic_charges" not in pred:
+                console.print(
+                    "'atomic_charges' or 'dipoles' required to calculate 'dipoles',"
+                    " but model doesn't predict either",
+                    style="red",
+                )
+                console.print(f"Predicted labels are: {pred.keys()}", style="red")
+                raise Abort()
+            pred["dipoles"] = self._dipole_computer(
+                batch["species"], batch["coordinates"], pred["atomic_charges"]
+            )
+        if self.loss.is_enabled("total_charge") and "total_charge" not in pred:
+            if self._assume_neutral and "total_charge" not in batch:
+                _coords = batch["coordinates"]
+                batch["total_charge"] = _coords.new_zeros(_coords.shape[0])
+
+            if "atomic_charges" not in pred:
+                console.print(
+                    "'atomic_charges' or 'total_charge' required for 'total_charge',"
+                    " but model doesn't predict either",
+                    style="red",
+                )
+                console.print(f"Predicted labels are: {pred.keys()}", style="red")
+                raise Abort()
+            pred["total_charge"] = pred["atomic_charges"].sum(-1)
 
         for term in self.loss.grad_terms:
             pred[term.label] = (-1 if term.negative_grad else 1) * torch.autograd.grad(
@@ -264,7 +297,7 @@ def train_lit_model(
     wandb_project: str = "ani",
     log_wandb: bool = False,
     print_model: bool = True,
-) -> float:
+) -> None:
     r"""Train an ANI-style neural network potential using PyTorch Lightning
 
     Returns the final learning rate
@@ -352,7 +385,7 @@ def train_lit_model(
             model=model,
         )
         if loss_terms_and_factors:
-            lit_model.set_loss(loss_terms_and_factors)
+            lit_model.set_loss_factors(loss_terms_and_factors)
     else:
         no_ftune = config.ftune is None or config.ftune.dummy_ftune
         lit_model = LitModel(  # type: ignore
@@ -439,6 +472,20 @@ def train_lit_model(
         )
         callbacks.append(early_stopping)
 
+    if config.do_ema:
+        ema = EMA(config.ema_decay, config.ema_mode)
+        callbacks.append(ema)
+
+    if config.phase_changes:
+        for p in config.phase_changes:
+            p = p.copy()
+            epoch = int(p.pop("epoch"))
+            new_lr = p.pop("lr", None)
+            phase_change = PhaseChange(
+                epoch=epoch, new_lr=new_lr, new_loss_terms_and_factors=p
+            )
+            callbacks.append(phase_change)
+
     # Finetuning configuration, "dummy ftune" just performs normal training
     if config.ftune is not None and not config.ftune.dummy_ftune:
         if config.ftune.frozen_backbone:
@@ -501,4 +548,3 @@ def train_lit_model(
             val_dataloaders=validation,
             ckpt_path=ckpt_path if ckpt_path.is_file() else None,
         )
-    return trainer.optimizers[0].param_groups[0]["lr"]

@@ -805,7 +805,10 @@ def train(
         int,
         Option(
             "--early-stop-patience",
-            help="Max epochs without improving monitor metric before early stopping. No early stopping by default",
+            help=(
+                "Max epochs without improving monitor metric before early stopping. "
+                " No early stopping by default"
+            ),
         ),
     ] = -1,
     # From-scratch specific config
@@ -821,6 +824,10 @@ def train(
             rich_help_panel="Arch",
         ),
     ] = "",
+    do_ema: Annotated[
+        bool,
+        Option("--ema/--no-ema"),
+    ] = False,
     lot: Annotated[
         str,
         Option(
@@ -931,6 +938,7 @@ def train(
         float,
         Option(
             "-q",
+            "--atomic-qs",
             "--atomic-charges",
             help="Atomic charges factor",
             rich_help_panel="Loss",
@@ -938,7 +946,13 @@ def train(
     ] = 0.0,
     total_charge: Annotated[
         float,
-        Option("--total-q", help="Total charge factor", rich_help_panel="Loss"),
+        Option(
+            "-Q",
+            "--total-q",
+            "--total-charge",
+            help="Total charge factor",
+            rich_help_panel="Loss",
+        ),
     ] = 0.0,
     monitor: Annotated[
         str,
@@ -1043,13 +1057,13 @@ def train(
         str,
         Option("--wandb-project", rich_help_panel="Wandb"),
     ] = "ani",
-    phases_config: Annotated[
+    phase_configs: Annotated[
         tp.Optional[list[str]],
         Option(
             "--phase-config",
             hidden=True,
-            help="Phase configuration strings."
-            " Format is epochs:<num>,lr:<factor>,energies:<factor>,forces:<factor>,atomic_charges:<factor>,...",  # noqa
+            help="Phase configuration strings. Epoch is required, rest are optional"
+            " Format is epoch:<num>,lr:<new-val>,energies:<factor>,forces:<factor>,atomic_charges:<factor>,...",  # noqa
         ),
     ] = None,
 ) -> None:
@@ -1173,13 +1187,28 @@ def train(
         )
         raise Abort()
 
+    # Build phase changes from strings
+    phase_changes = []
+    if phase_configs:
+        for phase_str in phase_configs:
+            parts = phase_str.split(",")
+            phase_config = {}
+            for p in parts:
+                k, v = p.split(":")
+                phase_config[k] = float(v)
+            if "epoch" not in phase_config:
+                raise ValueError("All phase configs must specify a trigger epoch")
+            phase_changes.append(phase_config)
+
     config = TrainConfig(
         name=name,
         debug=debug,
         ds=ds_config,
+        do_ema=do_ema,
         monitor_label=monitor,
         ftune=ftune_config,
         model=model_config,
+        phase_changes=phase_changes,
         loss=LossConfig(terms_and_factors=terms_and_factors),
         optim=OptimizerConfig(resolve_options(optim_opts, optim), optim),
         scheduler=SchedulerConfig(resolve_options(lrsched_opts, lrsched), lrsched),
@@ -1200,10 +1229,7 @@ def train(
     if slurm:
         send_to_scheduler(slurm_gpu, slurm, num_workers, config.path.name)
         sys.exit(0)
-    if phases_config:
-        console.print("Starting phase 0 training")
-        console.print(f"Run name: {config.name}")
-    final_lr = train_lit_model(
+    train_lit_model(
         config,
         allow_restart=auto_restart,
         verbose=verbose,
@@ -1211,64 +1237,3 @@ def train(
         wandb_entity=wandb_entity,
         log_wandb=log_wandb,
     )
-    if phases_config:
-        for j, phase_str in enumerate(phases_config, 1):
-            ftune_config, model_config = setup_finetune_and_model_config(
-                ftune_from=config.name, dummy_ftune=True
-            )
-            config.ftune = ftune_config
-            config.model = model_config
-
-            # Default new weights
-            phase_config = {
-                "epochs": 0.0,
-                "lr": 1.0,
-                "energies": 0.0,
-                "forces": 0.0,
-                "dipoles": 0.0,
-                "atomic_volumes": 0.0,
-                "atomic_charges": 0.0,
-                "total_charge": 0.0,
-            }
-            parts = phase_str.split(",")
-            # Override weights
-            for p in parts:
-                k, v = p.split(":")
-                phase_config[k] = float(v)
-
-            if phase_config["epochs"] != 0.0:
-                config.accel.max_epochs = int(phase_config["epochs"])
-
-            terms_and_factors = build_loss_terms_and_factors(
-                phase_config["energies"],
-                phase_config["forces"],
-                phase_config["dipoles"],
-                phase_config["atomic_charges"],
-                phase_config["atomic_volumes"],
-                phase_config["total_charge"],
-                no_sqrt_atoms,
-                xc,
-            )
-
-            # Overwrite values in config for new phases
-            for key, val in terms_and_factors.items():
-                config.loss.terms_and_factors[key] = val
-            config.optim.options["lr"] = final_lr * phase_config["lr"]
-            if "phase" not in config.name:
-                config.name = f"{config.name}-phase{j}"
-            else:
-                config.name = f"{'-'.join(config.name.split('-')[:-1])}-phase{j}"
-            console.print(f"Starting phase {j} training")
-            console.print(f"Run name: {config.name}")
-            console.print(f"Final lr of previous phase: {final_lr}")
-            console.print(f"Initial lr for this phase: {final_lr * phase_config['lr']}")
-            console.print(f"New loss weights for phase: {terms_and_factors}")
-            final_lr = train_lit_model(
-                config,
-                allow_restart=auto_restart,
-                verbose=verbose,
-                wandb_project=wandb_project,
-                wandb_entity=wandb_entity,
-                log_wandb=log_wandb,
-                print_model=False,
-            )
