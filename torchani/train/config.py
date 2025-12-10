@@ -320,6 +320,7 @@ class TrainConfig(Config):
     ema_decay: float = 0.99
     ema_mode: str = "batch"
     do_ema: bool = False
+    dipole_reference: str = "center_of_mass"
     # Each phase change may specify a different lr and different loss weights.
     # They are triggerd at specific epochs
     phase_changes: list[dict[str, float]] = field(default_factory=list)

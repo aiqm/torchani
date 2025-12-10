@@ -1076,6 +1076,13 @@ def train(
     dipoles: Annotated[
         float, Option("-m", "--dipoles", help="Dipole factor", rich_help_panel="Loss")
     ] = 0.0,
+    dipole_reference: Annotated[
+        str,
+        Option(
+            "--dipole-reference",
+            help="One of 'center_of_mass', 'center_of_geometry' or 'origin'",
+        ),
+    ] = "center_of_mass",
     atomic_volumes: Annotated[
         float,
         Option(
@@ -1365,6 +1372,7 @@ def train(
         ftune=ftune_config,
         model=model_config,
         phase_changes=phase_changes,
+        dipole_reference=dipole_reference,
         loss=LossConfig(terms_and_factors=terms_and_factors),
         optim=OptimizerConfig(resolve_options(optim_opts, optim), optim),
         scheduler=SchedulerConfig(resolve_options(lrsched_opts, lrsched), lrsched),

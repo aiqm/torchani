@@ -80,6 +80,7 @@ class LitModel(lightning.LightningModule):
         uncertainty_weighted: bool = False,
         num_head_layers: int = 0,
         assume_neutral: bool = True,
+        dipole_reference: str = "center_of_mass",
     ) -> None:
         super().__init__()
         self.optimizer_options = optimizer_options
@@ -128,7 +129,9 @@ class LitModel(lightning.LightningModule):
         # Auxiliary module to compute dipoles if required
         # mypy complains but this is valid, too lazy to type correctly
         self._dipole_computer = DipoleComputer(
-            device=self.device, dtype=self.dtype  # type: ignore
+            device=self.device,
+            dtype=self.dtype,  # type: ignore
+            reference=dipole_reference,  # type: ignore
         )
 
     def set_loss_factors(self, terms_and_factors: tp.Dict[str, float]) -> None:
@@ -400,6 +403,7 @@ def train_lit_model(
         no_ftune = config.ftune is None or config.ftune.dummy_ftune
         lit_model = LitModel(  # type: ignore
             model,
+            dipole_reference=config.dipole_reference,
             loss_terms_and_factors=config.loss.terms_and_factors,
             monitor_label=config.monitor_label,
             # Loss
