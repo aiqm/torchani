@@ -1391,3 +1391,102 @@ def train(
         wandb_entity=wandb_entity,
         log_wandb=log_wandb,
     )
+
+
+@main.command()
+def plot(
+    ftune_name_or_idx: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-f", "--ftune-run", help="Name|idx of ftune run"),
+    ] = None,
+    ptrain_name_or_idx: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-t", "--train-run", help="Name|idx of train run"),
+    ] = None,
+    labels: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-l", "--label"),
+    ] = None,
+    limits: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("--lim"),
+    ] = None,
+    validation: Annotated[
+        bool,
+        Option("--val/--train"),
+    ] = True,
+) -> None:
+    from torchani.paths import DataKind, select_subdirs
+
+    try:
+        import pandas as pd
+        import matplotlib.pyplot as plt
+    except ImportError:
+        console.print("pandas and matplotlib are required for plotting")
+        raise
+
+    prefix = "train" if not validation else "valid"
+    r"""Plot a specific metric"""
+    if labels is None:
+        labels = [
+            "mae_energies_kcal|mol",
+            "mae_forces_kcal|mol|ang",
+            "rmse_energies_kcal|mol",
+            "rmse_forces_kcal|mol|ang",
+        ]
+    if limits is not None:
+        limit_tuples = tp.cast(
+            tp.List[tp.Tuple[float, int]],
+            [tuple(map(int, lim.split(","))) for lim in limits],
+        )
+    else:
+        limit_tuples = [None] * len(labels)  # type: ignore
+    if len(limit_tuples) != len(labels):
+        raise ValueError("Limit tuples and labels must have the same length")
+    paths = []
+    for selectors, dkind in zip(
+        (
+            ftune_name_or_idx,
+            ptrain_name_or_idx,
+        ),
+        (
+            DataKind.FTUNE,
+            DataKind.TRAIN,
+        ),
+    ):
+        if selectors is not None:
+            paths.extend(select_subdirs(selectors, kind=dkind))
+
+        dfs: tp.Dict[str, pd.DataFrame] = {}
+        for path in paths:
+            csv_path = path / "csv-logs"
+            _df = []
+            for version_dir in sorted(csv_path.glob("version_*")):
+                metrics = version_dir / "metrics.csv"
+                if metrics.is_file():
+                    _df.append(pd.read_csv(metrics))
+            dfs[path.name] = pd.concat(_df)
+
+        if dfs:
+            for label, lim in zip(labels, limit_tuples):
+                fig, ax = plt.subplots()
+                for j, (name, df) in enumerate(dfs.items()):
+                    ax.plot(df["epoch"], df[f"{prefix}/{label}"], label=f"Model {j}")
+                label = label.replace(
+                    "mae_energies_kcal|mol", r"$E_{\text{MAE}}$ (kcal/mol)"
+                )
+                label = label.replace(
+                    "mae_forces_kcal|mol|ang", r"$F_{\text{MAE}}$ (kcal/mol/\AA{})"
+                )
+                label = label.replace(
+                    "rmse_energies_kcal|mol", r"$E_{\text{RMSE}}$ (kcal/mol)"
+                )
+                label = label.replace(
+                    "rmse_forces_kcal|mol|ang", r"$F_{\text{RMSE}}$ (kcal/mol/\AA{})"
+                )
+                ax.set_ylabel(f"{label}")
+                ax.set_xlabel(r"Epoch")
+                if lim is not None:
+                    ax.set_ylim(lim[0], lim[1])
+                ax.legend()
+                plt.show()

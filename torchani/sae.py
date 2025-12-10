@@ -49,6 +49,11 @@ class SelfEnergy(_ChemModule):
         r"""Instantiate SelfEnergy with ground state atomic energies"""
         return cls(symbols, cls._sorted_gsaes(symbols, functional, basis_set))
 
+    @classmethod
+    def zeros(cls, symbols: tp.Sequence[str]):
+        r"""Instantiate SelfEnergy with zero values"""
+        return cls(symbols, [0.0] * len(symbols))
+
     # TODO: Neighbors(empty(0), ...) is a Hack that seems to work for now to
     # avoid having to pass that argument to SelfEnergies
     def forward(

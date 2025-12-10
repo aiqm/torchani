@@ -1111,10 +1111,21 @@ def simple_schnet(
     ensemble_size: int = 1,
     strategy: str = "auto",
     neighborlist: NeighborlistArg = "all_pairs",
+    self_energies: tp.Union[
+        tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
+    ] = None,
 ) -> SchNet:
+    if self_energies == "zero":
+        _self_energies = [0.0] * len(symbols)
+    elif self_energies is None:
+        gsaes = GSAES[lot.lower()]
+        _self_energies = [gsaes[s] for s in symbols]
+    else:
+        _self_energies = [self_energies[k] for k in symbols]
+    shifter = SelfEnergy(symbols, _self_energies)
     # strategy is a no-op
     assert ensemble_size == 1
-    return SchNet(symbols, neighborlist=neighborlist)
+    return SchNet(symbols, neighborlist=neighborlist, energy_shifter=shifter)
 
 
 def simple_ani(

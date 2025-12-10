@@ -1,4 +1,5 @@
-r"""Implementation of the SchNet model"""
+r"""Simple implementation of the SchNet model"""
+
 import math
 import typing as tp
 import torch
@@ -8,16 +9,17 @@ from torchani.nn import SpeciesConverter
 from torchani.aev import ANIRadial
 from torchani.cutoffs import CutoffArg
 from torchani.tuples import SpeciesEnergies
+from torchani.sae import SelfEnergy
 
 
 class ShiftedSoftplus(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self._shift = torch.log(torch.tensor(0.5))
+        self._shift = torch.log(torch.tensor(2))
 
     def forward(self, x: Tensor) -> Tensor:
         # Equivalent to equation in SchNet article
-        return torch.nn.functional.softplus(x) + self._shift
+        return torch.nn.functional.softplus(x) - self._shift
 
 
 class CFConv(torch.nn.Module):
@@ -98,6 +100,7 @@ class SchNet(torch.nn.Module):
         num_shifts: int = 300,
         interaction_num: int = 3,
         eta: float = 10.0,
+        energy_shifter: tp.Optional[SelfEnergy] = None,
         neighborlist: NeighborlistArg = "all_pairs",
         cutoff: float = 30.0,
         cutoff_fn: CutoffArg = "dummy",
@@ -127,6 +130,10 @@ class SchNet(torch.nn.Module):
         self._ssp = ShiftedSoftplus()
         self._final_linear = torch.nn.Linear(embed_dim // 2, 1)
         # NOTE: The original SchNet has *no energy shifter*
+        if energy_shifter is None:
+            energy_shifter = SelfEnergy.zeros(symbols)
+            energy_shifter._enabled = False
+        self._energy_shifter = energy_shifter
 
     def forward(
         self,
@@ -157,6 +164,11 @@ class SchNet(torch.nn.Module):
             features = block(features, neighbors, expansion)
         out = self._ssp(self._linear(features))
         atomic_energies = self._final_linear(out).squeeze(-1)
+
+        if self._energy_shifter._enabled:
+            atomic_energies = atomic_energies + self._energy_shifter(
+                elem_idxs, atomic=True
+            )
         if atomic:
             return SpeciesEnergies(species, atomic_energies)
         return SpeciesEnergies(species, atomic_energies.sum(-1))
