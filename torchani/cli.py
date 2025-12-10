@@ -904,18 +904,52 @@ def train(
             rich_help_panel="Optimizer",
         ),
     ] = 5e-4,
-    # Loss config
-    xc: Annotated[
-        bool, Option("--xc/ ", help="Train to XC energies", rich_help_panel="Loss")
-    ] = False,
-    no_sqrt_atoms: Annotated[
+
+    # The following options are seldom used, mostly here for reproducibility:
+    use_xc_energies: Annotated[
         bool,
         Option(
-            "--no-sqrt-atoms/ ",
-            help="Divide energy loss by atoms instead of sqrt(atoms)",
-            rich_help_panel="Loss",
+            "--xc/ ", help="Train to XC energies", rich_help_panel="Loss", hidden=True
         ),
     ] = False,
+    normalize_energy_by_sqrt_atoms: Annotated[
+        bool,
+        Option(
+            "--normalize-energy-by-sqrt-atoms/ ",
+            help=(
+                "Normalize energy loss term multiplying by 1/sqrt(atoms) instead of 1/atoms."  # noqa
+                " This was originally done for the ANI-1, ANI-1x, ANI-2x, and ANI-1ccx articles"  # noqa
+            ),
+            rich_help_panel="Loss",
+            hidden=True,
+        ),
+    ] = False,
+    use_unnormalized_forces: Annotated[
+        bool,
+        Option(
+            "--use-unnormalized-forces/ ",
+            help=(
+                "Don't scale the forces by 1/N."
+                " This is done in the original MACE JPC article"
+            ),
+            rich_help_panel="Loss",
+            hidden=True,
+        ),
+    ] = False,
+    use_per_atom_energy: Annotated[
+        bool,
+        Option(
+            "--use-per-atom-energy/ ",
+            help=(
+                "Scale energy by N before computing the loss."
+                " This is done in the original MACE JPC article"
+            ),
+            rich_help_panel="Loss",
+            hidden=True,
+        ),
+    ] = False,
+
+    # Loss config
     energies: Annotated[
         float, Option("-e", "--energies", help="Energy factor", rich_help_panel="Loss")
     ] = 1.0,
@@ -1137,8 +1171,10 @@ def train(
         atomic_charges,
         atomic_volumes,
         total_charge,
-        no_sqrt_atoms,
-        xc,
+        use_unnormalized_forces=use_unnormalized_forces,
+        use_per_atom_energy=use_per_atom_energy,
+        normalize_energy_by_sqrt_atoms=normalize_energy_by_sqrt_atoms,
+        use_xc_energies=use_xc_energies,
     )
 
     lrsched = parse_scheduler_str(lrsched)

@@ -25,12 +25,15 @@ class Penalty(Enum):
 
 @dataclass
 class LossTerm:
-    label: str = "pred"
-    # targ_label_only is label in the dataset, if blank assumed the same as 'label'
+    label: str
+    is_vec3: bool  # Vec3 quantities are scaled by 3 (after sum)
+    is_atomic: bool  # Atomic quantities are normalized by 1/N (after sum)
+    is_extensive: bool  # Extensive quantities (E) are normalized by 1/N (after sum)
+    # targ_label_only is label in the dtaset, if blank assumed the same as 'label'
     targ_label_only: str = ""
-    is_extensive: bool = False
     scale_by_sqrt_atoms: bool = False
-    is_vec3: bool = False
+    # Transform targ and pred to a per-atom quantity (1/N) *before* the loss
+    make_per_atom: bool = False
     factor: float = 1.0
     grad_of_label: str = ""
     grad_wrt_targ_label: str = "coordinates"
@@ -46,21 +49,54 @@ class LossTerm:
         d["penalty"] = d["penalty"].value
         return d
 
+    @property
+    def needs_num_atoms_scaling(self) -> bool:
+        return self.is_extensive or self.is_atomic or self.scale_by_sqrt_atoms
+
 
 def Forces(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="forces",
-        grad_of_label="energies",
         is_vec3=True,
+        is_atomic=True,
         is_extensive=False,
+        grad_of_label="energies",
         factor=factor,
         negative_grad=True,
+    )
+
+
+def UnnormalizedForces(factor: float = 1.0) -> LossTerm:
+    return LossTerm(
+        label="forces",
+        is_vec3=True,
+        # Avoid dividing by 1/N, this is done in the MACE article, together
+        # with EnergiesPerAtom
+        is_atomic=False,
+        is_extensive=False,
+        grad_of_label="energies",
+        factor=factor,
+        negative_grad=True,
+    )
+
+
+def EnergiesPerAtom(factor: float = 1.0) -> LossTerm:
+    return LossTerm(
+        label="energies",
+        is_vec3=False,
+        is_atomic=False,
+        # Since the resulting quantity is per-atom, it is not extensive in this case
+        is_extensive=False,
+        make_per_atom=True,
+        factor=factor,
     )
 
 
 def Energies(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="energies",
+        is_vec3=False,
+        is_atomic=False,
         is_extensive=True,
         factor=factor,
     )
@@ -69,6 +105,8 @@ def Energies(factor: float = 1.0) -> LossTerm:
 def EnergiesSqrtAtoms(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="energies",
+        is_vec3=False,
+        is_atomic=False,
         is_extensive=True,
         factor=factor,
         scale_by_sqrt_atoms=True,
@@ -78,6 +116,8 @@ def EnergiesSqrtAtoms(factor: float = 1.0) -> LossTerm:
 def TotalCharge(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="total_charge",
+        is_vec3=False,
+        is_atomic=False,
         is_extensive=True,
         factor=factor,
     )
@@ -86,6 +126,8 @@ def TotalCharge(factor: float = 1.0) -> LossTerm:
 def EnergiesXC(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="energies_xc",
+        is_vec3=False,
+        is_atomic=False,
         is_extensive=True,
         factor=factor,
     )
@@ -94,17 +136,31 @@ def EnergiesXC(factor: float = 1.0) -> LossTerm:
 def EnergiesXCSqrtAtoms(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="energies_xc",
+        is_vec3=False,
+        is_atomic=False,
         is_extensive=True,
         factor=factor,
         scale_by_sqrt_atoms=True,
     )
 
 
+def EnergiesXCPerAtom(factor: float = 1.0) -> LossTerm:
+    return LossTerm(
+        label="energies_xc",
+        is_vec3=False,
+        is_atomic=False,
+        is_extensive=False,
+        make_per_atom=True,
+        factor=factor,
+    )
+
+
 def Dipoles(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="dipoles",
-        is_extensive=False,
         is_vec3=True,
+        is_atomic=False,
+        is_extensive=False,
         factor=factor,
     )
 
@@ -115,8 +171,10 @@ def AtomicVolumes(
     # TODO: change to volumes
     return LossTerm(
         label="atomic_charges",
+        is_vec3=False,
+        is_atomic=True,
+        is_extensive=False,
         targ_label_only=targ_label,
-        is_extensive=True,
         factor=factor,
     )
 
@@ -126,8 +184,10 @@ def AtomicCharges(
 ) -> LossTerm:
     return LossTerm(
         label="atomic_charges",
+        is_vec3=False,
+        is_atomic=True,
+        is_extensive=False,
         targ_label_only=targ_label,
-        is_extensive=True,
         factor=factor,
     )
 
@@ -190,31 +250,43 @@ class MultiTaskLoss(torch.nn.Module):
         losses["loss"] = torch.tensor(
             0.0, dtype=torch.float, device=targ["species"].device
         )
+        num_atoms = (targ["species"] >= 0).sum(dim=1, dtype=torch.float)
         for term in self.terms:
             if term.label not in pred:
                 console.print(
                     f"Loss has {term.label} but model doesn't predict it", style="red"
                 )
                 raise Abort()
+
+            # For forces: error.shape = (N, A, 3)
+            # For atomic_charges: error.shape = (N, A)
+            # For dipoles: error.shape = (N, 3)
+            # For energies: error.shape = (N,)
+            difference = pred[term.label] - targ[term.targ_label]
+
+            # Transform difference into a per-atom quantity if needed
+            if term.make_per_atom:
+                difference /= num_atoms
+
             if term.penalty is Penalty.SQUARE:
-                error = (pred[term.label] - targ[term.targ_label]).pow(2)
+                error = difference.pow(2)
             elif term.penalty is Penalty.ABS:
-                #  For forces: error.shape = (N, A, 3)
-                error = torch.abs(pred[term.label] - targ[term.targ_label])
-
-            if term.scale_by_sqrt_atoms or term.is_extensive:
-                num_atoms = (targ["species"] >= 0).sum(dim=1, dtype=torch.float)
-                num_atoms = num_atoms.view((-1,) + (1,) * (error.ndim - 1))
-                if term.scale_by_sqrt_atoms:
-                    error *= num_atoms.sqrt()
-                if term.is_extensive:
-                    error /= num_atoms
-
-            if term.is_vec3:
-                error = error / 3
+                error = difference.abs()
 
             # Sum over everything except batch size
             error = error.view(error.size(0), -1).sum(-1)
+
+            # Calculate scaling after summation
+            if term.scale_by_sqrt_atoms:
+                error *= num_atoms.sqrt()
+            if term.is_extensive:
+                error /= num_atoms
+            if term.is_atomic:
+                error /= num_atoms
+            if term.is_vec3:
+                error = error / 3
+
+            # Mean over the batch size
             mean_error = error.mean()
             losses[term.label] = mean_error
             losses["loss"] += mean_error * term.factor
@@ -228,16 +300,43 @@ def build_loss_terms_and_factors(
     atomic_charges: float,
     atomic_volumes: float,
     total_charge: float,
-    no_sqrt_atoms: bool = False,
-    xc: bool = False,
+    normalize_energy_by_sqrt_atoms: bool = False,
+    use_per_atom_energy: bool = False,
+    use_unnormalized_forces: bool = False,
+    use_xc_energies: bool = False,
 ) -> dict[str, float]:
+    # Validate options
+    if use_per_atom_energy and normalize_energy_by_sqrt_atoms:
+        raise ValueError(
+            "Per atom energy is incompatible with normalization by sqrt atoms"
+        )
+    if (use_per_atom_energy or normalize_energy_by_sqrt_atoms or use_xc_energies) and (
+        energies == 0.0
+    ):
+        raise ValueError(
+            "Energy factor must be provided if using energy scaling options"
+        )
+    if use_unnormalized_forces and (forces == 0.0):
+        raise ValueError(
+            "Forces factor must be provided if using force scaling options"
+        )
+
     # Set terms and factors required to build the loss function
     terms_and_factors: tp.Dict[str, float] = {}
     if energies > 0.0:
-        label = "EnergiesXC" if xc else "Energies"
-        terms_and_factors[label if no_sqrt_atoms else f"{label}SqrtAtoms"] = energies
+        label = "Energies"
+        if use_xc_energies:
+            label = f"{label}XC"
+        if normalize_energy_by_sqrt_atoms:
+            label = f"{label}SqrtAtoms"
+        if use_per_atom_energy:
+            label = f"{label}PerAtom"
+        terms_and_factors[label] = energies
     if forces > 0.0:
-        terms_and_factors["Forces"] = forces
+        label = "Forces"
+        if use_unnormalized_forces:
+            label = f"Unnormalized{label}"
+        terms_and_factors[label] = forces
     if dipoles > 0.0:
         terms_and_factors["Dipoles"] = dipoles
     if atomic_charges > 0.0:
