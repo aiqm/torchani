@@ -168,15 +168,18 @@ class DatasetConfig(Config):
         )
 
     @property
-    def path(self) -> Path:
+    def name_hash(self) -> str:
         dict_ = asdict(self)
         dict_.pop("fold_idx")
         dict_.pop("label")
         state = sorted((k, v) for k, v in dict_.items())
         hasher = hashlib.shake_128()
         hasher.update(str(state).encode())
-        _path = batched_data_dir() / f"{self.name}-{hasher.hexdigest(4)}"
-        return _path
+        return f"{self.name}-{hasher.hexdigest(4)}"
+
+    @property
+    def path(self) -> Path:
+        return batched_data_dir() / self.name_hash
 
 
 @dataclass

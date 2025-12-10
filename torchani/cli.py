@@ -22,6 +22,7 @@ from pathlib import Path
 import re
 
 from rich.console import Console
+from rich.table import Table
 
 from ._builtin_dataset_ids import _DatasetId, _LotId
 
@@ -63,6 +64,9 @@ main = Typer(
 
 data_app = Typer()
 main.add_typer(data_app, name="data", help="Manage TorchANI datasets")
+
+batched_app = Typer(hidden=True)
+main.add_typer(batched_app, name="batched", help="Manage TorchANI pre-batched datasets")
 
 
 class DTypeKind(Enum):
@@ -335,8 +339,8 @@ def sp(
         print(json.dumps(output))
 
 
-@data_app.command("batch")
-def data_batch(
+@batched_app.command("create")
+def batched_create(
     src_ds: Annotated[
         tp.List[str],
         Argument(
@@ -425,8 +429,6 @@ def data_batch(
             ds_name = builtin
             ds = getattr(datasets, ds_name)(skip_check=True)
         in_lots.add(ds.lot)
-        if not out_name and i == 0:
-            out_name = f"{ds_name}:{ds.lot}"
         all_src_paths.extend(ds.store_locations)
     all_src_paths = sorted(set(all_src_paths))
 
@@ -1490,3 +1492,102 @@ def plot(
                     ax.set_ylim(lim[0], lim[1])
                 ax.legend()
                 plt.show()
+
+
+@batched_app.command("ls")
+def batched_ls(
+    show_hash: Annotated[
+        bool,
+        Option("--show-hash/--no-show-hash"),
+    ] = False,
+    show_seed: Annotated[
+        bool,
+        Option("--show-seed/--no-show-seed"),
+    ] = False,
+):
+    from torchani.paths import batched_data_dir
+    from torchani.train.config import DatasetConfig
+
+    batched = sorted(batched_data_dir().iterdir())
+    if not batched:
+        console.print("(No batched datasets found)")
+        return
+    table = Table(title="Pre-batched datasets", box=None)
+    table.add_column("", style="magenta")
+    table.add_column("data-name", style="magenta", overflow="fold")
+    table.add_column("divs", style="magenta")
+    table.add_column("builtin-src")
+    table.add_column("other-src")
+    table.add_column("lot")
+    table.add_column("conformers")
+    table.add_column("symbols")
+    table.add_column("properties")
+    table.add_column("batch-size")
+    if show_seed:
+        table.add_column("batch-seed")
+        table.add_column("divs-seed")
+    table.add_column("size (GB)")
+    for j, p in enumerate(batched):
+        try:
+            ds_config = DatasetConfig.from_json_file(p / "ds_config.json")
+            with open(p / "creation_log.json", mode="rt") as ft:
+                ds_log = json.load(ft)
+
+            properties = (
+                " ".join(ds_log["properties"])
+                .replace("coordinates", "R")
+                .replace("species", "Z")
+                .replace("forces", "F")
+                .replace("force", "F")
+                .replace("energies", "E")
+                .replace("energy", "E")
+                .replace("total_charges", "Q_tot")
+                .replace("atomic_charges", "q")
+                .replace("charges", "Q_tot")
+                .replace("dipoles", "μ_tot")
+            )
+
+            row_args = [
+                f"[bold]{j}[/bold]",
+                ds_config.name if not show_hash else ds_config.name_hash,
+                (
+                    f"{ds_config.folds}-folds"
+                    if ds_config.folds is not None
+                    else f"train:{ds_config.train_frac} valid:{ds_config.validation_frac}"  # noqa:E501
+                ),
+                " ".join(ds_config.data_names) or "--",
+                " ".join((p.stem for p in ds_config.src_paths)) or "--",
+                ds_config.lot,
+                f"{ds_log['num_conformers']:,}",
+                " ".join(ds_log["symbols"]),
+                properties,
+                # " ".join(ds_log["properties"]),
+                str(ds_config.batch_size),
+            ]
+            if show_seed:
+                row_args.extend(
+                    [
+                        str(ds_config.batch_seed),
+                        str(ds_config.divs_seed),
+                    ]
+                )
+            size = sum(f.stat().st_size for f in p.glob("**/*") if f.is_file())
+            row_args.append(format(size / 1024**3, ".1f"))
+        except Exception:
+            row_args = [f"[bold]{j}[/bold]", p.name, "???"]
+        table.add_row(*row_args)
+    console.print(table)
+
+
+@batched_app.command("rm")
+def batched_rm(
+    batched_ids: Annotated[tp.List[str], Argument(help="Name|idx of batched dataset")],
+) -> None:
+    r"""Delete one or more batched datasets, training, or finetuning run"""
+    from torchani.paths import select_subdirs, DataKind
+
+    paths = select_subdirs(batched_ids, kind=DataKind.BATCH)
+    for p in paths:
+        shutil.rmtree(p)
+        console.print(f"Removed {p.name}")
+    console.print()
