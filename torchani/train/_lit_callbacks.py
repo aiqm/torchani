@@ -2,6 +2,7 @@ r"""
 Custom Lightning compatible callbacks
 """
 
+import shutil
 from copy import deepcopy
 import json
 import typing as tp
@@ -115,6 +116,10 @@ class SaveConfig(Callback):
     def on_train_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
         root = Path(trainer.default_root_dir).resolve()
         self._config.to_json_file(root / "config.json")
+        # Copy the contents of the arch file used to instantiate the model, if it exists
+        # (file must be self-contained)
+        if self._config.model.arch_file:
+            shutil.copy(self._config.model.arch_file, root / "arch_file.py")
 
 
 class EMA(Callback):

@@ -1,11 +1,11 @@
 from pathlib import Path
 import typing as tp
 import logging
-import json
 import warnings
 from copy import deepcopy
 import sys
 import itertools
+import importlib
 
 from rich.prompt import Confirm
 from rich.console import Console
@@ -44,6 +44,23 @@ def _get_dotted_name(module: tp.Any, name: str) -> tp.Any:
     for part in parts:
         obj = getattr(obj, part)
     return obj
+
+
+def _load_arch_fn_from_file(path: str | Path, arch_fn: str) -> tp.Any:
+    path = Path(path).resolve()
+    # Create a module spec from the path
+    spec = importlib.util.spec_from_file_location(path.stem, str(path))
+    if spec is None:
+        raise ValueError(f"Could not load spec form file {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[path.stem] = module
+
+    # Load and execute the module
+    loader = spec.loader
+    if loader is None:
+        raise ValueError(f"Could not construct loader from file {path}")
+    loader.exec_module(module)
+    return getattr(module, arch_fn)
 
 
 class LitModel(lightning.LightningModule):
@@ -326,38 +343,31 @@ def train_lit_model(
     if not config.ds.path.exists():
         raise RuntimeError("Dataset does not exist")
 
-    if not config.model.builtin:
-        # TODO: Bw compat, this only happens if config is old file that has not lot, or
-        # no symbols Remove in the future since it is confusing, and fails for ftune
-        if not config.model.lot:
-            assert not config.ftune
-            assert restart
-            warnings.warn("Model LoT not found, assuming equal to ds lot")
-            lot = config.ds.lot
-        else:
-            lot = config.model.lot
-
-        if not config.model.symbols:
-            assert not config.ftune
-            assert restart
-            warnings.warn("Model symbols not found, assuming equal to ds symbols")
-            with open(config.ds.path / "creation_log.json", mode="rt") as f:
-                symbols = json.load(f)["symbols"]
-        else:
-            symbols = config.model.symbols
-
+    if config.model.builtin:
+        # Directly instantiate a builtin TorchANI model
+        model = _get_dotted_name(torchani, f"models.{config.model.arch_fn}")(
+            strategy="auto" if config.accel.device in ["cuda", "gpu"] else "pyaev",
+            **config.model.options,
+        )
+        model.requires_grad_(True)
+    elif config.model.arch_file:
+        # Custom architecture located in a user-provided file
+        # The resulting model is assumed to conform to the ANI API
+        lot = config.model.lot
+        symbols = config.model.symbols
+        model = _load_arch_fn_from_file(config.model.arch_file, config.model.arch_fn)(
+            lot=lot, symbols=symbols, **config.model.options
+        )
+    else:
+        # Build the model from an arch-function
+        lot = config.model.lot
+        symbols = config.model.symbols
         model = _get_dotted_name(torchani, f"arch.{config.model.arch_fn}")(
             lot=lot,
             symbols=symbols,
             strategy="auto" if config.accel.device in ["cuda", "gpu"] else "pyaev",
             **config.model.options,
         )
-    else:
-        model = _get_dotted_name(torchani, f"models.{config.model.arch_fn}")(
-            strategy="auto" if config.accel.device in ["cuda", "gpu"] else "pyaev",
-            **config.model.options,
-        )
-        model.requires_grad_(True)
 
     ckpt_path = (config.path / "latest-model") / "latest.ckpt"
 

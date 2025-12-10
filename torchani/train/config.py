@@ -202,6 +202,7 @@ class ModelConfig(FnConfig):
 
     lot: str = ""
     arch_fn: str = ""
+    arch_file: str = ""  # Custom arch file to search for the function
     builtin: bool = False
     symbols: tp.List[str] = field(default_factory=list)
     options: tp.Dict[str, PyScalar] = field(default_factory=dict)

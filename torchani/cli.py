@@ -4,6 +4,7 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+import hashlib
 import sys
 from copy import deepcopy
 import warnings
@@ -760,6 +761,89 @@ def data_pack(
         json.dump(data_dict, fj)
 
 
+@main.command()
+def save(
+    name: Annotated[
+        str,
+        Option(
+            "-n",
+            "--name",
+            help="Name of ensemble or saved model. CamelCase recommended",
+        ),
+    ] = "CustomModel",
+    desc: Annotated[
+        str,
+        Option(
+            "-d",
+            "--description",
+            help="Description of the model",
+        ),
+    ] = "Custom model",
+    ftune_names_or_idxs: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-f", "--ftune-run", help="Name|idx of train run"),
+    ] = None,
+    ptrain_names_or_idxs: Annotated[
+        tp.Optional[tp.List[str]],
+        Option("-t", "--train-run", help="Name|idx of ftune run"),
+    ] = None,
+) -> None:
+    r"""Extract and save a model or an ensemble an ensemble from a set of models"""
+    import torch
+    import jinja2
+    from torchani.utils import merge_state_dicts
+    from torchani.paths import custom_models_dir, DataKind, select_subdirs
+    from torchani.train.config import TrainConfig, SrcConfig
+
+    if ptrain_names_or_idxs is None:
+        ptrain_names_or_idxs = []
+    if ftune_names_or_idxs is None:
+        ftune_names_or_idxs = []
+    ptrain_paths = select_subdirs(ptrain_names_or_idxs, kind=DataKind.TRAIN)
+    ftune_paths = select_subdirs(ftune_names_or_idxs, kind=DataKind.FTUNE)
+    paths = deepcopy(ptrain_paths)
+    paths.extend(ftune_paths)
+    hasher = hashlib.shake_128()
+    for p in paths:
+        hasher.update(p.name.encode("utf-8"))
+    ckpt_paths = [(p / "best-model") / "best.ckpt" for p in paths]
+
+    state_dict = merge_state_dicts(ckpt_paths)
+
+    _hash = hasher.hexdigest(4)
+    config = TrainConfig.from_json_file(paths[0] / "config.json")
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(Path(__file__).parent / "train" / "templates/"),
+        undefined=jinja2.StrictUndefined,
+        autoescape=jinja2.select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    if (paths[0] / "arch_file.py").exists():
+        arch_file_contents = (paths[0] / "arch_file.py").read_text()
+    else:
+        arch_file_contents = None
+    tmpl = env.get_template("custom.py.jinja").render(
+        name=name,
+        desc=desc,
+        ensemble_size=len(paths),
+        lot=config.model.lot,
+        symbols=config.model.symbols,
+        arch_fn=config.model.arch_fn,
+        arch_file_contents=arch_file_contents,
+        arch_opts=config.model.options,
+    )
+    path = custom_models_dir() / f"{name}-{_hash}"
+    path.mkdir(exist_ok=True, parents=True)
+    src_config = SrcConfig(
+        train_src=list(p.name for p in ptrain_paths),
+        ftune_src=list(p.name for p in ftune_paths),
+    )
+    src_config.to_json_file(path / "src_config.json")
+    (path / "model.py").write_text(tmpl)
+    torch.save(state_dict, path / "model.pt")
+
+
 # HUGE training function
 @main.command(help="Train from scratch or finetune an ANI-style model")
 def train(
@@ -776,11 +860,11 @@ def train(
     name: Annotated[str, Option("-n", "--run-name", help="Name of run")] = "",
     slurm: Annotated[
         str,
-        Option("--slurm"),
+        Option("--slurm", hidden=True),
     ] = "",
     slurm_gpu: Annotated[
         str,
-        Option("--slurm-gpu"),
+        Option("--slurm-gpu", hidden=True),
     ] = "",
     num_workers: Annotated[
         int,
@@ -796,7 +880,11 @@ def train(
     ] = False,
     auto_restart: Annotated[
         bool,
-        Option("--auto-restart/ ", help="Auto restart runs that match a prev run"),
+        Option(
+            "--auto-restart/ ",
+            help="Auto restart runs that match a prev run",
+            hidden=True,
+        ),
     ] = False,
     max_epochs: Annotated[
         int, Option("--max-epochs", help="Max epochs to train")
@@ -809,6 +897,7 @@ def train(
                 "Max epochs without improving monitor metric before early stopping. "
                 " No early stopping by default"
             ),
+            hidden=True,
         ),
     ] = -1,
     # From-scratch specific config
@@ -840,6 +929,22 @@ def train(
     device: Annotated[
         tp.Optional[DeviceKind],
         Option("-d", "--device", case_sensitive=False),
+    ] = None,
+    # NOTE: Custom arch function MUST take the following args:
+    # lot, symbols, ensemble_size=1, neighborlist='all_pairs',
+    # It *can* take strategy which is 'py' by default
+    # It can take any other arbitrary options
+    arch_file: Annotated[
+        Path | None,
+        Option(
+            "--arch-file",
+            show_default=False,
+            rich_help_panel="Arch",
+            help=(
+                "Path to file with custom arch function"
+                " *Only use this option if you know what you are doing*!"
+            ),
+        ),
     ] = None,
     arch_fn: Annotated[
         str,
@@ -1195,9 +1300,10 @@ def train(
 
     # Set up the model and finetune configurations
     if ftune_from:
-        if arch_fn != "simple_ani" or arch_options or symbols:
+        if arch_fn != "simple_ani" or arch_options or symbols or arch_file:
             console.print(
-                "Don't specify 'arch', 'arch-opts' or 'symbols' for ftune", style="red"
+                "Don't use 'arch', 'arch-opts' or 'symbols' or 'arch-file' for ftune",
+                style="red",
             )
             raise Abort()
 
@@ -1214,6 +1320,7 @@ def train(
             lot=lot or ds_config.lot,
             symbols=symbols.split(",") if symbols else ds_symbols,
             arch_fn=arch_fn,
+            arch_file=(str(arch_file.resolve()) if arch_file is not None else ""),
             options=resolve_options(arch_options or (), arch_fn),
         )
 
