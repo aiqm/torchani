@@ -761,7 +761,7 @@ def data_pack(
         json.dump(data_dict, fj)
 
 
-@main.command()
+@main.command(hidden=True)
 def save(
     name: Annotated[
         str,
@@ -845,7 +845,7 @@ def save(
 
 
 # HUGE training function
-@main.command(help="Train from scratch or finetune an ANI-style model")
+@main.command(help="Train from scratch or finetune an ANI-style model", hidden=True)
 def train(
     batch_id: Annotated[str, Argument(help="Name|idx of the batched dataset")],
     fold_idx: Annotated[
@@ -1393,7 +1393,7 @@ def train(
     )
 
 
-@main.command()
+@main.command(hidden=True)
 def plot(
     ftune_name_or_idx: Annotated[
         tp.Optional[tp.List[str]],
