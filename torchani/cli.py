@@ -904,7 +904,6 @@ def train(
             rich_help_panel="Optimizer",
         ),
     ] = 5e-4,
-
     # The following options are seldom used, mostly here for reproducibility:
     use_xc_energies: Annotated[
         bool,
@@ -919,6 +918,18 @@ def train(
             help=(
                 "Normalize energy loss term multiplying by 1/sqrt(atoms) instead of 1/atoms."  # noqa
                 " This was originally done for the ANI-1, ANI-1x, ANI-2x, and ANI-1ccx articles"  # noqa
+            ),
+            rich_help_panel="Loss",
+            hidden=True,
+        ),
+    ] = False,
+    use_unnormalized_energy: Annotated[
+        bool,
+        Option(
+            "--use-unnormalized-energy/ ",
+            help=(
+                "Don't scale the energy by 1/N."
+                " This is done in the original PhysNet and SchNet articles"
             ),
             rich_help_panel="Loss",
             hidden=True,
@@ -948,7 +959,6 @@ def train(
             hidden=True,
         ),
     ] = False,
-
     # Loss config
     energies: Annotated[
         float, Option("-e", "--energies", help="Energy factor", rich_help_panel="Loss")
@@ -1172,6 +1182,7 @@ def train(
         atomic_volumes,
         total_charge,
         use_unnormalized_forces=use_unnormalized_forces,
+        use_unnormalized_energy=use_unnormalized_energy,
         use_per_atom_energy=use_per_atom_energy,
         normalize_energy_by_sqrt_atoms=normalize_energy_by_sqrt_atoms,
         use_xc_energies=use_xc_energies,

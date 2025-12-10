@@ -102,6 +102,17 @@ def Energies(factor: float = 1.0) -> LossTerm:
     )
 
 
+def UnnormalizedEnergies(factor: float = 1.0) -> LossTerm:
+    return LossTerm(
+        label="energies",
+        # Avoid dividing by 1/N, this is done in the PhysNet and SchNet articles
+        is_vec3=False,
+        is_atomic=False,
+        is_extensive=False,
+        factor=factor,
+    )
+
+
 def EnergiesSqrtAtoms(factor: float = 1.0) -> LossTerm:
     return LossTerm(
         label="energies",
@@ -303,19 +314,16 @@ def build_loss_terms_and_factors(
     normalize_energy_by_sqrt_atoms: bool = False,
     use_per_atom_energy: bool = False,
     use_unnormalized_forces: bool = False,
+    use_unnormalized_energy: bool = False,
     use_xc_energies: bool = False,
 ) -> dict[str, float]:
     # Validate options
-    if use_per_atom_energy and normalize_energy_by_sqrt_atoms:
-        raise ValueError(
-            "Per atom energy is incompatible with normalization by sqrt atoms"
-        )
-    if (use_per_atom_energy or normalize_energy_by_sqrt_atoms or use_xc_energies) and (
-        energies == 0.0
-    ):
-        raise ValueError(
-            "Energy factor must be provided if using energy scaling options"
-        )
+
+    if (
+        use_per_atom_energy + normalize_energy_by_sqrt_atoms + use_unnormalized_energy
+        > 1
+    ) and energies == 0.0:
+        raise ValueError("Energy options are mutually exclusive")
     if use_unnormalized_forces and (forces == 0.0):
         raise ValueError(
             "Forces factor must be provided if using force scaling options"
@@ -331,6 +339,8 @@ def build_loss_terms_and_factors(
             label = f"{label}SqrtAtoms"
         if use_per_atom_energy:
             label = f"{label}PerAtom"
+        if use_unnormalized_energy:
+            label = f"Unnormalized{label}"
         terms_and_factors[label] = energies
     if forces > 0.0:
         label = "Forces"
