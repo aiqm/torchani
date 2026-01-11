@@ -79,8 +79,6 @@ class BmmEnsemble(AtomicContainer):
     def __init__(self, ensemble: AtomicContainer):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.total_members_num = 1  # Operates as a single ANINetworks
-        self.active_members_idxs = [0]
         self.num_species = ensemble.num_species
         if not hasattr(ensemble, "members"):
             raise TypeError("BmmEnsemble can only take an Ensemble as an input")
@@ -90,12 +88,34 @@ class BmmEnsemble(AtomicContainer):
                 for s in ensemble.symbols
             }
         )
+        # Track number of models for select_models functionality
+        self.num_models = len(ensemble.members)
+        self.total_members_num = self.num_models
+        self.active_members_idxs = list(range(self.num_models))
 
         # bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
         self._idx_list: tp.List[Tensor] = _make_idx_list(
             self._last_species, self.num_species, []
         )
+
+    @torch.jit.export
+    def set_active_members(self, idxs: tp.List[int]) -> None:
+        """Set which ensemble members to use for averaging."""
+        for idx in idxs:
+            if not (0 <= idx < self.total_members_num):
+                raise IndexError(
+                    f"Idx {idx} should be 0 <= idx < {self.total_members_num}"
+                )
+        self.active_members_idxs = idxs
+        # Propagate to all BmmAtomicNetwork modules
+        use_num_models = len(idxs)
+        for bmm_atomic in self.atomics.values():
+            bmm_atomic.select_models(use_num_models)  # type: ignore
+
+    @torch.jit.export
+    def get_active_members_num(self) -> int:
+        return len(self.active_members_idxs)
 
     def forward(
         self,
@@ -128,6 +148,13 @@ class BmmEnsemble(AtomicContainer):
             energies = energies.sum(dim=-1)
         return energies
 
+    @torch.jit.export
+    def select_models(self, use_num_models: int) -> None:
+        """Select the first use_num_models models from the ensemble."""
+        for bmm_atomic in self.atomics.values():
+            bmm_atomic.select_models(use_num_models)
+        self.active_members_idxs = list(range(use_num_models))
+
 
 class BmmAtomicNetwork(torch.nn.Module):
     r"""The inference-optimized analogue of an `AtomicNetwork`
@@ -159,12 +186,20 @@ class BmmAtomicNetwork(torch.nn.Module):
         )
         self.final_layer = BmmLinear([n.final_layer for n in networks])
         self._num_batched_networks = len(networks)
+        self.use_num_models = self._num_batched_networks
 
     def forward(self, features: Tensor) -> Tensor:
-        features = features.expand(self._num_batched_networks, -1, -1)
+        features = features.expand(self.use_num_models, -1, -1)
         for layer in self.layers:
             features = self.activation(layer(features))
         return self.final_layer(features).mean(0)
+
+    @torch.jit.export
+    def select_models(self, use_num_models: int) -> None:
+        for layer in self.layers:
+            layer.select_models(use_num_models)
+        self.final_layer.select_models(use_num_models)
+        self.use_num_models = use_num_models
 
 
 class BmmLinear(torch.nn.Module):
@@ -181,6 +216,8 @@ class BmmLinear(torch.nn.Module):
 
     def __init__(self, linears: tp.Sequence[torch.nn.Linear]):
         super().__init__()
+        self.num_models = len(linears)
+        self.use_num_models = self.num_models
         # Concatenate weights
         weights = [layer.weight.unsqueeze(0).clone().detach() for layer in linears]
         self.weight = torch.nn.Parameter(torch.cat(weights).transpose(1, 2))
@@ -204,7 +241,17 @@ class BmmLinear(torch.nn.Module):
         self.out_features = self.weight.shape[2]
 
     def forward(self, input_: Tensor) -> Tensor:
-        return torch.baddbmm(self.bias, input_, self.weight, beta=self._beta)
+        # Slice weights and bias to use only the first use_num_models
+        weight = self.weight[: self.use_num_models, :, :]
+        if self._beta > 0:
+            bias = self.bias[: self.use_num_models, :, :]
+        else:
+            bias = self.bias
+        return torch.baddbmm(bias, input_, weight, beta=self._beta)
+
+    @torch.jit.export
+    def select_models(self, use_num_models: int) -> None:
+        self.use_num_models = use_num_models
 
     def extra_repr(self):
         r""":meta private:"""
