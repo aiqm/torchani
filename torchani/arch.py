@@ -359,11 +359,9 @@ class _ANI(torch.nn.Module):
 
     # Needed for typing
     @property
-    def nnp(self) -> NNPotential:  # type: ignore
+    def nnp(self):
         r""":meta private:"""
-        nnp = self.potentials["nnp"]
-        assert isinstance(nnp, NNPotential)
-        return nnp
+        return self.potentials["nnp"]
 
     # Needed for client classes that depend on accessing neural_networks directly
     @property

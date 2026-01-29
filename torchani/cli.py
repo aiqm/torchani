@@ -4,6 +4,7 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+from typing import Annotated
 import os
 from enum import Enum
 import shutil
@@ -74,14 +75,21 @@ def _build_extensions(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
         ),
     ] = None,
+    all_sms: Annotated[
+        bool,
+        Option("--all-sms/ ", help="Build for all PyTorch supported sms"),
+    ] = False,
 ) -> None:
     r"""Build CUDA and C++ extensions"""
     import torch
     import torchani.paths
     from torch.utils.cpp_extension import load
 
+    if all_sms:
+        sms = ["7.0", "7.5", "8.0", "8.9", "9.0", "10.0", "12.0"]
+
     if sms is not None:
-        os.environ["TORCH_CUDA_ARCH_LIST"] = ",".join(sms)
+        os.environ["TORCH_CUDA_ARCH_LIST"] = ";".join(sms)
 
     nvcc_args = ["--expt-extended-lambda"]
     nvcc_args.extend(
