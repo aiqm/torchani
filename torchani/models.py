@@ -61,7 +61,6 @@ For more details consult the examples documentation
     submodel = model[0]
 """
 
-import os
 import warnings
 import typing as tp
 import importlib.util
@@ -550,20 +549,18 @@ def SnnANI2xr(
 
 
 # Custom models
-# NOTE: Custom getattr does not seem to work with sphinx on CI
-if os.environ.get("SPHINX_BUILD") != "1":
-
-    def __getattr__(name: str):
-        if name == "__path__":
-            # This module is not a package
-            raise AttributeError
-        for p in sorted(custom_models_dir().iterdir()):
-            if p.name.startswith(name):
-                spec = importlib.util.spec_from_file_location("model", p / "model.py")
-                if spec is None:
-                    raise ImportError(f"{p} / model.py could not be found")
-                module = importlib.util.module_from_spec(spec)
-                assert spec.loader is not None  # mypy
-                spec.loader.exec_module(module)
-                return getattr(module, name)
-        raise ImportError(f"Could not find custom model {name}")
+def __getattr__(name: str):
+    # __mro__ needed for sphinx
+    if name in ["__path__", "__mro__"]:
+        # This module is not a package
+        raise AttributeError
+    for p in sorted(custom_models_dir().iterdir()):
+        if p.name.startswith(name):
+            spec = importlib.util.spec_from_file_location("model", p / "model.py")
+            if spec is None:
+                raise ImportError(f"{p} / model.py could not be found")
+            module = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None  # mypy
+            spec.loader.exec_module(module)
+            return getattr(module, name)
+    raise ImportError(f"Could not find custom model {name}")
