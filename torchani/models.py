@@ -271,10 +271,6 @@ def ANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -306,10 +302,6 @@ def ANI2dr(
     Trained to the B973c level of theory with added repulsion and dispersion potentials,
     and smoother PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="b973c-def2mtzvp",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -346,6 +338,7 @@ def ANIr2s(
     # and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum
     # model is returned.
     # """
+    warnings.warn("ANIr2s is experimental. Use at your own risk")
     suffix = f"{'_' + solvent if solvent is not None else ''}"
     # These models were trained with _AltSmoothCutoff, but difference is negligible
     model = simple_ani(
@@ -447,10 +440,6 @@ def SnnANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr-snn is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=["H", "C", "N", "O", "F", "S", "Cl"],
