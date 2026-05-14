@@ -26,7 +26,7 @@ from torchani.grad import hessians, forces
 model = torchani.models.ANI2x()
 
 ###############################################################################
-# It is very easy to compile and save the model using `torch.jit`.
+# It is very easy to compile and save the model using ``torch.jit``.
 compiled_model = torch.jit.script(model)
 torch.jit.save(compiled_model, "compiled_model.pt")
 
