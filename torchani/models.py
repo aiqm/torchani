@@ -1,8 +1,8 @@
 r"""Provides access to all published ANI models.
 
-Provided models are subclasses of `torchani.arch.ANI`. Some models have been
-published in previous articles, and some in TorchANI 2. If you use any of these models
-in your work please cite the corresponding article(s).
+Provided models are subclasses of `torchani.arch.ANI`. Some models have been published
+in previous articles, and some in TorchANI 2.0. If you use any of these models in your
+work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
 some region of chemical space, please open an issue in GitHub. The TorchANI developers
@@ -73,6 +73,8 @@ from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
 from torchani.paths import custom_models_dir
+
+__all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2xr"]
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -269,10 +271,6 @@ def ANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -304,10 +302,6 @@ def ANI2dr(
     Trained to the B973c level of theory with added repulsion and dispersion potentials,
     and smoother PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="b973c-def2mtzvp",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -344,6 +338,7 @@ def ANIr2s(
     # and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum
     # model is returned.
     # """
+    warnings.warn("ANIr2s is experimental. Use at your own risk")
     suffix = f"{'_' + solvent if solvent is not None else ''}"
     # These models were trained with _AltSmoothCutoff, but difference is negligible
     model = simple_ani(
@@ -363,7 +358,7 @@ def ANIr2s(
         radial_cutoff=5.1,
     )
     model.load_state_dict(
-        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
+        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=False)
     )
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
@@ -445,10 +440,6 @@ def SnnANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr-snn is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=["H", "C", "N", "O", "F", "S", "Cl"],
@@ -531,9 +522,9 @@ def __getattr__(name: str):
         if p.name.startswith(name):
             spec = importlib.util.spec_from_file_location("model", p / "model.py")
             if spec is None:
-                raise ImportError(f"{p} / model.py could not be found")
+                raise AttributeError(f"{p} / model.py could not be found")
             module = importlib.util.module_from_spec(spec)
             assert spec.loader is not None  # mypy
             spec.loader.exec_module(module)
             return getattr(module, name)
-    raise ImportError(f"Could not find custom model {name}")
+    raise AttributeError(f"Could not find custom model {name}")

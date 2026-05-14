@@ -15,7 +15,9 @@ from torch import Tensor
 # all parameters of a Cutoff **must be passed to init of the superclass**
 # If cuaev supports the cutoff _cuaev_name must be defined to be a unique string
 class Cutoff(torch.nn.Module):
-    r"""Base class for cutoff functions"""
+    r"""Base class for cutoff functions.
+
+    If you implement a custom cutoff, you should subclass this module"""
 
     _cuaev_name: str
 

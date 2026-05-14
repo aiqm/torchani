@@ -28,8 +28,6 @@ from torchani.datasets.batching import (
     batch_all_in_ram,
 )
 from torchani.datasets.builtin import (
-    _DatasetId,
-    _LotId,
     # Auto-generated:
     TestData,
     TestDataIons,
@@ -59,8 +57,6 @@ __all__ = [
     "_utils",
     "filters",
     "concatenate",
-    "_DatasetId",
-    "_LotId",
     # Auto-generated:
     "TestData",
     "TestDataIons",

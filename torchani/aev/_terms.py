@@ -24,7 +24,7 @@ class _Term(torch.nn.Module):
         self.num_feats = 0
 
 
-class BaseAngular(_Term):
+class _BaseAngular(_Term):
     r"""Base class for 3-body expansions
 
     Client classes should only rely on ``module(tri_distances, tri_vectors)``,
@@ -88,8 +88,7 @@ class BaseAngular(_Term):
         raise NotImplementedError("Must be implemented by subclasses")
 
 
-# TODO: Change name to BaseRadial
-class BaseRadial(_Term):
+class _BaseRadial(_Term):
     r"""Base class for 2-body expansions
 
     Client classes should only rely on ``module(distances)``,
@@ -115,7 +114,7 @@ class BaseRadial(_Term):
         raise NotImplementedError("Must be implemented by subclasses")
 
 
-class ANIRadial(BaseRadial):
+class ANIRadial(_BaseRadial):
     r"""Compute the radial sub-AEV terms given a sequence of atom pair distances
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -244,7 +243,7 @@ class ANIRadial(BaseRadial):
         )
 
 
-class ANIAngular(BaseAngular):
+class ANIAngular(_BaseAngular):
     """Compute the angular sub-AEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -419,7 +418,7 @@ class ANIAngular(BaseAngular):
 # Classes meant for extension by users
 
 
-class Angular(BaseAngular):
+class Angular(_BaseAngular):
 
     angles_tensors: tp.List[str] = []
     radial_tensors: tp.List[str] = []
@@ -462,7 +461,7 @@ class Angular(BaseAngular):
         self.num_feats = radial_feats * angles_feats
 
 
-class Radial(BaseRadial):
+class Radial(_BaseRadial):
 
     tensors: tp.List[str] = []
 
@@ -497,25 +496,25 @@ class Radial(BaseRadial):
 
 
 _Models = tp.Literal["ani1x", "ani2x", "ani1ccx"]
-AngularArg = tp.Union[_Models, BaseAngular]
-RadialArg = tp.Union[_Models, BaseRadial]
+AngularArg = tp.Union[_Models, _BaseAngular]
+RadialArg = tp.Union[_Models, _BaseRadial]
 
 
-def _parse_angular_term(angular_term: AngularArg) -> BaseAngular:
+def _parse_angular_term(angular_term: AngularArg) -> _BaseAngular:
     if angular_term in ["ani1x", "ani1ccx"]:
         angular_term = ANIAngular.like_1x()
     elif angular_term == "ani2x":
         angular_term = ANIAngular.like_2x()
-    elif not isinstance(angular_term, BaseAngular):
+    elif not isinstance(angular_term, _BaseAngular):
         raise ValueError(f"Unsupported angular term: {angular_term}")
-    return tp.cast(BaseAngular, angular_term)
+    return tp.cast(_BaseAngular, angular_term)
 
 
-def _parse_radial_term(radial_term: RadialArg) -> BaseRadial:
+def _parse_radial_term(radial_term: RadialArg) -> _BaseRadial:
     if radial_term in ["ani1x", "ani1ccx"]:
         radial_term = ANIRadial.like_1x()
     elif radial_term == "ani2x":
         radial_term = ANIRadial.like_2x()
-    elif not isinstance(radial_term, BaseRadial):
+    elif not isinstance(radial_term, _BaseRadial):
         raise ValueError(f"Unsupported radial term: {radial_term}")
-    return tp.cast(BaseRadial, radial_term)
+    return tp.cast(_BaseRadial, radial_term)
