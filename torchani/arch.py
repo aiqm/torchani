@@ -31,7 +31,7 @@ import logging
 from copy import deepcopy
 import warnings
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import OrderedDict
 import typing as tp
 
@@ -833,7 +833,7 @@ class _AEVComputerWrapper:
 class _AtomicContainerWrapper:
     cls: AtomicContainerCls
     ctor: str = "separate_networks"
-    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
+    kwargs: tp.Dict[str, tp.Any] = field(default_factory=dict)
 
     def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
         out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
