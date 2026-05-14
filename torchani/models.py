@@ -365,7 +365,7 @@ def ANIr2s(
         radial_cutoff=5.1,
     )
     model.load_state_dict(
-        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
+        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=False)
     )
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
