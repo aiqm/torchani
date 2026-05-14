@@ -479,9 +479,9 @@ def __getattr__(name: str):
         if p.name.startswith(name):
             spec = importlib.util.spec_from_file_location("model", p / "model.py")
             if spec is None:
-                raise ImportError(f"{p} / model.py could not be found")
+                raise AttributeError(f"{p} / model.py could not be found")
             module = importlib.util.module_from_spec(spec)
             assert spec.loader is not None  # mypy
             spec.loader.exec_module(module)
             return getattr(module, name)
-    raise ImportError(f"Could not find custom model {name}")
+    raise AttributeError(f"Could not find custom model {name}")
