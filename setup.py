@@ -268,7 +268,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
 
     # CUB needed to build the cuAEV, download it if not found bundled with Torch
     include_paths_kwargs: tp.Dict[str, tp.Any]
-    if float(".".join(torch.__version__.split(".")[:2])) >= 2.7:
+    if tuple(map(int, torch.__version__.split(".")[:2])) >= (2, 7):
         include_paths_kwargs = {"device_type": "cuda"}
     else:
         include_paths_kwargs = {"cuda": True}
