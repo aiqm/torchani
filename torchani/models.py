@@ -66,10 +66,7 @@ import typing as tp
 import importlib.util
 
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
-from torchani.potentials import (
-    SeparateChargesNNPotential,
-    SeparateScalarsNNPotential,
-)
+from torchani.potentials import SeparateChargesNNPotential
 from torchani.electro import ChargeNormalizer
 from torchani.arch import (
     Assembler,
@@ -81,10 +78,32 @@ from torchani.arch import (
 )
 from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
-from torchani.nn._internal import _ANINetworksDiscardFirstScalar
-from torchani.paths import custom_models_dir
+from torchani.nn._internal import (
+    PositiveVolumeNetworks,
+    _ANINetworksDiscardFirstScalar,
+)
+from torchani.paths import custom_models_dir, state_dicts_dir
 
-__all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2xr"]
+__all__ = [
+    "ANI1x",
+    "ANI2x",
+    "ANI1ccx",
+    "ANI2xr",
+    "ANI2dr",
+    "ANImbis",
+    "ANImbisv",
+    "SnnANI2xr",
+]
+
+
+def _fetch_animbisv_state_dict() -> tp.Any:
+    try:
+        return _fetch_state_dict("animbisv_state_dict.pt", private=False)
+    except Exception as original_error:
+        state_dict_path = state_dicts_dir() / "animbisv_state_dict.pt"
+        if state_dict_path.is_file():
+            return _fetch_state_dict(str(state_dict_path), local=True)
+        raise original_error
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -220,7 +239,7 @@ def ANImbisv(
     dtype: DType = None,
 ) -> ANIscalars:
     r"""
-    Experimental ANI-2x model with MBIS charges
+    Experimental ANI-2x model with MBIS charges and atomic volumes.
     """
     asm = Assembler(cls=ANIscalars, periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X)
@@ -238,41 +257,30 @@ def ANImbisv(
         ctor="ani2x",
         kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
     )
-    asm.add_scalar_networks("atomic_volumes")
+    asm.add_scalar_networks(
+        key="atomic_volumes",
+        cls=PositiveVolumeNetworks,
+        ctor="build",
+        kwargs={
+            "dims": {
+                "H": (256, 192, 160),
+                "C": (224, 192, 160),
+                "N": (192, 160, 128),
+                "O": (192, 160, 128),
+                "S": (160, 128, 96),
+                "F": (160, 128, 96),
+                "Cl": (160, 128, 96),
+            },
+            "out_dim": 1,
+            "bias": True,
+            "activation": "gelu",
+        },
+    )
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANIscalars, asm.assemble(8))
-
-    ani2x_state_dict = _fetch_state_dict("ani2x_state_dict.pt")
-    energy_nn_state_dict = {
-        k.replace("neural_networks.", ""): v
-        for k, v in ani2x_state_dict.items()
-        if k.endswith("weight") or k.endswith("bias")
-    }
-    aev_state_dict = {
-        k.replace("aev_computer.", ""): v
-        for k, v in ani2x_state_dict.items()
-        if k.startswith("aev_computer")
-    }
-
-    shifter_state_dict = {
-        "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
-    }
-    model.energy_shifter.load_state_dict(shifter_state_dict)
-
-    # TODO: Here the volume_nn_state_dict and volume_shifter_state_dict should be loaded
-    # volume_shifter_state_dict: tp.Dict[str, tp.Any] = {}
-    # model.volume_shifter.load_state_dict(volume_shifter_state_dict)
-
-    # volume_nn_state_dict: tp.Dict[str, tp.Any] = {}
-
-    charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=False)
-    nnp = tp.cast(SeparateScalarsNNPotential, model.nnp)
-    nnp.aev_computer.load_state_dict(aev_state_dict)
-    nnp.neural_networks.load_state_dict(energy_nn_state_dict)
-    nnp.scalar_networks["atomic_charges"].load_state_dict(charge_nn_state_dict)
-    # nnp.scalar_networks["atomic_volumes"].load_state_dict(volume_nn_state_dict)
+    model.load_state_dict(_fetch_animbisv_state_dict())
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)

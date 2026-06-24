@@ -864,7 +864,7 @@ class ANIscalars(_ANI):
                 result = pot.compute_from_neighbors(
                     elem_idxs, coords, neighbors, charge, atomic, ensemble_values
                 )  # type: ignore[operator]
-                output["energies"] + result["energies"]
+                output["energies"] = output["energies"] + result["energies"]
                 if k == "nnp":
                     for k in self._scalar_keys:
                         output[k] = output[k] + result[k]
