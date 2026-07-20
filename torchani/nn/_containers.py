@@ -14,7 +14,6 @@ from torchani.nn._core import (
     AtomicEmbedding,
     _Embedding,
 )
-from torchani.nn._infer import BmmEnsemble, MNPNetworks
 
 
 class SingleNN(AtomicContainer):
@@ -456,6 +455,8 @@ class ANINetworks(AtomicContainer):
 
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        from torchani.nn._infer import MNPNetworks  # Avoid circular import
+
         return MNPNetworks(self, use_mnp=use_mnp)
 
     @classmethod
@@ -720,6 +721,8 @@ class Ensemble(AtomicContainer):
 
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        from torchani.nn._infer import BmmEnsemble, MNPNetworks  # Avoid circular import
+
         if use_mnp:
             return MNPNetworks(self, use_mnp=True)
         return BmmEnsemble(self)

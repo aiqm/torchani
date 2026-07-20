@@ -19,7 +19,7 @@ keywords = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "torch>=2.0,<=2.8",
+    "torch>=2.0,<=2.13",
     "numpy",
     "typing_extensions>=4.0.0",
     "h5py",
