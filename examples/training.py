@@ -4,6 +4,7 @@ Training an ANI network using a custom script
 
 This example shows how to use TorchANI to train a neural network potential.
 """
+
 # %% To begin with, let's first import the modules and setup devices we will use
 import math
 from pathlib import Path
@@ -17,6 +18,8 @@ from torchani.arch import ANI, simple_ani
 from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
 from torchani.grad import forces_for_training
+from torchani.utils import rmse_is_better
+
 # %%
 # Device and dataset to run the training
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -83,6 +86,8 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     factor=0.5,
     patience=100,
     threshold=0,
+    threshold_mode="rel",
+    mode="min",
 )
 # %%
 # We first read the checkpoint files to restart training. We use ``latest_traininig.pt``
@@ -187,8 +192,8 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
     rmse = validate(model, validation)
     print(f"After epoch {epoch}: Validation RMSE (kcal/mol) {rmse}")
 
-    # Checkpoint the model if the RMSE; improved
-    if scheduler.is_better(rmse, scheduler.best):
+    # Checkpoint the model if the RMSE improved
+    if rmse_is_better(scheduler, rmse, scheduler.best):
         torch.save(model.state_dict(), best_model_state_checkpoint_path)
 
     # Step the epoch-scheduler

@@ -14,6 +14,7 @@ from numpy.typing import NDArray
 import torch
 from torch import Tensor
 import torch.utils.data
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from torchani.annotations import Device, DType
 from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
@@ -32,12 +33,28 @@ __all__ = [
     "sort_by_atomic_num",
     "EnergyShifter",
     "get_atomic_masses",
+    "rmse_is_better",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
     "SYMBOLS_1X",
     "SYMBOLS_2X",
     "SYMBOLS_2X_ZNUM_ORDER",
 ]
+
+
+def rmse_is_better(scheduler: ReduceLROnPlateau, rmse: float, best: float) -> bool:
+    if scheduler.mode == "min" and scheduler.threshold_mode == "rel":
+        rel_epsilon = 1.0 - scheduler.threshold
+        return rmse < best * rel_epsilon
+
+    elif scheduler.mode == "min" and scheduler.threshold_mode == "abs":
+        return rmse < best - scheduler.threshold
+
+    elif scheduler.mode == "max" and scheduler.threshold_mode == "rel":
+        rel_epsilon = scheduler.threshold + 1.0
+        return rmse > best * rel_epsilon
+    # mode == 'max' and epsilon_mode == 'abs':
+    return rmse > best + scheduler.threshold
 
 
 def _parse_device_and_dtype(
@@ -239,7 +256,7 @@ def pad_atomic_properties(
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
             # here x[k] is implicitly cast to long if it has another integer type
-            output[k][index0:index0 + n, 0:original_size, ...] = x[k]
+            output[k][index0 : index0 + n, 0:original_size, ...] = x[k]
             index0 += n
     return output
 
