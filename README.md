@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
-[![CI](https://github.com/aiqm/torchani/actions/workflows/public-ci.yaml/badge.svg?branch=main)](https://github.com/aiqm/torchani/actions/workflows/public-ci.yaml)
+[![CI](https://github.com/aiqm/torchani/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/aiqm/torchani/actions/workflows/ci.yaml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 TorchANI 2.0 is an open-source library that supports training, development, and research

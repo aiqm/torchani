@@ -31,7 +31,7 @@ import logging
 from copy import deepcopy
 import warnings
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import OrderedDict
 import typing as tp
 
@@ -833,7 +833,7 @@ class _AEVComputerWrapper:
 class _AtomicContainerWrapper:
     cls: AtomicContainerCls
     ctor: str = "separate_networks"
-    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
+    kwargs: tp.Dict[str, tp.Any] = field(default_factory=dict)
 
     def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
         out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
@@ -1335,6 +1335,11 @@ def _fetch_state_dict(
         model_name = "animbis"
     else:
         model_name = state_dict_file.replace("_state_dict.pt", "").replace(".pt", "")
+
+    # r2s models all live in the same huggingface model repo
+    if model_name.startswith("anir2s_"):
+        model_name = "anir2s"
+
     hf_kw = dict(
         repo_id=f"{repo_id}/{model_name}",
         filename=state_dict_file,

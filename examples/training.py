@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 
 import torch
-import torch.utils.tensorboard
+import torch.utils.tensorboard as tensorboard
 from tqdm import tqdm
 
 import torchani
@@ -124,7 +124,7 @@ def validate(model: ANI, validation: torch.utils.data.DataLoader) -> float:
 
 # %%
 # We will also use TensorBoard to visualize our training process
-tensorboard = torch.utils.tensorboard.SummaryWriter()
+writer = tensorboard.SummaryWriter(Path.cwd() / "runs")
 # %%
 # Criteria for stopping training
 max_epochs = 5
@@ -205,7 +205,8 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
     )
 
     # Log scalars
-    tensorboard.add_scalar("validation_rmse_kcalpermol", rmse, epoch)
-    tensorboard.add_scalar("best_validation_rmse_kcalpermol", scheduler.best, epoch)
-    tensorboard.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], epoch)
-    tensorboard.add_scalar("epoch_loss_square_ha", loss, epoch)
+    writer.add_scalar("validation_rmse_kcalpermol", rmse, epoch)
+    writer.add_scalar("best_validation_rmse_kcalpermol", scheduler.best, epoch)
+    writer.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], epoch)
+    writer.add_scalar("epoch_loss_square_ha", loss, epoch)
+writer.close()
