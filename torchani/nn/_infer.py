@@ -9,6 +9,7 @@ from torch import Tensor
 
 from torchani.csrc import MNP_IS_INSTALLED
 from torchani.nn._core import AtomicContainer, AtomicNetwork, TightCELU
+from torchani.nn._containers import Ensemble
 
 
 def jit_unused_if_no_mnp():
@@ -76,26 +77,45 @@ class BmmEnsemble(AtomicContainer):
     batched matrix multiplication (BMM).
     """
 
-    def __init__(self, ensemble: AtomicContainer):
+    def __init__(self, ensemble: Ensemble):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.total_members_num = 1  # Operates as a single ANINetworks
-        self.active_members_idxs = [0]
         self.num_species = ensemble.num_species
-        if not hasattr(ensemble, "members"):
-            raise TypeError("BmmEnsemble can only take an Ensemble as an input")
+        if not isinstance(ensemble, Ensemble):
+            raise TypeError("BmmEnsemble can only wrap an Ensemble")
         self.atomics = torch.nn.ModuleDict(
             {
                 s: BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])  # type: ignore # noqa:E501
                 for s in ensemble.symbols
             }
         )
+        # Track number of models for the set_active_members/select_first_n functionality
+        self.total_members_num = len(ensemble.members)
+        self.active_members_idxs = list(range(self.total_members_num))
 
         # bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
         self._idx_list: tp.List[Tensor] = _make_idx_list(
             self._last_species, self.num_species, []
         )
+
+    @torch.jit.export
+    def set_active_members(self, idxs: tp.List[int]) -> None:
+        """Set which ensemble members to use for averaging."""
+        for idx in idxs:
+            if not (0 <= idx < self.total_members_num):
+                raise IndexError(
+                    f"Idx {idx} should be 0 <= idx < {self.total_members_num}"
+                )
+
+        n = len(idxs)
+        if torch.arange(n) != torch.tensor(idxs):
+            raise ValueError("For infer models, idxs must be [0, 1, ...]")
+
+        self.active_members_idxs = idxs
+        # Propagate to all BmmAtomicNetwork modules
+        for bmm_atomic in self.atomics.values():
+            bmm_atomic.select_first_n(n)  # type: ignore
 
     def forward(
         self,
@@ -128,6 +148,15 @@ class BmmEnsemble(AtomicContainer):
             energies = energies.sum(dim=-1)
         return energies
 
+    # NOTE: Functionality is redundant with set_active_members but is left here for
+    # compatibility with LAMMPS-ANI
+    @torch.jit.export
+    def select_first_n(self, n: int) -> None:
+        r""":meta private:"""
+        for bmm_atomic in self.atomics.values():
+            bmm_atomic.select_first_n(n)  # type: ignore
+        self.active_members_idxs = list(range(n))
+
 
 class BmmAtomicNetwork(torch.nn.Module):
     r"""The inference-optimized analogue of an `AtomicNetwork`
@@ -158,13 +187,26 @@ class BmmAtomicNetwork(torch.nn.Module):
             [BmmLinear([n.layers[j] for n in networks]) for j in range(num_layers)]  # type: ignore  # noqa
         )
         self.final_layer = BmmLinear([n.final_layer for n in networks])
-        self._num_batched_networks = len(networks)
+
+        # Track number of batched networks and currently selected networks
+        self.total_batched_networks_num = len(networks)
+        self.active_batched_networks_num = len(networks)
 
     def forward(self, features: Tensor) -> Tensor:
-        features = features.expand(self._num_batched_networks, -1, -1)
+        features = features.expand(self.active_batched_networks_num, -1, -1)
         for layer in self.layers:
             features = self.activation(layer(features))
         return self.final_layer(features).mean(0)
+
+    @torch.jit.export
+    def select_first_n(self, n: int) -> None:
+        r""":meta private:"""
+        if n > self.total_batched_networks_num:
+            raise ValueError(f"Max n is {self.total_batched_networks_num}")
+        for layer in self.layers:
+            layer.select_first_n(n)  # type: ignore
+        self.final_layer.select_first_n(n)
+        self.active_batched_networks_num = n
 
 
 class BmmLinear(torch.nn.Module):
@@ -203,8 +245,25 @@ class BmmLinear(torch.nn.Module):
         self.in_features = self.weight.shape[1]
         self.out_features = self.weight.shape[2]
 
+        # Track number of batched linear layers and currently selected layers
+        self.total_batched_linears_num = len(linears)
+        self.active_batched_linears_num = len(linears)
+
     def forward(self, input_: Tensor) -> Tensor:
-        return torch.baddbmm(self.bias, input_, self.weight, beta=self._beta)
+        # Slice weights and bias to use only the first N active models
+        weight = self.weight[: self.active_batched_linears_num, :, :]
+        if self._beta > 0:
+            bias = self.bias[: self.active_batched_linears_num, :, :]
+        else:
+            bias = self.bias
+        return torch.baddbmm(bias, input_, weight, beta=self._beta)
+
+    @torch.jit.export
+    def select_first_n(self, n: int) -> None:
+        r""":meta private:"""
+        if n > self.total_batched_linears_num:
+            raise ValueError(f"Max n is {self.total_batched_linears_num}")
+        self.active_batched_linears_num = n
 
     def extra_repr(self):
         r""":meta private:"""
@@ -236,8 +295,7 @@ class MNPNetworks(AtomicContainer):
         self.active_members_idxs = [0]
         self.num_species = module.num_species
 
-        # Detect "ensemble" case via duck typing
-        self._is_bmm = hasattr(module, "members")
+        self._is_bmm = isinstance(module, Ensemble)
         if self._is_bmm:
             self.atomics = torch.nn.ModuleDict(
                 {
