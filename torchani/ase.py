@@ -97,6 +97,8 @@ class Calculator(AseCalculator):
             self.atoms.set_positions(coords.detach().cpu().reshape(-1, 3).numpy())
 
         if not pbc.any():
+            if needs_stress:
+                raise ValueError("Can't require stress if not using PBC")
             cell = None
             pbc = None
 
@@ -108,6 +110,8 @@ class Calculator(AseCalculator):
         coords = coords.unsqueeze(0)
 
         if needs_stress:
+            assert cell is not None
+            assert pbc is not None
             elem_idxs = self.model.species_converter(species)
             if self.stress_kind == "scaling":
                 cell = cell @ scaling

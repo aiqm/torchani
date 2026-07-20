@@ -349,10 +349,6 @@ def ANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -384,10 +380,6 @@ def ANI2dr(
     Trained to the B973c level of theory with added repulsion and dispersion potentials,
     and smoother PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="b973c-def2mtzvp",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -424,6 +416,7 @@ def ANIr2s(
     # and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum
     # model is returned.
     # """
+    warnings.warn("ANIr2s is experimental. Use at your own risk")
     suffix = f"{'_' + solvent if solvent is not None else ''}"
     # These models were trained with _AltSmoothCutoff, but difference is negligible
     model = simple_ani(
@@ -443,7 +436,7 @@ def ANIr2s(
         radial_cutoff=5.1,
     )
     model.load_state_dict(
-        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
+        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=False)
     )
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
@@ -525,10 +518,6 @@ def SnnANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr-snn is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=["H", "C", "N", "O", "F", "S", "Cl"],
@@ -548,6 +537,60 @@ def SnnANI2xr(
     return model
 
 
+def ANI1xnr(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r"""The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_
+
+    The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_. This model
+    model is an ensemble of 8 networks that was trained on the ANI-1xnr dataset dataset.
+    The target level of theory is BLYP/TZV2P. It is a reactive potential that predicts
+    energies on HCNO elements exclusively. It shouldn't be used with other atom types.
+
+    .. _ani-1xnr on GitHub:
+        https://github.com/atomistic-ml/ani-1xnr/
+
+    .. _ani-1xnr Paper:
+        https://www.nature.com/articles/s41557-023-01427-3
+    """
+    model = simple_ani(
+        lot="blyp-tzv2p",
+        symbols=["H", "C", "N", "O"],
+        radial_start=0.5,
+        angular_start=0.5,
+        radial_cutoff=5.2,
+        angular_cutoff=3.5,
+        radial_precision=65.7,
+        angular_precision=10.1,
+        angular_zeta=14.1,
+        radial_shifts=32,
+        angular_shifts=8,
+        sections=4,
+        cutoff_fn="cosine",
+        container="ANINetworks",
+        container_ctor="like_2x",
+        dispersion=False,
+        repulsion=False,
+        ensemble_size=8,
+        activation="celu",
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        strategy=strategy,
+        self_energies="zero",  # overwritten by the state dict
+        bias=True,
+    )
+    model.load_state_dict(_fetch_state_dict("ani1xnr.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
 # Custom models
 def __getattr__(name: str):
     # __mro__ needed for sphinx
@@ -558,9 +601,9 @@ def __getattr__(name: str):
         if p.name.startswith(name):
             spec = importlib.util.spec_from_file_location("model", p / "model.py")
             if spec is None:
-                raise ImportError(f"{p} / model.py could not be found")
+                raise AttributeError(f"{p} / model.py could not be found")
             module = importlib.util.module_from_spec(spec)
             assert spec.loader is not None  # mypy
             spec.loader.exec_module(module)
             return getattr(module, name)
-    raise ImportError(f"Could not find custom model {name}")
+    raise AttributeError(f"Could not find custom model {name}")
