@@ -24,6 +24,7 @@ class AtomicOneHot(_Embedding):
         # encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, 0, 0]])
 
     """
+
     one_hot: Tensor
 
     def __init__(self, symbols: tp.Sequence[str]) -> None:

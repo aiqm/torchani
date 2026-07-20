@@ -9,6 +9,7 @@ from torch import Tensor
 
 from torchani.csrc import MNP_IS_INSTALLED
 from torchani.nn._core import AtomicContainer, AtomicNetwork, TightCELU
+from trochani.nn._containers import Ensemble
 
 
 def jit_unused_if_no_mnp():
@@ -76,12 +77,12 @@ class BmmEnsemble(AtomicContainer):
     batched matrix multiplication (BMM).
     """
 
-    def __init__(self, ensemble: AtomicContainer):
+    def __init__(self, ensemble: Ensemble):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
         self.num_species = ensemble.num_species
-        if not hasattr(ensemble, "members"):
-            raise TypeError("BmmEnsemble can only take an Ensemble as an input")
+        if not isinstance(ensemble, Ensemble):
+            raise TypeError("BmmEnsemble can only wrap an Ensemble")
         self.atomics = torch.nn.ModuleDict(
             {
                 s: BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])  # type: ignore # noqa:E501
@@ -152,7 +153,7 @@ class BmmEnsemble(AtomicContainer):
     def select_models(self, use_num_models: int) -> None:
         """Select the first use_num_models models from the ensemble."""
         for bmm_atomic in self.atomics.values():
-            bmm_atomic.select_models(use_num_models)
+            bmm_atomic.select_models(use_num_models)  # type: ignore
         self.active_members_idxs = list(range(use_num_models))
 
 
@@ -197,7 +198,7 @@ class BmmAtomicNetwork(torch.nn.Module):
     @torch.jit.export
     def select_models(self, use_num_models: int) -> None:
         for layer in self.layers:
-            layer.select_models(use_num_models)
+            layer.select_models(use_num_models)  # type: ignore
         self.final_layer.select_models(use_num_models)
         self.use_num_models = use_num_models
 
