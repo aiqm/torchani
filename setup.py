@@ -67,7 +67,10 @@ def cuaev_extension_kwargs(
     for arg in nvcc_args:
         print(f"    {arg}")
 
-    cxx_args = ["-std=c++17"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20"]
+    else:
+        cxx_args = ["-std=c++17"]
     print("C++ compiler args:")
     for arg in cxx_args:
         print(f"    {arg}")
@@ -83,9 +86,12 @@ def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     print("-" * 75)
     print("Will build MNP")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++17", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
@@ -101,9 +107,12 @@ def clist_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     print("-" * 75)
     print("Will build Cell List")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++17", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
