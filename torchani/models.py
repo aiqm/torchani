@@ -68,13 +68,42 @@ import importlib.util
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
 from torchani.potentials import SeparateChargesNNPotential
 from torchani.electro import ChargeNormalizer
-from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict, simple_ani
+from torchani.arch import (
+    Assembler,
+    ANI,
+    ANIq,
+    ANIscalars,
+    _fetch_state_dict,
+    simple_ani,
+)
 from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
-from torchani.nn._internal import _ANINetworksDiscardFirstScalar
-from torchani.paths import custom_models_dir
+from torchani.nn._internal import (
+    PositiveVolumeNetworks,
+    _ANINetworksDiscardFirstScalar,
+)
+from torchani.paths import custom_models_dir, state_dicts_dir
 
-__all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2xr"]
+__all__ = [
+    "ANI1x",
+    "ANI2x",
+    "ANI1ccx",
+    "ANI2xr",
+    "ANI2dr",
+    "ANImbis",
+    "ANImbisv",
+    "SnnANI2xr",
+]
+
+
+def _fetch_animbisv_state_dict() -> tp.Any:
+    try:
+        return _fetch_state_dict("animbisv_state_dict.pt", private=False)
+    except Exception as original_error:
+        state_dict_path = state_dicts_dir() / "animbisv_state_dict.pt"
+        if state_dict_path.is_file():
+            return _fetch_state_dict(str(state_dict_path), local=True)
+        raise original_error
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -195,6 +224,63 @@ def ANI2x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANImbisv(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANIscalars:
+    r"""
+    Experimental ANI-2x model with MBIS charges and atomic volumes.
+    """
+    asm = Assembler(cls=ANIscalars, periodic_table_index=periodic_table_index)
+    asm.set_symbols(SYMBOLS_2X)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
+    asm.set_atomic_networks(ctor="ani2x")
+    asm.set_charge_normalizer(
+        normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        )
+    )
+    asm.add_scalar_networks(
+        key="atomic_charges",
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
+    )
+    asm.add_scalar_networks(
+        key="atomic_volumes",
+        cls=PositiveVolumeNetworks,
+        ctor="build",
+        kwargs={
+            "dims": {
+                "H": (256, 192, 160),
+                "C": (224, 192, 160),
+                "N": (192, 160, 128),
+                "O": (192, 160, 128),
+                "S": (160, 128, 96),
+                "F": (160, 128, 96),
+                "Cl": (160, 128, 96),
+            },
+            "out_dim": 1,
+            "bias": True,
+            "activation": "gelu",
+        },
+    )
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = tp.cast(ANIscalars, asm.assemble(8))
+    model.load_state_dict(_fetch_animbisv_state_dict())
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -515,7 +601,8 @@ def ANI1xnr(
 
 # Custom models
 def __getattr__(name: str):
-    if name == "__path__":
+    # __mro__ needed for sphinx
+    if name in ["__path__", "__mro__"]:
         # This module is not a package
         raise AttributeError
     for p in sorted(custom_models_dir().iterdir()):

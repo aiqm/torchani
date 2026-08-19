@@ -292,9 +292,15 @@ def sp(
             znums, coords, cell, pbc = torchani.io.read_xyz(
                 p, device=_device, dtype=_dtype
             )
+        elif p.name.endswith(".orca.in"):
+            znums, coords = torchani.io.read_orca(p, device=_device, dtype=_dtype)
+            cell = None
+            pbc = None
         else:
             # Single molecule supported only
             atoms = tp.cast(Atoms, ase_read(p))
+            if not atoms.symbols:
+                raise ValueError(f"No atoms could be found in {p}")
             if isinstance(atoms, list):
                 raise ValueError("Batch eval only supported for single molecules")
             coords = (
