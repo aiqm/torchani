@@ -302,6 +302,8 @@ def single_point(
     atomic_energies: bool = False,
     atomic_charges: bool = False,
     atomic_charges_grad: bool = False,
+    atomic_volumes: bool = False,
+    atomic_volumes_grad: bool = False,
     ensemble_values: bool = False,
     keep_vars: bool = False,
 ) -> tp.Dict[str, Tensor]:
@@ -333,7 +335,7 @@ def single_point(
         various result tensors.
     """
     saved_requires_grad = coordinates.requires_grad
-    if forces or hessians or atomic_charges_grad:
+    if forces or hessians or atomic_charges_grad or atomic_volumes_grad:
         coordinates.requires_grad_(True)
     result = model(
         species_coordinates=(species, coordinates),
@@ -346,13 +348,35 @@ def single_point(
     energies = result.energies
     out: tp.Dict[str, Tensor] = {}
     if atomic_charges:
-        if not hasattr(result, "atomic_charges"):
+        if not (
+            hasattr(result, "atomic_charges")
+            or (hasattr(result, "scalars") and "atomic_charges" in result.scalars)
+        ):
             raise ValueError("Model doesn't support atomic charges")
-        out["atomic_charges"] = result.atomic_charges
+        if hasattr(result, "scalars"):
+            out["atomic_charges"] = result.scalars["atomic_charges"]
+        else:
+            out["atomic_charges"] = result.atomic_charges
         if atomic_charges_grad:
             retain = forces or hessians
             out["atomic_charges_grad"] = calc_grads(
                 result.atomic_charges, coordinates, retain_graph=retain
+            )
+
+    if atomic_volumes:
+        if not (
+            hasattr(result, "atomic_volumes")
+            or (hasattr(result, "scalars") and "atomic_volumes" in result.scalars)
+        ):
+            raise ValueError("Model doesn't support atomic volumes")
+        if hasattr(result, "scalars"):
+            out["atomic_volumes"] = result.scalars["atomic_volumes"]
+        else:
+            out["atomic_volumes"] = result.atomic_volumes
+        if atomic_volumes_grad:
+            retain = forces or hessians
+            out["atomic_volumes_grad"] = calc_grads(
+                result.atomic_volumes, coordinates, retain_graph=retain
             )
 
     if ensemble_values:

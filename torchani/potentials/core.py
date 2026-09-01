@@ -4,7 +4,6 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.tuples import EnergiesScalars
 from torchani.cutoffs import _parse_cutoff_fn, CutoffArg, CutoffDummy
 from torchani.neighbors import Neighbors, adaptive_list, all_pairs
 from torchani.utils import _validate_user_kwargs
@@ -64,7 +63,7 @@ class Potential(_ChemModule):
             neighbors = all_pairs(self.cutoff, elem_idxs, coords, cell, pbc)
         return self.compute_from_neighbors(
             elem_idxs, coords, neighbors, atomic, ensemble_values
-        ).energies
+        )["energies"]
 
     def compute_from_neighbors(
         self,
@@ -75,7 +74,7 @@ class Potential(_ChemModule):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         r"""Compute the energies associated with the potential
 
         If the potential is an ensemble of multiple models, ensemble_values=True should
@@ -97,10 +96,10 @@ class DummyPotential(Potential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         if atomic:
-            return EnergiesScalars(coords.new_zeros(elem_idxs.shape))
-        return EnergiesScalars(coords.new_zeros(elem_idxs.shape[0]))
+            return {"energies": coords.new_zeros(elem_idxs.shape)}
+        return {"energies": coords.new_zeros(elem_idxs.shape[0])}
 
 
 class BasePairPotential(Potential):
@@ -187,7 +186,7 @@ class BasePairPotential(Potential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesScalars:
+    ) -> tp.Dict[str, Tensor]:
         # NOTE: Currently having ensembles of pair potentials is not supported, so
         # ensemble_values is disregarded
         # NOTE: Currently charge is not passed to the pair_potentials
@@ -204,7 +203,7 @@ class BasePairPotential(Potential):
                 neighbors.indices[0], elem_idxs.shape[1], rounding_mode="floor"
             )
             energies.index_add_(0, molecs_idxs, pair_energies)
-        return EnergiesScalars(energies)
+        return {"energies": energies}
 
     @staticmethod
     def symm(x: Tensor) -> Tensor:

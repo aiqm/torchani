@@ -62,6 +62,12 @@ class SpeciesEnergiesAtomicCharges(tp.NamedTuple):
     atomic_charges: Tensor
 
 
+class SpeciesEnergiesScalars(tp.NamedTuple):
+    species: Tensor
+    energies: Tensor
+    scalars: tp.Dict[str, Tensor]
+
+
 class EnergiesAtomicCharges(tp.NamedTuple):
     energies: Tensor
     atomic_charges: Tensor

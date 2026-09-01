@@ -174,3 +174,56 @@ def read_xyz(
     if return_comments:
         return pad_properties["species"], pad_properties["coordinates"], cell, pbc, comments_list  # type: ignore  # noqa: E501
     return pad_properties["species"], pad_properties["coordinates"], cell, pbc
+
+
+def read_orca(
+    path: StrPath,
+    dtype: DType = None,
+    device: Device = None,
+    detect_padding: bool = True,
+    pad_species_value: int = 100,
+) -> tuple[Tensor, Tensor]:
+    path = Path(path)
+    in_xyz = False
+    species = []
+    coordinates = []
+    with open(path, mode="rt", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("* xyz"):
+                in_xyz = True
+                continue
+            if line.startswith("*"):
+                in_xyz = False
+                break
+            if in_xyz:
+                s, x, y, z = line.split()
+                s = s.capitalize()
+                if s in ATOMIC_NUMBER:
+                    atomic_num = ATOMIC_NUMBER[s]
+                else:
+                    atomic_num = int(s)
+                if atomic_num == pad_species_value and detect_padding:
+                    atomic_num = -1
+                    x, y, z = "0.0", "0.0", "0.0"
+                species.append(atomic_num)
+                coordinates.append([float(x), float(y), float(z)])
+        else:
+            raise ValueError("Could not find * xyz ... * block in orca file")
+    properties = [
+        (
+            {
+                "coordinates": torch.tensor(
+                    [coordinates],
+                    dtype=dtype,
+                    device=device,
+                ),
+                "species": torch.tensor(
+                    [species],
+                    dtype=torch.long,
+                    device=device,
+                ),
+            }
+        )
+    ]
+    pad_properties = pad_atomic_properties(properties)
+    return pad_properties["species"], pad_properties["coordinates"]
