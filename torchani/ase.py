@@ -13,6 +13,8 @@ import torch
 from torch import Tensor
 import ase
 import ase.units
+import numpy as np
+from numpy.typing import NDArray
 from ase.calculators.calculator import (
     Calculator as AseCalculator,
     all_changes as _ALL_CHANGES,
@@ -79,7 +81,8 @@ class Calculator(AseCalculator):
         # TODO: We should not need to reset the results every time this is called,
         # bugs associated with stress and force calculation should be investigated,
         # since this should be a no-op
-        self.results = {}  # Clear results, added by WardLT
+        # Clear results, added by WardLT
+        self.results: dict[str, NDArray[np.floating] | float] = {}
         if self.atoms is None:
             raise ValueError("Can't calculate if not attached to Atoms")
 
