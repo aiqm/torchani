@@ -1,5 +1,4 @@
 import math
-import typing as tp
 
 import ase
 import ase.vibrations

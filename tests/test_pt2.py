@@ -1,5 +1,4 @@
 # NOTE: These tests are experimental
-import typing as tp
 import os
 import torch
 from torch import Tensor

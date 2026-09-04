@@ -14,7 +14,6 @@ potentials/dispersion.
 
 import math
 import h5py
-import typing as tp
 import pickle
 from pathlib import Path
 

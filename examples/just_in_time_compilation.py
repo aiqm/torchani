@@ -9,7 +9,6 @@ files in a process where there is no Python dependency.
 """
 # To begin with, let's first import the modules we will use:
 from pathlib import Path
-import typing as tp
 
 import torch
 from torch import Tensor
