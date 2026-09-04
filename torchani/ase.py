@@ -162,7 +162,7 @@ class Calculator(AseCalculator):
             self._set_result("stress", virial / volume)
 
     def _set_result(self, key: str, value: Tensor) -> None:
-        if value.ndim < 1:
+        if value.ndim in (0, 1):
             self.results[key] = value.item()
         else:
             if value.ndim == 3:
