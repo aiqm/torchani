@@ -87,9 +87,9 @@ class Calculator(AseCalculator):
         if "forces" in properties:
             crds.requires_grad_(True)
 
-        scaling = torch.eye(3, dtype=self._dtype, device=self._device)
+        strain = crds.new_zeros((3, 3))
         if "stress" in properties and self._stress_kind == "scaling":
-            scaling.requires_grad_(True)
+            strain.requires_grad_(True)
 
         if self._overwrite and (cell is not None) and (pbc is not None):
             warnings.warn("'overwrite' set, info about crossing PBC *will be lost*")
@@ -102,8 +102,11 @@ class Calculator(AseCalculator):
                 raise ValueError("Can't require stress if not using PBC")
 
             if self._stress_kind == "scaling":
-                crds = crds @ scaling
-                cell = cell @ scaling
+                eye = torch.eye(3, dtype=self._dtype, device=self._device)
+                # Sym not strictly needed but done for numeric robustness
+                defo_grad = eye + 0.5 * (strain + strain.T)
+                crds = crds @ defo_grad
+                cell = cell @ defo_grad
 
             _cutoff = self.model.cutoff
             neighbors = self.model.neighborlist(_cutoff, species, crds, cell, pbc)
@@ -129,7 +132,7 @@ class Calculator(AseCalculator):
                 if self._stress_kind == "fdotr":
                     inputs[1] = diff_vec
                 elif self._stress_kind == "scaling":
-                    inputs[1] = scaling
+                    inputs[1] = strain
             grads = torch.autograd.grad(energy.squeeze(), inputs, allow_unused=True)
 
         # Set all calculated properties in the "results" mapping
