@@ -23,7 +23,7 @@ with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
     _DATASETS_SPEC = json.load(f)
 
 # Convert csv file with format "file_name, MD5-hash" into a dictionary
-_MD5S: tp.Dict[str, str] = dict()
+_MD5S: dict[str, str] = dict()
 with open(Path(__file__).resolve().parent / "md5s.csv") as f:
     lines = f.readlines()
     for line in lines[1:]:
@@ -32,8 +32,8 @@ with open(Path(__file__).resolve().parent / "md5s.csv") as f:
 
 
 # TODO clean this up
-def _available_archives() -> tp.Dict[str, tp.Tuple[str, str]]:
-    ars: tp.Dict[str, tp.Tuple[str, str]] = {}
+def _available_archives() -> dict[str, tuple[str, str]]:
+    ars: dict[str, tuple[str, str]] = {}
     for k, v in _DATASETS_SPEC.items():
         if k.endswith("-meta"):
             continue
@@ -42,7 +42,7 @@ def _available_archives() -> tp.Dict[str, tp.Tuple[str, str]]:
     return ars
 
 
-def _available_dataset_lots(ds_name: str) -> tp.List[str]:
+def _available_dataset_lots(ds_name: str) -> list[str]:
     return list(_DATASETS_SPEC[ds_name]["lot"].keys())
 
 
@@ -59,7 +59,7 @@ def _fetch_and_create_builtin_dataset(
     lot: str = "",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
     skip_check: bool = False,
     suffix: str = ".h5",
 ) -> ANIDataset:
@@ -155,7 +155,7 @@ def _fetch_and_create_builtin_dataset(
 
 
 def _check_files_integrity(
-    files_and_md5s: tp.Dict[str, str],
+    files_and_md5s: dict[str, str],
     root: Path,
     suffix: str = ".h5",
     name: str = "Dataset",

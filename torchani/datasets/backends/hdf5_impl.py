@@ -26,7 +26,7 @@ class _HDF5Store(_HierarchicalStore):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
         grouping: tp.Optional[Grouping] = None,
     ):
         super().__init__(root, dummy_properties, grouping)
@@ -80,7 +80,7 @@ class _HDF5Store(_HierarchicalStore):
 
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
         cache = Cache()
         # If the dataset is standarized (it is a tree with depth
         # 1, where all groups are directly joined to the root) then it is much faster

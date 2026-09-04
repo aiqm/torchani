@@ -68,7 +68,7 @@ def narrow_down(
     elem_idxs: Tensor,
     coords: Tensor,
     neighbor_idxs: Tensor,
-    shifts: tp.Optional[Tensor] = None,
+    shifts: Tensor | None = None,
 ) -> Neighbors:
     r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors
 
@@ -122,7 +122,7 @@ def narrow_down(
 
 def compute_bounding_cell(
     coords: Tensor, eps: float = 1e-3, displace: bool = True, square: bool = False
-) -> tp.Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     r"""Compute the rectangular unit cell that minimally bounds a set of coords.
 
     Optionally displace the coords so that they fully lie inside the cell. Displacing
@@ -155,8 +155,8 @@ class Neighborlist(torch.nn.Module):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         r"""Calculate all pairs of atoms that are neighbors, given a cutoff.
 
@@ -185,8 +185,8 @@ class AllPairs(Neighborlist):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         return all_pairs(cutoff, species, coords, cell, pbc)
 
@@ -195,8 +195,8 @@ def all_pairs(
     cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
 ) -> Neighbors:
     _validate_inputs(cutoff, species, coords, cell, pbc)
 
@@ -224,7 +224,7 @@ def _all_pairs_pbc(
     species: Tensor,
     cell: Tensor,
     pbc: Tensor,
-) -> tp.Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     cell = cell.detach()
     shifts = _all_pairs_pbc_shifts(cutoff, cell, pbc)
     num_atoms = species.shape[1]
@@ -295,8 +295,8 @@ class FastCellList(Neighborlist):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         output = torch.ops.cell_list.cell_list(cutoff, species, coords, cell, pbc)
         return Neighbors(*output)
@@ -316,8 +316,8 @@ class CellList(Neighborlist):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         return cell_list(cutoff, species, coords, cell, pbc)
 
@@ -339,8 +339,8 @@ class AdaptiveList(Neighborlist):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         if pbc is not None:
             return adaptive_list(cutoff, species, coords, cell, pbc, self._thresh)
@@ -362,8 +362,8 @@ class FastAdaptiveList(Neighborlist):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         if pbc is not None:
             return fast_adaptive_list(cutoff, species, coords, cell, pbc, self._thresh)
@@ -376,8 +376,8 @@ def fast_adaptive_list(
     cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
     threshold: int = 190,
 ) -> Neighbors:
     _validate_inputs(
@@ -399,8 +399,8 @@ def adaptive_list(
     cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
     threshold: int = 190,
 ) -> Neighbors:
     _validate_inputs(
@@ -423,8 +423,8 @@ def cell_list(
     cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
 ) -> Neighbors:
     _validate_inputs(
         cutoff,
@@ -475,7 +475,7 @@ def _cell_list(
     grid_shape: Tensor,  # shape (3,)
     coords: Tensor,  # shape (C, A, 3)
     cell: Tensor,  # shape (3, 3)
-) -> tp.Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     # 1) Get location of each atom in the grid, given by a "grid_idx3" (g3) or by a
     # single flat "grid_idx" (g).
     atom_grid_idx3 = coords_to_grid_idx3(coords, cell, grid_shape)  # Shape (M, A, 3)
@@ -642,7 +642,7 @@ def flatten_idx3(
     return (idx3 * grid_factors).sum(-1)
 
 
-def atom_image_converters(grid_idx: Tensor) -> tp.Tuple[Tensor, Tensor]:
+def atom_image_converters(grid_idx: Tensor) -> tuple[Tensor, Tensor]:
     # NOTE: Since sorting is not stable this may scramble the atoms,
     # this is not important for the neighborlist, only the pairs are important,
     # and non-stable sorting is marginally faster.
@@ -669,7 +669,7 @@ def atom_image_converters(grid_idx: Tensor) -> tp.Tuple[Tensor, Tensor]:
 def count_atoms_in_buckets(
     atom_grid_idx: Tensor,  # shape (C, A)
     grid_shape: Tensor,
-) -> tp.Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     # Return number of atoms in each bucket, and cumulative number of
     # atoms before each bucket, as indexed with the flat grid_idx
     atom_grid_idx = atom_grid_idx.view(-1)  # shape (A,), get rid of C
@@ -797,7 +797,7 @@ def lower_image_pairs_between(
     cumcount_in_atom_surround: Tensor,  # shape (C, A, N=13)
     shift_idxs_between: Tensor,  # shape (C, A, N=13, 3)
     count_in_grid_max: int,  # scalar
-) -> tp.Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     device = count_in_atom_surround.device
     mols, atoms, neighbors = count_in_atom_surround.shape
     # shape is (c-max)
@@ -858,8 +858,8 @@ class VerletCellList(CellList):
         cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Neighbors:
         _validate_inputs(
             cutoff,
@@ -993,8 +993,8 @@ def _validate_inputs(
     cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cell: tp.Optional[Tensor],
-    pbc: tp.Optional[Tensor],
+    cell: Tensor | None,
+    pbc: Tensor | None,
     supports_batches: bool = True,
     supports_individual_pbc: bool = True,
 ):
@@ -1024,7 +1024,7 @@ def _validate_inputs(
 
 
 # Wrapper because unique_consecutive doesn't have a dynamic meta kernel asof pytorch 2.5
-def _unique_and_counts(sorted_flat_idxs: Tensor) -> tp.Tuple[Tensor, Tensor]:
+def _unique_and_counts(sorted_flat_idxs: Tensor) -> tuple[Tensor, Tensor]:
     # Sort compute unique key
     if torch.compiler.is_compiling():
         return torch.unique(sorted_flat_idxs, return_counts=True)

@@ -420,8 +420,8 @@ class ANIAngular(_BaseAngular):
 
 class Angular(_BaseAngular):
 
-    angles_tensors: tp.List[str] = []
-    radial_tensors: tp.List[str] = []
+    angles_tensors: list[str] = []
+    radial_tensors: list[str] = []
 
     def __init__(
         self,
@@ -463,7 +463,7 @@ class Angular(_BaseAngular):
 
 class Radial(_BaseRadial):
 
-    tensors: tp.List[str] = []
+    tensors: list[str] = []
 
     def __init__(
         self,

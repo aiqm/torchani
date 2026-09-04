@@ -46,8 +46,8 @@ def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
 def _make_idx_list(
     species: Tensor,
     num_species: int,
-    idx_list: tp.List[Tensor],
-) -> tp.List[Tensor]:
+    idx_list: list[Tensor],
+) -> list[Tensor]:
     species_ = species.flatten()
     with torch.no_grad():
         idx_list = [torch.empty(0) for i in range(num_species)]
@@ -95,12 +95,12 @@ class BmmEnsemble(AtomicContainer):
 
         # bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
-        self._idx_list: tp.List[Tensor] = _make_idx_list(
+        self._idx_list: list[Tensor] = _make_idx_list(
             self._last_species, self.num_species, []
         )
 
     @torch.jit.export
-    def set_active_members(self, idxs: tp.List[int]) -> None:
+    def set_active_members(self, idxs: list[int]) -> None:
         """Set which ensemble members to use for averaging."""
         for idx in idxs:
             if not (0 <= idx < self.total_members_num):
@@ -120,7 +120,7 @@ class BmmEnsemble(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -309,7 +309,7 @@ class MNPNetworks(AtomicContainer):
 
         # Bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
-        self._idx_list: tp.List[Tensor] = _make_idx_list(
+        self._idx_list: list[Tensor] = _make_idx_list(
             self._last_species, self.num_species, []
         )
 
@@ -317,12 +317,12 @@ class MNPNetworks(AtomicContainer):
         self._stream_list = [torch.cuda.Stream() for i in range(self.num_species)]
 
         # Variables used to pass tensors to torch.ops.mnp when use_mnp=True
-        self._weight_names: tp.List[str] = []
-        self._bias_names: tp.List[str] = []
+        self._weight_names: list[str] = []
+        self._bias_names: list[str] = []
         # Num linears (or bmm-linears) in each atomic network
-        self._num_layers: tp.List[int] = []
+        self._num_layers: list[int] = []
         # Idx in the flattened weight/bias lists where each atomic network starts
-        self._first_layer_idxs: tp.List[int] = []
+        self._first_layer_idxs: list[int] = []
 
         if self._use_mnp:
             if not self._MNP_IS_INSTALLED:
@@ -352,16 +352,16 @@ class MNPNetworks(AtomicContainer):
     @torch.jit.unused
     def _copy_weights_and_biases(
         self,
-    ) -> tp.Tuple[tp.List[Tensor], tp.List[Tensor], tp.List[int]]:
+    ) -> tuple[list[Tensor], list[Tensor], list[int]]:
         activation = next(iter(self.atomics.values())).activation
         if not isinstance(activation, TightCELU):
             raise ValueError(
                 f"Unsupported activation {type(activation)},"
                 " only torchani.atomics.TightCELU is supported"
             )
-        num_layers: tp.List[int] = []  # len: num_species
-        weights: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
-        biases: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
+        num_layers: list[int] = []  # len: num_species
+        weights: list[Tensor] = []  # len: sum(num_species * num_layers[j])
+        biases: list[Tensor] = []  # len: sum(num_species * num_layers[j])
         for atomic in self.atomics.values():
             if not isinstance(atomic.activation, type(activation)):
                 raise ValueError("All atomic networks must have the same activation fn")
@@ -381,7 +381,7 @@ class MNPNetworks(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -407,8 +407,8 @@ class MNPNetworks(AtomicContainer):
 
     @jit_unused_if_no_mnp()
     def _cpp_mnp(self, aev: Tensor) -> Tensor:
-        weights: tp.List[Tensor] = []
-        biases: tp.List[Tensor] = []
+        weights: list[Tensor] = []
+        biases: list[Tensor] = []
         for name, buffer in self.named_buffers():
             if name in self._bias_names:
                 biases.append(buffer)
@@ -449,7 +449,7 @@ class PythonMNP(torch.autograd.Function):
         assert num_species == len(atomic_networks)
         assert num_species == len(stream_list)
         energy_list = torch.zeros(num_species, dtype=aev.dtype, device=aev.device)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+        event_list: list[tp.Optional[torch.cuda.Event]] = [
             torch.cuda.Event() for i in range(num_species)
         ]
         current_stream = torch.cuda.current_stream()
@@ -501,7 +501,7 @@ class PythonMNP(torch.autograd.Function):
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+        event_list: list[tp.Optional[torch.cuda.Event]] = [
             torch.cuda.Event() for j, _ in enumerate(stream_list)
         ]
 

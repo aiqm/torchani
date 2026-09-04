@@ -29,7 +29,7 @@ def cmd(
         Argument(help=".xyz file to use for the benchmark", show_default=False),
     ] = None,
     optims: tpx.Annotated[
-        tp.Optional[tp.List[Opt]],
+        tp.Optional[list[Opt]],
         Option(
             "-o",
             "--optim",
@@ -129,7 +129,7 @@ def cmd(
     model = ANI1x(
         model_index=0, device=device, strategy=strategy, neighborlist=neighborlist
     )
-    models: tp.Dict[Opt, ANI] = {}
+    models: dict[Opt, ANI] = {}
     for opt in optims:
         if opt is Opt.NONE:
             models[opt] = model

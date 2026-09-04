@@ -40,7 +40,7 @@ class SelfEnergy(_ChemModule):
     @staticmethod
     def _sorted_gsaes(
         symbols: tp.Sequence[str], functional: str, basis_set: str
-    ) -> tp.List[float]:
+    ) -> list[float]:
         gsaes = GSAES[f"{functional.lower()}-{basis_set.lower()}"]
         return [gsaes[e] for e in symbols]
 

@@ -86,8 +86,8 @@ class TestRepulsion(ANITestCase):
     def testAtomicEnergy(self):
         model = self._setup(ANI2dr(model_index=0))
         species = torch.tensor([[8, 1, 1]], device=self.device)
-        _energies: tp.List[Tensor] = []
-        _atomic_energies: tp.List[Tensor] = []
+        _energies: list[Tensor] = []
+        _atomic_energies: list[Tensor] = []
         distances = torch.linspace(0.1, 6.0, 100, device=self.device)
         for d in distances:
             coordinates = torch.tensor(

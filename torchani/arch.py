@@ -104,7 +104,7 @@ class _ANI(torch.nn.Module):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        potentials: tp.Optional[dict[str, Potential]] = None,
         periodic_table_index: bool = True,
     ):
         super().__init__()
@@ -207,7 +207,7 @@ class _ANI(torch.nn.Module):
         return new_state_dict
 
     @torch.jit.export
-    def set_active_members(self, idxs: tp.List[int]) -> None:
+    def set_active_members(self, idxs: list[int]) -> None:
         # NOTE: Awkward ignore directive and assert required due to pytorch typing not
         # being great
         nn = self.potentials["nnp"].neural_networks
@@ -262,7 +262,7 @@ class _ANI(torch.nn.Module):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
+        _molecule_idxs: Tensor | None = None,
     ) -> EnergiesScalars:
         r"""This entrypoint supports input from an external neighborlist
 
@@ -327,7 +327,7 @@ class _ANI(torch.nn.Module):
 
     @property
     @torch.jit.unused
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
@@ -393,13 +393,13 @@ class ANI(_ANI):
 
     def forward(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
+        _molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergies:
         r"""Obtain a species-energies tuple from an input species-coords tuple"""
         species, coords = species_coordinates
@@ -490,9 +490,9 @@ class ANI(_ANI):
     @torch.jit.export
     def atomic_energies(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         charge: int = 0,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
@@ -508,9 +508,9 @@ class ANI(_ANI):
     @torch.jit.unused
     def members_forces(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         charge: int = 0,
     ) -> SpeciesForces:
         r"""Calculates predicted forces from ensemble members
@@ -544,9 +544,9 @@ class ANI(_ANI):
     @torch.jit.export
     def energies_qbcs(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         unbiased: bool = True,
         charge: int = 0,
     ) -> SpeciesEnergiesQBC:
@@ -593,9 +593,9 @@ class ANI(_ANI):
     @torch.jit.export
     def atomic_stdev(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         charge: int = 0,
         ensemble_values: bool = False,
         unbiased: bool = True,
@@ -623,9 +623,9 @@ class ANI(_ANI):
     @torch.jit.unused
     def force_magnitudes(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         ensemble_values: bool = False,
     ) -> ForceMagnitudes:
         r"""Computes the L2 norm of predicted atomic force vectors
@@ -648,9 +648,9 @@ class ANI(_ANI):
     @torch.jit.unused
     def force_qbc(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> ForceStdev:
@@ -698,7 +698,7 @@ class ANIq(_ANI):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        potentials: tp.Optional[dict[str, Potential]] = None,
         periodic_table_index: bool = True,
         charge_networks: tp.Optional[AtomicContainer] = None,
         charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
@@ -766,13 +766,13 @@ class ANIq(_ANI):
     # NOTE: Currently fused-cuAEV is not supported for ANIq
     def forward(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
+        _molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergiesAtomicCharges:
         species, coords = species_coordinates
         self._check_inputs(species, coords, charge)
@@ -833,7 +833,7 @@ class _AEVComputerWrapper:
 class _AtomicContainerWrapper:
     cls: AtomicContainerCls
     ctor: str = "separate_networks"
-    kwargs: tp.Dict[str, tp.Any] = field(default_factory=dict)
+    kwargs: dict[str, tp.Any] = field(default_factory=dict)
 
     def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
         out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
@@ -843,7 +843,7 @@ class _AtomicContainerWrapper:
 @dataclass
 class _PotentialWrapper:
     cls: PotentialCls
-    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
+    kwargs: tp.Optional[dict[str, tp.Any]] = None
     cutoff: float = math.inf
     cutoff_fn: CutoffArg = "global"
 
@@ -862,15 +862,15 @@ class Assembler:
 
         self._neighborlist = _parse_neighborlist(neighborlist)
         self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
-        self._potentials: tp.Dict[str, _PotentialWrapper] = {}
+        self._potentials: dict[str, _PotentialWrapper] = {}
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
-        self._self_energies: tp.Dict[str, float] = {}
+        self._self_energies: dict[str, float] = {}
         self._container: tp.Optional[_AtomicContainerWrapper] = None
         self._charge_container: tp.Optional[_AtomicContainerWrapper] = None
         self._charge_normalizer: tp.Optional[BaseChargeNormalizer] = None
-        self._symbols: tp.Tuple[str, ...] = tuple(symbols)
+        self._symbols: tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
         self._cls: ModelCls = cls
@@ -879,14 +879,14 @@ class Assembler:
         self.periodic_table_index = periodic_table_index
 
     @property
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return self._symbols
 
     def set_symbols(self, symbols: tp.Sequence[str]) -> None:
         self._symbols = tuple(symbols)
 
     @property
-    def self_energies(self) -> tp.Dict[str, float]:
+    def self_energies(self) -> dict[str, float]:
         if not self._self_energies:
             raise RuntimeError("Self energies have not been set")
         return self._self_energies
@@ -934,7 +934,7 @@ class Assembler:
         self,
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
-        kwargs: tp.Dict[str, tp.Any] = {},
+        kwargs: dict[str, tp.Any] = {},
     ) -> None:
         ctor = {
             "ani1x": "like_1x",
@@ -954,7 +954,7 @@ class Assembler:
         self,
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
-        kwargs: tp.Dict[str, tp.Any] = {},
+        kwargs: dict[str, tp.Any] = {},
         normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ) -> None:
         ctor = {
@@ -1005,7 +1005,7 @@ class Assembler:
         name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
-        kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        kwargs: tp.Optional[dict[str, tp.Any]] = None,
     ) -> None:
         r"""Add a potential to the constructed ANI model """
         if name in self._potentials:
@@ -1068,9 +1068,9 @@ class Assembler:
             symbols=self.symbols,
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )
-        kwargs: tp.Dict[str, tp.Any] = {}
+        kwargs: dict[str, tp.Any] = {}
         if self._potentials:
-            potentials: tp.Dict[str, Potential] = {}
+            potentials: dict[str, Potential] = {}
             for pot_name, pot in self._potentials.items():
                 if pot.kwargs is not None:
                     pot_kwargs = pot.kwargs
@@ -1129,7 +1129,7 @@ def simple_ani(
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
     self_energies: tp.Union[
-        tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
+        tp.Optional[dict[str, float]], tp.Literal["zero"]
     ] = None,
 ) -> ANI:
     r"""Flexible builder to create ANI-style models that predict energies
@@ -1224,7 +1224,7 @@ def simple_aniq(
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
     self_energies: tp.Union[
-        tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
+        tp.Optional[dict[str, float]], tp.Literal["zero"]
     ] = None,
 ) -> ANIq:
     r"""Flexible builder to create ANI-style models that output charges and energies

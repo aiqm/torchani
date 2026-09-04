@@ -32945,7 +32945,7 @@ c6_unraveled = [0.30267000E+01,0.100E+01,0.100E+01,0.91180000E+00,0.91180000E+00
      ,0.45528540E+03,0.482E+03,0.482E+03,0.39098000E+01,0.39098000E+01]
 
 
-def _decode_atomic_numbers(a: int, b: int) -> tp.Tuple[int, int, int, int]:
+def _decode_atomic_numbers(a: int, b: int) -> tuple[int, int, int, int]:
     # Translated from Grimme et. al. Fortran code this is "limit" in Fortran
     # a_ref and b_ref give the conformation's ref (?) if a or b are greater
     # than 100 this means the conformation ref has to be moved by +1 an easier
@@ -32954,7 +32954,7 @@ def _decode_atomic_numbers(a: int, b: int) -> tp.Tuple[int, int, int, int]:
     b_ref, b = divmod(b, 100)
     return a, b, a_ref, b_ref
 
-def _dump_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
+def _dump_c6_constants() -> tuple[Tensor, Tensor, Tensor]:
     # Hardcoded in Grimme's et. al. D3 Fortran code
     total_records = 161925
     num_lines = 32385

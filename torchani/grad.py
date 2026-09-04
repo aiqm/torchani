@@ -264,8 +264,8 @@ def energies_and_forces(
     model: Model,
     species: Tensor,
     coordinates: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
     retain_graph: tp.Optional[bool] = None,
     create_graph: bool = False,
 ) -> EnergiesForces:
@@ -294,8 +294,8 @@ def single_point(
     model: tp.Union[ANI, ANIq],
     species: Tensor,
     coordinates: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
     charge: int = 0,
     forces: bool = False,
     hessians: bool = False,
@@ -304,7 +304,7 @@ def single_point(
     atomic_charges_grad: bool = False,
     ensemble_values: bool = False,
     keep_vars: bool = False,
-) -> tp.Dict[str, Tensor]:
+) -> dict[str, Tensor]:
     r"""Calculate properties for a batch of molecules
 
     This is the main entrypoint of ANI-style models
@@ -344,7 +344,7 @@ def single_point(
         ensemble_values=ensemble_values,
     )
     energies = result.energies
-    out: tp.Dict[str, Tensor] = {}
+    out: dict[str, Tensor] = {}
     if atomic_charges:
         if not hasattr(result, "atomic_charges"):
             raise ValueError("Model doesn't support atomic charges")

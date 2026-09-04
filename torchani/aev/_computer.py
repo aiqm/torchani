@@ -198,9 +198,9 @@ class AEVComputer(torch.nn.Module):
     def forward(
         self,
         elem_idxs: Tensor,
-        coords: tp.Optional[Tensor] = None,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        coords: Tensor | None = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Tensor:
         r"""Compute AEVs for a batch of molecules
 
@@ -456,7 +456,7 @@ class AEVComputer(torch.nn.Module):
     # Converet half nbrlist to full nbrlist.
     @jit_unused_if_no_cuaev()
     @staticmethod
-    def _half_to_full_nbrlist(atom_index12: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    def _half_to_full_nbrlist(atom_index12: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         ilist = atom_index12.view(-1)
         jlist = atom_index12.flip(0).view(-1)
         ilist_sorted, indices = ilist.sort(stable=True)
@@ -474,7 +474,7 @@ class AEVComputer(torch.nn.Module):
         numneigh: Tensor,
         species: Tensor,
         fullnbr_diff_vector: Tensor,
-    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    ) -> tuple[Tensor, Tensor, Tensor]:
         # NOTE: This function has the following limitations: itonly works for
         # lammps-type pbc neighborlists (with local and ghost atoms). TorchANI
         # neighborlists only have 1 set of atoms and do mapping with local and image

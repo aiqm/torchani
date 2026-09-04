@@ -96,7 +96,7 @@ class TestExport(ANITestCasePT2):
 
         class Mod(torch.nn.Module):
             def forward(
-                self, neighbors: tp.Tuple[Tensor, Tensor, Tensor], cutoff: float
+                self, neighbors: tuple[Tensor, Tensor, Tensor], cutoff: float
             ) -> Neighbors:
                 indices, distances, diff_vectors = neighbors
                 _neighbors = Neighbors(indices, distances, diff_vectors)
@@ -121,7 +121,7 @@ class TestExport(ANITestCasePT2):
         neighbors = make_neighbors(10, seed=1234)
 
         class Mod(torch.nn.Module):
-            def forward(self, neighbors: tp.Tuple[Tensor, Tensor, Tensor]) -> Triples:
+            def forward(self, neighbors: tuple[Tensor, Tensor, Tensor]) -> Triples:
                 indices, distances, diff_vectors = neighbors
                 _neighbors = Neighbors(indices, distances, diff_vectors)
                 return neighbors_to_triples(_neighbors)
