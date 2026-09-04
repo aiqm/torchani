@@ -68,13 +68,19 @@ class Calculator(AseCalculator):
 
     # NOTE: The ASE default is _ALL_CHANGES ==
     # ["positions", "numbers", "cell", "pbc", "initial_charges", "initial_magmoms"]
-    # NOTE: Bad idea to use lists as defaults, but this is what ASE does
     def calculate(
         self,
         atoms: ase.Atoms | None = None,
         properties: list[str] = _DEFAULT_PROPERTIES,
         system_changes: list[str] = _ALL_CHANGES,
     ):
+        # NOTE: Bad idea to use mutables (lists) as defaults, but this is what ASE does,
+        # The function and superclass don't mutate, so this should be fine anyways
+        # Still, copy the values to avoid passing back unintended mutations, since
+        # this is bad practice and could create bugs in the future
+        properties = properties.copy()
+        system_changes = system_changes.copy()
+
         # NOTE: If atoms is passed, then the
         # superclass overwrites self.atoms with the passed atoms
         super().calculate(atoms, properties, system_changes)
