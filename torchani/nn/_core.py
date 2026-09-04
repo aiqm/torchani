@@ -121,7 +121,7 @@ class AtomicNetwork(torch.nn.Module):
     def __init__(
         self,
         layer_dims: tp.Sequence[int],
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> None:
         super().__init__()
@@ -171,7 +171,7 @@ class TightCELU(torch.nn.Module):
         return torch.nn.functional.celu(x, alpha=0.1)
 
 
-def parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:
+def parse_activation(module: str | torch.nn.Module) -> torch.nn.Module:
     if module == "gelu":
         return torch.nn.GELU()
     if module == "celu":

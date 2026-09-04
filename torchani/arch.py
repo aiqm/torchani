@@ -801,10 +801,10 @@ class ANIq(_ANI):
         return SpeciesEnergiesAtomicCharges(elem_idxs, result.energies, qs)
 
 
-AEVComputerCls = tp.Type[AEVComputer]
-PotentialCls = tp.Type[Potential]
-AtomicContainerCls = tp.Type[AtomicContainer]
-ModelCls = tp.Union[tp.Type[ANI], tp.Type[ANIq]]
+AEVComputerCls = type[AEVComputer]
+PotentialCls = type[Potential]
+AtomicContainerCls = type[AtomicContainer]
+ModelCls = type[ANI] | type[ANIq]
 
 
 # "global" cutoff means the global cutoff_fn will be used
@@ -1017,7 +1017,7 @@ class Assembler:
             cutoff_fn=cutoff_fn,
         )
 
-    def assemble(self, ensemble_size: int = 1) -> tp.Union[ANI, ANIq]:
+    def assemble(self, ensemble_size: int = 1) -> ANI | ANIq:
         r"""Construct an `ANI` model from the passed arguments
 
         Args:
@@ -1121,7 +1121,7 @@ def simple_ani(
     repulsion: bool = True,
     container_ctor: str = "default",
     container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    activation: str | torch.nn.Module = "gelu",
     bias: bool = False,
     strategy: str = "auto",
     periodic_table_index: bool = True,
@@ -1211,7 +1211,7 @@ def simple_aniq(
     charge_container_ctor: str = "default",
     container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
     charge_container: str = "ANINetworks",
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    activation: str | torch.nn.Module = "gelu",
     bias: bool = False,
     strategy: str = "auto",
     merge_charge_networks: bool = False,
