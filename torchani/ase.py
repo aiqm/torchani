@@ -13,8 +13,6 @@ import torch
 from torch import Tensor
 import ase
 import ase.units
-import numpy as np
-from numpy.typing import NDArray
 from ase.calculators.calculator import (
     Calculator as AseCalculator,
     all_changes as _ALL_CHANGES,
@@ -68,7 +66,9 @@ class Calculator(AseCalculator):
 
     # NOTE: The ASE default is _ALL_CHANGES ==
     # ["positions", "numbers", "cell", "pbc", "initial_charges", "initial_magmoms"]
-    # NOTE: Bad idea to use lists as defaults, but this is what ASE does
+    # NOTE: It is a bad idea to use mutables (e.g. lists) as defaults, but this is what
+    # ASE does Since the functions don't mutate the arguments, it is harmless, (but
+    # error-prone and a potential source of bugs, so be careful)
     def calculate(
         self,
         atoms: ase.Atoms | None = None,
@@ -78,11 +78,6 @@ class Calculator(AseCalculator):
         # NOTE: If atoms is passed, then the
         # superclass overwrites self.atoms with the passed atoms
         super().calculate(atoms, properties, system_changes)
-        # TODO: We should not need to reset the results every time this is called,
-        # bugs associated with stress and force calculation should be investigated,
-        # since this should be a no-op
-        # Clear results, added by WardLT
-        self.results: dict[str, NDArray[np.floating] | float] = {}
         if self.atoms is None:
             raise ValueError("Can't calculate if not attached to Atoms")
 
