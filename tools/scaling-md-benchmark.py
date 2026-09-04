@@ -234,7 +234,7 @@ if __name__ == "__main__":
     else:
         device = torch.device(args.device)
         sizes_list: list[int] = []
-        xyz_files: tp.Union[list[Path], NDArray[tp.Any]]
+        xyz_files: list[Path] | NDArray[tp.Any]
 
         xyz_files = sorted(path_to_xyz.rglob("*.xyz"))
         for f in xyz_files:

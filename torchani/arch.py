@@ -1128,9 +1128,7 @@ def simple_ani(
     neighborlist: NeighborlistArg = "all_pairs",
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
-    self_energies: tp.Union[
-        tp.Optional[dict[str, float]], tp.Literal["zero"]
-    ] = None,
+    self_energies: dict[str, float] | tp.Literal["zero"] | None = None,
 ) -> ANI:
     r"""Flexible builder to create ANI-style models that predict energies
 
@@ -1223,9 +1221,7 @@ def simple_aniq(
     normalize: bool = True,
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
-    self_energies: tp.Union[
-        tp.Optional[dict[str, float]], tp.Literal["zero"]
-    ] = None,
+    self_energies: dict[str, float] | tp.Literal["zero"] | None = None,
 ) -> ANIq:
     r"""Flexible builder to create ANI-style models that output charges and energies
 
