@@ -63,7 +63,7 @@ class SingleNN(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -107,9 +107,9 @@ class SingleNN(AtomicContainer):
         cls,
         symbols: tp.Sequence[str],
         in_dim: int,
-        dims: tp.Tuple[int, ...],
+        dims: tuple[int, ...],
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
         embed_kind: str = "continuous",
         embed_dims: tp.Optional[int] = None,
@@ -133,7 +133,7 @@ class SingleNN(AtomicContainer):
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
     ) -> tpx.Self:
         dims = (256, 160, 128, 512)
         return cls.build(
@@ -147,7 +147,7 @@ class SingleNN(AtomicContainer):
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
     ) -> tpx.Self:
         dims = (256, 160, 128, 512)
         return cls.build(
@@ -161,7 +161,7 @@ class SingleNN(AtomicContainer):
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
     ) -> tpx.Self:
         dims = (256, 160, 128, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
@@ -173,7 +173,7 @@ class SingleNN(AtomicContainer):
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
     ) -> tpx.Self:
         dims = (320, 256, 256, 512)
         return cls.build(
@@ -187,7 +187,7 @@ class SingleNN(AtomicContainer):
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
     ) -> tpx.Self:
         dims = (320, 256, 256, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
@@ -209,7 +209,7 @@ class ANISharedNetworks(AtomicContainer):
     def __init__(
         self,
         shared: AtomicNetwork,
-        modules: tp.Dict[str, AtomicNetwork],
+        modules: dict[str, AtomicNetwork],
         alias: bool = False,
     ):
         super().__init__()
@@ -231,7 +231,7 @@ class ANISharedNetworks(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -268,14 +268,14 @@ class ANISharedNetworks(AtomicContainer):
         cls,
         symbols: tp.Sequence[str],
         in_dim: int,
-        shared_dims: tp.Tuple[int, ...],
-        dims: tp.Dict[str, tp.Tuple[int, ...]],
+        shared_dims: tuple[int, ...],
+        dims: dict[str, tuple[int, ...]],
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
-        default_dims: tp.Tuple[int, ...] = (),
+        default_dims: tuple[int, ...] = (),
     ) -> tpx.Self:
-        modules: tp.Dict[str, AtomicNetwork] = {}
+        modules: dict[str, AtomicNetwork] = {}
 
         shared = AtomicNetwork(layer_dims=(in_dim,) + shared_dims)
         out_shared = shared_dims[-1]
@@ -292,12 +292,12 @@ class ANISharedNetworks(AtomicContainer):
         symbols: tp.Sequence[str],
         in_dim: int,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> tpx.Self:
         default_dims = (128, 96)
         shared_dims = (256,)
-        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+        dims: dict[str, tuple[int, ...]] = {
             "H": (192, 160),
             "C": (192, 160),
             "N": (160, 128),
@@ -388,7 +388,7 @@ class ANINetworks(AtomicContainer):
         }
         return new_state_dict
 
-    def __init__(self, modules: tp.Dict[str, AtomicNetwork], alias: bool = False):
+    def __init__(self, modules: dict[str, AtomicNetwork], alias: bool = False):
         super().__init__()
         if any(s not in PERIODIC_TABLE for s in modules):
             raise ValueError("All modules should be mapped to valid chemical symbols")
@@ -410,7 +410,7 @@ class ANINetworks(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -464,13 +464,13 @@ class ANINetworks(AtomicContainer):
         cls,
         symbols: tp.Sequence[str],
         in_dim: int,
-        dims: tp.Dict[str, tp.Tuple[int, ...]],
+        dims: dict[str, tuple[int, ...]],
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
-        default_dims: tp.Tuple[int, ...] = (),
+        default_dims: tuple[int, ...] = (),
     ) -> tpx.Self:
-        modules: tp.Dict[str, AtomicNetwork] = {}
+        modules: dict[str, AtomicNetwork] = {}
         for s in symbols:
             layer_dims = (in_dim,) + dims.get(s, default_dims) + (out_dim,)
             modules[s] = AtomicNetwork(
@@ -484,11 +484,11 @@ class ANINetworks(AtomicContainer):
         symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> tpx.Self:
         default_dims = (160, 128, 96)
-        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+        dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
             "C": (256, 192, 160),
             "N": (192, 160, 128),
@@ -513,11 +513,11 @@ class ANINetworks(AtomicContainer):
         symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "celu",
+        activation: str | torch.nn.Module = "celu",
         bias: bool = True,
     ) -> tpx.Self:
         default_dims = (160, 128, 96)
-        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+        dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
             "C": (224, 196, 160),
             "N": (192, 160, 128),
@@ -542,11 +542,11 @@ class ANINetworks(AtomicContainer):
         symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "celu",
+        activation: str | torch.nn.Module = "celu",
         bias: bool = True,
     ) -> tpx.Self:
         default_dims = (160, 128, 96)
-        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+        dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
             "C": (224, 192, 160),
             "N": (192, 160, 128),
@@ -571,7 +571,7 @@ class ANINetworks(AtomicContainer):
         symbols: tp.Sequence[str],
         in_dim: int,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> tpx.Self:
         return cls.like_2x(symbols, in_dim, out_dim, activation, bias)
@@ -582,11 +582,11 @@ class ANINetworks(AtomicContainer):
         symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
         in_dim: int = 384,
         out_dim: int = 1,
-        activation: tp.Union[str, torch.nn.Module] = "celu",
+        activation: str | torch.nn.Module = "celu",
         bias: bool = True,
     ) -> tpx.Self:
         default_dims = (128, 112, 96)
-        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+        dims: dict[str, tuple[int, ...]] = {
             "H": (160, 128, 96),
             "C": (144, 112, 96),
             "N": (128, 112, 96),
@@ -674,7 +674,7 @@ class Ensemble(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:

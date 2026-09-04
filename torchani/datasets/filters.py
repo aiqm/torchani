@@ -26,7 +26,7 @@ def filter_by_high_force(
     delete_inplace: bool = False,
     verbose: bool = True,
     device: Device = None,
-) -> tp.Optional[tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]]:
+) -> tp.Optional[tuple[list[Conformers], dict[str, Tensor]]]:
     r"""
     Filter outlier conformations in a dataset, either by force components or
     force magnitude
@@ -37,7 +37,7 @@ def filter_by_high_force(
         raise ValueError('Criteria must be one of "magnitude" or "components"')
 
     desc = f"Filtering where any atomic force {criteria} > {threshold} Ha / Angstrom"
-    _bad_keys_and_idxs: tp.Dict[str, tp.List[Tensor]] = dict()
+    _bad_keys_and_idxs: dict[str, list[Tensor]] = dict()
     with torch.no_grad():
         for key, cumul_idx, group in tqdm(
             dataset.chunked_items(max_size=max_split, properties=("forces",)),
@@ -78,7 +78,7 @@ def filter_by_high_energy_error(
     delete_inplace: bool = False,
     verbose: bool = True,
     device: Device = None,
-) -> tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]:
+) -> tuple[list[Conformers], dict[str, Tensor]]:
     r"""
     Filter conformations for which a model has an excessively high absolute
     error w.r.t. a given ANI model
@@ -86,7 +86,7 @@ def filter_by_high_energy_error(
     if dataset.grouping == "legacy":
         raise ValueError("Legacy grouping not supported in filters")
 
-    _bad_keys_and_idxs: tp.Dict[str, tp.List[Tensor]] = dict()
+    _bad_keys_and_idxs: dict[str, list[Tensor]] = dict()
     model = model.to(device)
     if not model.periodic_table_index:
         raise ValueError(
@@ -131,12 +131,12 @@ def filter_by_high_energy_error(
 
 def _fetch_and_delete_conformations(
     dataset: ANIDataset,
-    bad_keys_and_idxs: tp.Dict[str, Tensor],
+    bad_keys_and_idxs: dict[str, Tensor],
     delete_inplace: bool,
     verbose: bool,
     device: Device = None,
-) -> tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]:
-    bad_conformations: tp.List[Conformers] = []
+) -> tuple[list[Conformers], dict[str, Tensor]]:
+    bad_conformations: list[Conformers] = []
     for k, idxs in bad_keys_and_idxs.items():
         if idxs.ndim == 0:
             idxs = idxs.unsqueeze(0)

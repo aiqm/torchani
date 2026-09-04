@@ -70,7 +70,7 @@ def _get_any_element_key(properties: tp.Iterable[str]):
             ) from None
 
 
-def _get_formulas(conformers: NumpyConformers) -> tp.List[str]:
+def _get_formulas(conformers: NumpyConformers) -> list[str]:
     elements = conformers[_get_any_element_key(conformers.keys())]
     if issubclass(elements.dtype.type, np.integer):
         elements = _numbers_to_symbols(elements)
@@ -78,7 +78,7 @@ def _get_formulas(conformers: NumpyConformers) -> tp.List[str]:
 
 
 def _get_dim_size(
-    conformers: NumpyConformers, common_keys: tp.Set[str], dim: int
+    conformers: NumpyConformers, common_keys: set[str], dim: int
 ) -> int:
     # Tries to get dimension size from one of the "common keys" that have the dimension
     present_keys = common_keys.intersection(conformers.keys())
@@ -101,13 +101,13 @@ _get_num_conformers = partial(
 )
 
 
-def _to_strpath_list(obj: tp.Union[tp.Iterable[StrPath], StrPath]) -> tp.List[StrPath]:
+def _to_strpath_list(obj: tp.Union[tp.Iterable[StrPath], StrPath]) -> list[StrPath]:
     try:
         # This will raise an exception if obj is tp.Iterable[StrPath]
         list_ = [fspath(obj)]  # type: ignore
     except TypeError:
         list_ = [o for o in obj]  # type: ignore
-    return tp.cast(tp.List[StrPath], list_)
+    return tp.cast(list[StrPath], list_)
 
 
 # convert to / from symbols and atomic numbers properties
@@ -123,18 +123,18 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         # num_conformer_groups are all calculated on the fly to guarantee
         # synchronization with "group_sizes".
         self._group_sizes: tp.OrderedDict[str, int] = OrderedDict()
-        self._properties: tp.Set[str] = set()
+        self._properties: set[str] = set()
 
     @property
     def group_sizes(self) -> tp.OrderedDict[str, int]:
         return self._group_sizes.copy()
 
     @property
-    def properties(self) -> tp.Set[str]:
+    def properties(self) -> set[str]:
         return self._properties
 
     @property
-    def tensor_properties(self) -> tp.Tuple[str, ...]:
+    def tensor_properties(self) -> tuple[str, ...]:
         set_ = {
             p
             for p in self._properties
@@ -165,7 +165,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def numpy_items(
         self, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tp.Tuple[str, NumpyConformers]]:
+    ) -> tp.Iterator[tuple[str, NumpyConformers]]:
         count = 0
         for group_name in self.keys():
             count += 1
@@ -189,7 +189,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def chunked_items(
         self, max_size: int = 2500, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tp.Tuple[str, int, MixedConformers]]:
+    ) -> tp.Iterator[tuple[str, int, MixedConformers]]:
         r"""Sequentially iterate over chunked pieces of the dataset with a maximum size
 
         The iteration is "chunked" into pieces, so instead of yielding groups
@@ -235,13 +235,13 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def chunked_numpy_items(
         self, **kwargs
-    ) -> tp.Iterator[tp.Tuple[str, int, MixedConformers]]:
+    ) -> tp.Iterator[tuple[str, int, MixedConformers]]:
         kwargs.update({"getter": "get_numpy_conformers"})
         yield from self.chunked_items(**kwargs)
 
     def iter_key_idx_conformers(
         self, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tp.Tuple[str, int, Conformers]]:
+    ) -> tp.Iterator[tuple[str, int, Conformers]]:
         kwargs = kwargs.copy()
         getter = kwargs.pop("getter", "get_conformers")
         count = 0
@@ -256,7 +256,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def iter_key_idx_numpy_conformers(
         self, **kwargs
-    ) -> tp.Iterator[tp.Tuple[str, int, Conformers]]:
+    ) -> tp.Iterator[tuple[str, int, Conformers]]:
         kwargs.update({"getter": "get_numpy_conformers"})
         yield from self.iter_key_idx_conformers(**kwargs)
 
@@ -317,7 +317,7 @@ class _ANISubdataset(_ANIDatasetBase):
         grouping: tp.Optional[Grouping] = None,
         backend: tp.Optional[Backend] = None,
         verbose: bool = True,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
     ):
         # dummy_properties must be a dict of the form {'name': {'dtype': dtype,
         # 'is_atomic': is_atomic, 'extra_dims': extra_dims, 'fill_value':
@@ -332,7 +332,7 @@ class _ANISubdataset(_ANIDatasetBase):
             dummy_properties,
         )
         # StoreFactory monkey patches all stores with "backend" attribute
-        self._possible_nonbatch_properties: tp.Set[str]
+        self._possible_nonbatch_properties: set[str]
 
         if self.grouping not in ["by_formula", "by_num_atoms", "legacy"]:
             raise RuntimeError(f"Read with unsupported grouping {self.grouping}")
@@ -414,16 +414,16 @@ class _ANISubdataset(_ANIDatasetBase):
 
     def __str__(self) -> str:
         str_ = f"ANI {self._store.backend} store:\n"
-        d: tp.Dict[str, tp.Any] = {"Conformers": f"{self.num_conformers:,}"}
+        d: dict[str, tp.Any] = {"Conformers": f"{self.num_conformers:,}"}
         d.update({"Conformer groups": self.num_conformer_groups})
         d.update({"Properties": sorted(self.properties)})
         return str_ + pformat(d)
 
     @property
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         self._check_correct_grouping()
         element_key = _get_any_element_key(self.properties)
-        present: tp.Set[str] = set()
+        present: set[str] = set()
         for group_name in self.keys():
             conformers = self.get_numpy_conformers(
                 group_name, properties=element_key, chem_symbols=True
@@ -432,14 +432,14 @@ class _ANISubdataset(_ANIDatasetBase):
         return sort_by_atomic_num(present)
 
     @property
-    def znumbers(self) -> tp.Tuple[int, ...]:
+    def znumbers(self) -> tuple[int, ...]:
         r"""Get an ordered list with all elements present in the dataset
         list is ordered alphabetically. Function raises ValueError if neither
         'species' or 'numbers' properties are present.
         """
         self._check_correct_grouping()
         element_key = _get_any_element_key(self.properties)
-        present: tp.Set[int] = set()
+        present: set[int] = set()
         for group_name in self.keys():
             conformers = self.get_numpy_conformers(
                 group_name, properties=element_key, chem_symbols=False
@@ -512,7 +512,7 @@ class _ANISubdataset(_ANIDatasetBase):
             )
         # Nonbatch properties, if present, need tiling in the first dim
         if nonbatch_properties:
-            tile_shape: tp.Tuple[int, ...]
+            tile_shape: tuple[int, ...]
             if idx_ is None or idx_.ndim == 1:
                 tile_shape = (_get_num_conformers(numpy_conformers), 1)
             else:
@@ -627,7 +627,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         dest_key: str,
         is_atomic: bool = False,
-        extra_dims: tp.Union[int, tp.Tuple[int, ...]] = tuple(),
+        extra_dims: tp.Union[int, tuple[int, ...]] = tuple(),
         fill_value: int = 0,
         dtype: DTypeLike = np.int64,
     ) -> "_ANISubdataset":
@@ -661,7 +661,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 )
             else:
                 for group_name in self.keys():
-                    shape: tp.Tuple[int, ...] = (_get_num_conformers(f[group_name]),)
+                    shape: tuple[int, ...] = (_get_num_conformers(f[group_name]),)
                     if is_atomic:
                         shape += (_get_num_atoms(f[group_name]),)
                     f[group_name][dest_key] = np.full(
@@ -669,13 +669,13 @@ class _ANISubdataset(_ANIDatasetBase):
                     )
         return self
 
-    def _attach_dummy_properties(self, dummy_properties: tp.Dict[str, tp.Any]) -> None:
+    def _attach_dummy_properties(self, dummy_properties: dict[str, tp.Any]) -> None:
         with ExitStack() as stack:
             f = self._get_open_store(stack, "r+", only_meta_needed=True)
             f._dummy_properties = dummy_properties
 
     @property
-    def _dummy_properties(self) -> tp.Dict[str, tp.Any]:
+    def _dummy_properties(self) -> dict[str, tp.Any]:
         with ExitStack() as stack:
             dummy = self._get_open_store(
                 stack, "r+", only_meta_needed=True
@@ -886,7 +886,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     @_broadcast
     @_needs_cache_update
-    def rename_properties(self, old_new_dict: tp.Dict[str, str]) -> "_ANISubdataset":
+    def rename_properties(self, old_new_dict: dict[str, str]) -> "_ANISubdataset":
         r"""Rename some properties from the dataset
 
         Expects a dictionary of the form: {old_name: new_name}
@@ -1117,21 +1117,21 @@ class ANIDataset(_ANIDatasetBase):
             yield self
 
     @property
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return sort_by_atomic_num(
             {s for ds in self._datasets.values() for s in ds.symbols}
         )
 
     @property
-    def znumbers(self) -> tp.Tuple[int, ...]:
+    def znumbers(self) -> tuple[int, ...]:
         return tuple(sorted({s for ds in self._datasets.values() for s in ds.znumbers}))
 
     @property
-    def store_locations(self) -> tp.List[str]:
+    def store_locations(self) -> list[str]:
         return [fspath(ds._store.location.root) for ds in self._datasets.values()]
 
     @property
-    def store_names(self) -> tp.List[str]:
+    def store_names(self) -> list[str]:
         return list(self._datasets.keys())
 
     @property
@@ -1153,7 +1153,7 @@ class ANIDataset(_ANIDatasetBase):
         )
         element_key = _get_any_element_key(numpy_conformers.keys())
         elements = numpy_conformers[element_key]
-        groups: tp.Dict[str, tp.Any] = {}
+        groups: dict[str, tp.Any] = {}
         for j, znumbers in enumerate(elements):
             mask = znumbers != padding
             if self.grouping == "by_formula":
@@ -1251,7 +1251,7 @@ class ANIDataset(_ANIDatasetBase):
         self._properties = self._first_subds.properties
         return self
 
-    def _parse_key(self, key: str) -> tp.Tuple[str, str]:
+    def _parse_key(self, key: str) -> tuple[str, str]:
         tokens = key.split("/")
         if self.num_stores == 1:
             return self._first_name, "/".join(tokens)

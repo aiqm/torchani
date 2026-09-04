@@ -38,8 +38,8 @@ class Potential(_ChemModule):
         self,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         atomic_nums_input: bool = True,
@@ -74,7 +74,7 @@ class Potential(_ChemModule):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         r"""Compute the energies associated with the potential
 
@@ -96,7 +96,7 @@ class DummyPotential(Potential):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         if atomic:
             return EnergiesScalars(coords.new_zeros(elem_idxs.shape))
@@ -156,7 +156,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> Tensor:
         # Input validation
         assert elem_idxs.ndim == 2, "species should be 2 dimensional"
@@ -186,7 +186,7 @@ class BasePairPotential(Potential):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         # NOTE: Currently having ensembles of pair potentials is not supported, so
         # ensemble_values is disregarded
@@ -257,9 +257,9 @@ class PairPotential(BasePairPotential):
         pot = Square(symbols=("H", "C", "O"), k=k, bias=0.1, eq=eq, trainable="k")
     """
 
-    tensors: tp.List[str] = []
-    elem_tensors: tp.List[str] = []
-    pair_elem_tensors: tp.List[str] = []
+    tensors: list[str] = []
+    elem_tensors: list[str] = []
+    pair_elem_tensors: list[str] = []
 
     def __init__(
         self,

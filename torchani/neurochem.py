@@ -72,7 +72,7 @@ def load_aev_computer_and_symbols(
     strategy: str = "pyaev",
     neighborlist: NeighborlistArg = "all_pairs",
     cutoff_fn: CutoffArg = "cosine",
-) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
+) -> tuple[AEVComputer, tuple[str, ...]]:
     consts, symbols = load_aev_constants_and_symbols(consts_file)
     aev_computer = AEVComputer.from_constants(
         radial_cutoff=consts.radial_cutoff,
@@ -95,19 +95,19 @@ def load_aev_computer_and_symbols(
 class AEVConstants:
     radial_cutoff: float
     radial_eta: float
-    radial_shifts: tp.Tuple[float, ...]
+    radial_shifts: tuple[float, ...]
     angular_cutoff: float
     angular_eta: float
     angular_zeta: float
-    angular_shifts: tp.Tuple[float, ...]
-    sections: tp.Tuple[float, ...]
+    angular_shifts: tuple[float, ...]
+    sections: tuple[float, ...]
 
 
 def load_aev_constants_and_symbols(
     consts_file: StrPath,
-) -> tp.Tuple[AEVConstants, tp.Tuple[str, ...]]:
-    aev_floats: tp.Dict[str, float] = {}
-    aev_seqs: tp.Dict[str, tp.Tuple[float, ...]] = {}
+) -> tuple[AEVConstants, tuple[str, ...]]:
+    aev_floats: dict[str, float] = {}
+    aev_seqs: dict[str, tuple[float, ...]] = {}
     file_name_mapping = {
         "Rcr": "radial_cutoff",
         "Rca": "angular_cutoff",
@@ -199,7 +199,7 @@ def _decompress_nnf(buffer_: bytes) -> str:
     return bz2.decompress(buffer_)[:-1].decode("ascii").strip()
 
 
-def _parse_nnf(nnf_str: str) -> tp.List[NeurochemLayerSpec]:
+def _parse_nnf(nnf_str: str) -> list[NeurochemLayerSpec]:
     # Hack: replace tokens so the file can be evale'd as a list of python dicts
     # This is unsafe and hacky but since neurochem is legacy it is not a problem
     layers = [
@@ -244,10 +244,10 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     except Exception:
         raise NeurochemParseError(f"Could not parse nnf file {filename}") from None
 
-    activations: tp.List[int] = []
-    layer_dims: tp.List[int] = []
-    weight_files: tp.List[Path] = []
-    bias_files: tp.List[Path] = []
+    activations: list[int] = []
+    layer_dims: list[int] = []
+    weight_files: list[Path] = []
+    bias_files: list[Path] = []
     for j, spec in enumerate(layer_specs):
         # construct linear layer and load parameters
         _in = spec.blocksize
@@ -346,7 +346,7 @@ class NeurochemInfo:
     @classmethod
     def from_info_file(cls, info_file_path: Path) -> tpx.Self:
         with open(info_file_path, mode="rt", encoding="utf-8") as f:
-            lines: tp.List[str] = [x.strip() for x in f.readlines()][:4]
+            lines: list[str] = [x.strip() for x in f.readlines()][:4]
             _const_file, _sae_file, _ensemble_prefix, _ensemble_size = lines
 
             ensemble_size: int = int(_ensemble_size)
@@ -393,7 +393,7 @@ def modules_from_info(
     info: NeurochemInfo,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         strategy=strategy,
@@ -424,7 +424,7 @@ def modules_from_model_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""Creates the necessary modules to generate a pre-trained ANI model
 
     Parses data from legacy neurochem files, which are fetched according to the model
@@ -441,7 +441,7 @@ def modules_from_info_file(
     info_file: Path,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
     from legacy neurochem files.

@@ -208,7 +208,7 @@ class TestVibrationsASE(ANITestCase):
         vib = Vibrations(molecule)
         vib.run()
         array_freqs = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
-        _modes: tp.List[NDArray[np.float64]] = []
+        _modes: list[NDArray[np.float64]] = []
         for j in range(6, 6 + len(array_freqs)):
             _modes.append(np.expand_dims(vib.get_mode(j), axis=0))
         vib.clean()

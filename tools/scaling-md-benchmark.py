@@ -233,8 +233,8 @@ if __name__ == "__main__":
             plot_many(args.path_to_files, comment, show)
     else:
         device = torch.device(args.device)
-        sizes_list: tp.List[int] = []
-        xyz_files: tp.Union[tp.List[Path], NDArray[tp.Any]]
+        sizes_list: list[int] = []
+        xyz_files: list[Path] | NDArray[tp.Any]
 
         xyz_files = sorted(path_to_xyz.rglob("*.xyz"))
         for f in xyz_files:

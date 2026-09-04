@@ -42,11 +42,11 @@ class _PandasStore(Store):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
         grouping: tp.Optional[Grouping] = None,
     ):
         super().__init__(root, dummy_properties, grouping)
-        self._append_ops: tp.List[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
+        self._append_ops: list[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
         self._engine = pandas
         self._data_is_dirty = False
 
@@ -98,7 +98,7 @@ class _PandasStore(Store):
 
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
         cache = Cache()
         try:
             group_sizes_df = self.data["group"].value_counts().sort_index()
@@ -125,7 +125,7 @@ class _PandasStore(Store):
         return d
 
     # When unpickling, restore modules from their names
-    def __setstate__(self, d: tp.Dict[str, tp.Any]) -> None:
+    def __setstate__(self, d: dict[str, tp.Any]) -> None:
         if d["_engine"] == "pandas":
             import pandas  # noqa
 
@@ -223,7 +223,7 @@ class _PandasStore(Store):
         self.data[dest_key] = self._engine.Series(new_property)
         self._data_is_dirty = True
 
-    def rename_direct(self, old_new_dict: tp.Dict[str, str]) -> None:
+    def rename_direct(self, old_new_dict: dict[str, str]) -> None:
         self.execute_all_queued_append_ops()
         self.data.rename(columns=old_new_dict, inplace=True)
         self._data_is_dirty = True
@@ -244,7 +244,7 @@ class _CudfStore(_PandasStore):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
         grouping: tp.Optional[Grouping] = None,
     ):
         super().__init__(root, dummy_properties, grouping)

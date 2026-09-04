@@ -71,7 +71,7 @@ class AtomicContainer(torch.nn.Module):
 
     num_species: int
     total_members_num: int
-    active_members_idxs: tp.List[int]
+    active_members_idxs: list[int]
     atomic_numbers: Tensor
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
@@ -85,7 +85,7 @@ class AtomicContainer(torch.nn.Module):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -96,7 +96,7 @@ class AtomicContainer(torch.nn.Module):
 
     @property
     @torch.jit.unused
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     @torch.jit.export
@@ -104,7 +104,7 @@ class AtomicContainer(torch.nn.Module):
         return len(self.active_members_idxs)
 
     @torch.jit.export
-    def set_active_members(self, idxs: tp.List[int]) -> None:
+    def set_active_members(self, idxs: list[int]) -> None:
         for idx in idxs:
             if not (0 <= idx < self.total_members_num):
                 raise IndexError(
@@ -121,7 +121,7 @@ class AtomicNetwork(torch.nn.Module):
     def __init__(
         self,
         layer_dims: tp.Sequence[int],
-        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> None:
         super().__init__()
@@ -171,7 +171,7 @@ class TightCELU(torch.nn.Module):
         return torch.nn.functional.celu(x, alpha=0.1)
 
 
-def parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:
+def parse_activation(module: str | torch.nn.Module) -> torch.nn.Module:
     if module == "gelu":
         return torch.nn.GELU()
     if module == "celu":

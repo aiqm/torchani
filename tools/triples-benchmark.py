@@ -32,7 +32,7 @@ def run(
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
     optims: tpx.Annotated[
-        tp.Optional[tp.List[Opt]],
+        tp.Optional[list[Opt]],
         Option(
             "-o",
             "--optim",
@@ -84,7 +84,7 @@ def run(
 
     # Set up required models for benchmark
     symbols = SYMBOLS_2X
-    models: tp.Dict[str, tp.Any] = {}
+    models: dict[str, tp.Any] = {}
     if Opt.PY in optims:
         models["triples"] = neighbors_to_triples
     if Opt.COMPILE in optims:

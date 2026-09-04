@@ -1,5 +1,4 @@
 import math
-import typing as tp
 
 import ase
 import ase.vibrations
@@ -29,7 +28,7 @@ vib.run()
 
 array_freq = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
 
-modes: tp.List[NDArray[np.float64]] = []
+modes: list[NDArray[np.float64]] = []
 for j in range(6, 6 + len(array_freq)):
     modes.append(np.expand_dims(vib.get_mode(j), axis=0))
 vib.clean()

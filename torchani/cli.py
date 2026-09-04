@@ -70,7 +70,7 @@ class DeviceKind(Enum):
 @main.command("build-extensions")
 def _build_extensions(
     sms: tpx.Annotated[
-        tp.Optional[tp.List[str]],
+        tp.Optional[list[str]],
         Option(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
         ),
@@ -161,7 +161,7 @@ def _build_extensions(
 @main.command(hidden=True)
 def opt(
     paths: tpx.Annotated[
-        tp.List[Path],
+        list[Path],
         Argument(),
     ],
     output_path: tpx.Annotated[
@@ -199,7 +199,7 @@ def opt(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -233,7 +233,7 @@ def opt(
 @main.command()
 def sp(
     paths: tpx.Annotated[
-        tp.List[Path],
+        list[Path],
         Argument(
             help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
         ),
@@ -279,7 +279,7 @@ def sp(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -337,13 +337,13 @@ def sp(
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
     names: tpx.Annotated[
-        tp.Optional[tp.List[_DatasetId]],
+        tp.Optional[list[_DatasetId]],
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
     lots: tpx.Annotated[
-        tp.Optional[tp.List[_LotId]],
+        tp.Optional[list[_LotId]],
         Option(
             "-l",
             "--lot",
@@ -576,7 +576,7 @@ def data_pack(
     csv_path = dest_dir / f"{name}.md5s.csv"
     json_path = dest_dir / f"{name}.json"
 
-    data_dict: tp.Dict[str, tp.Any] = {
+    data_dict: dict[str, tp.Any] = {
         name: {
             "lot": {
                 lot: {

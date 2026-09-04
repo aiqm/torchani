@@ -402,19 +402,19 @@ class TestANIDataset(TestCase):
         for k, v in conformers.items():
             ds.append_conformers(k, v)
 
-        keys: tp.Set[str] = set()
+        keys: set[str] = set()
         coords = []
         for k, _, v in ds.chunked_numpy_items(max_size=10):
             coords.append(torch.from_numpy(v["coordinates"]))
             keys.add(k)
 
-        keys_large: tp.Set[str] = set()
+        keys_large: set[str] = set()
         coords_large = []
         for k, _, v in ds.chunked_numpy_items(max_size=100000):
             coords_large.append(torch.from_numpy(v["coordinates"]))
             keys_large.add(k)
 
-        keys_expect: tp.Set[str] = set()
+        keys_expect: set[str] = set()
         coords_expect = []
         for k, v in ds.numpy_items():
             coords_expect.append(torch.from_numpy(v["coordinates"]))
