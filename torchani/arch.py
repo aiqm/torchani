@@ -1353,11 +1353,13 @@ def _fetch_state_dict(
     try:
         # First attempt local file
         path = hf_hub_download(**hf_kw, local_files_only=True)  # type: ignore
+        path = tp.cast(str, path)
         dict_ = torch.load(path, map_location=torch.device("cpu"), weights_only=True)
     except Exception:
         # Try downloading from hf
         try:
             path = hf_hub_download(**hf_kw, force_download=True)  # type: ignore
+            path = tp.cast(str, path)
             dict_ = torch.load(
                 path, map_location=torch.device("cpu"), weights_only=True
             )
