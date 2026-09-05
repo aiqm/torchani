@@ -1,5 +1,3 @@
-import typing as tp
-
 from torch import Tensor
 
 from torchani.tuples import EnergiesScalars
@@ -40,7 +38,7 @@ class MergedChargesNNPotential(NNPotential):
         self,
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -78,7 +76,7 @@ class SeparateChargesNNPotential(NNPotential):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         charge_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:

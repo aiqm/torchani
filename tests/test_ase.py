@@ -22,6 +22,7 @@ from torchani._testing import ANITestCase, expand
 from torchani.arch import ANI
 from torchani.models import ANI1x, ANI2dr
 from torchani.potentials import DummyPotential
+from torchani.ase import to_ase
 
 
 def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
@@ -160,13 +161,9 @@ class TestASE(ANITestCase):
         )
         assert pbc is not None
         assert cell is not None
-        benzene = Atoms(
-            numbers=species.squeeze(0).numpy(),
-            positions=coordinates.squeeze(0).numpy(),
-            cell=cell.numpy(),
-            velocities=np.full((species.shape[1], 3), 1e-15),  # Set vels to small value
-            pbc=pbc.numpy(),
-        )
+        benzene = to_ase(species, coordinates, cell, pbc)
+        # Set vels to small value
+        benzene.set_velocities(np.full((species.shape[1], 3), 1e-15))
         calculator = model.ase(stress_kind="fdotr" if use_fdotr else "scaling")
         benzene.calc = calculator
         dyn = NPTBerendsen(

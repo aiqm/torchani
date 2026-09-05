@@ -76,7 +76,7 @@ class AEVComputer(torch.nn.Module):
         angular: AngularArg,
         num_species: int,
         strategy: str = "pyaev",
-        cutoff_fn: tp.Optional[CutoffArg] = None,
+        cutoff_fn: CutoffArg | None = None,
         neighborlist: NeighborlistArg = "all_pairs",
     ):
         super().__init__()

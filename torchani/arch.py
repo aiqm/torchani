@@ -104,7 +104,7 @@ class _ANI(torch.nn.Module):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[dict[str, Potential]] = None,
+        potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
     ):
         super().__init__()
@@ -698,10 +698,10 @@ class ANIq(_ANI):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[dict[str, Potential]] = None,
+        potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
-        charge_networks: tp.Optional[AtomicContainer] = None,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_networks: AtomicContainer | None = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(
             symbols=symbols,
@@ -843,7 +843,7 @@ class _AtomicContainerWrapper:
 @dataclass
 class _PotentialWrapper:
     cls: PotentialCls
-    kwargs: tp.Optional[dict[str, tp.Any]] = None
+    kwargs: dict[str, tp.Any] | None = None
     cutoff: float = math.inf
     cutoff_fn: CutoffArg = "global"
 
@@ -919,7 +919,7 @@ class Assembler:
         gsaes = GSAES[lot.lower()]
         self.set_self_energies({s: gsaes[s] for s in self.symbols})
 
-    def _check_symbols(self, symbols: tp.Optional[tp.Iterable[str]] = None) -> None:
+    def _check_symbols(self, symbols: tp.Iterable[str] | None = None) -> None:
         if not self.symbols:
             raise ValueError(
                 "Please set symbols before setting the gsaes as self energies"
@@ -1007,7 +1007,7 @@ class Assembler:
         cutoff_fn: CutoffArg = "global",
         kwargs: tp.Optional[dict[str, tp.Any]] = None,
     ) -> None:
-        r"""Add a potential to the constructed ANI model """
+        r"""Add a potential to the constructed ANI model"""
         if name in self._potentials:
             raise ValueError("Potential names must be unique")
         self._potentials[name] = _PotentialWrapper(
