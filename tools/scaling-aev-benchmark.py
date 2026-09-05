@@ -17,7 +17,7 @@ import torchani
 summary = "\n"
 runcounter = 0
 N = 200
-last_py_speed: tp.Optional[float] = None
+last_py_speed: float | None = None
 
 
 def getGpuName(device=None):

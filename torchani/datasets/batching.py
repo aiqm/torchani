@@ -45,9 +45,9 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
 
     def as_dataloader(
         self,
-        num_workers: tp.Optional[int] = 0,
-        pin_memory: tp.Optional[bool] = None,
-        prefetch_factor: tp.Optional[int] = None,
+        num_workers: int | None = 0,
+        pin_memory: bool | None = None,
+        prefetch_factor: int | None = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
         if num_workers is None:
@@ -110,9 +110,9 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
 
     def as_dataloader(
         self,
-        num_workers: tp.Optional[int] = 0,
-        pin_memory: tp.Optional[bool] = None,
-        prefetch_factor: tp.Optional[int] = None,
+        num_workers: int | None = 0,
+        pin_memory: bool | None = None,
+        prefetch_factor: int | None = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
         if num_workers not in (None, 0) or prefetch_factor is not None:
@@ -189,7 +189,7 @@ class ANIBatchedDataset(BatchedDataset):
     def cache(
         self,
         verbose: bool = True,
-        pin_memory: tp.Optional[bool] = None,
+        pin_memory: bool | None = None,
     ) -> ANIBatchedInMemoryDataset:
         r"""Saves the full dataset into RAM"""
         desc = f"Cacheing {self.div}, Warning: this may use a lot of RAM!"
@@ -269,15 +269,15 @@ class Batcher:
         src: tp.Union[tp.Iterable[StrPath], StrPath, ANIDataset],
         dest_dir: str = "",
         # Dataset modifications and options
-        splits: tp.Optional[dict[str, float]] = None,
-        folds: tp.Optional[int] = None,
+        splits: dict[str, float] | None = None,
+        folds: int | None = None,
         batch_size: int = 2560,
-        padding: tp.Optional[dict[str, float]] = None,
+        padding: dict[str, float] | None = None,
         transform: Transform = identity,
         properties: tp.Iterable[str] = (),
         # rng seeds
-        divs_seed: tp.Optional[int] = None,
-        batch_seed: tp.Optional[int] = None,
+        divs_seed: int | None = None,
+        batch_seed: int | None = None,
     ) -> dict[str, BatchedDataset]:
         padding = PADDING if padding is None else padding
         if (not self.store_on_disk) and dest_dir:
@@ -586,8 +586,8 @@ class Batcher:
         divs_seed: int,
         batch_seed: int,
         padding: dict[str, float],
-        splits: tp.Optional[dict[str, float]],
-        folds: tp.Optional[int],
+        splits: dict[str, float] | None,
+        folds: int | None,
         properties: tp.Sequence[str],
     ) -> None:
         split_names = sorted(splits) if splits is not None else None
@@ -620,17 +620,17 @@ class Batcher:
 # Kept for bw compat
 def create_batched_dataset(
     src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
-    dest_path: tp.Optional[StrPath] = None,
+    dest_path: StrPath | None = None,
     # Dataset modifications and options
     batch_size: int = 2560,
     properties: tp.Iterable[str] = (),
-    padding: tp.Optional[dict[str, float]] = None,
-    splits: tp.Optional[dict[str, float]] = None,
-    folds: tp.Optional[int] = None,
+    padding: dict[str, float] | None = None,
+    splits: dict[str, float] | None = None,
+    folds: int | None = None,
     transform: Transform = identity,
     # rng seeds
-    divs_seed: tp.Optional[int] = None,
-    batch_seed: tp.Optional[int] = None,
+    divs_seed: int | None = None,
+    batch_seed: int | None = None,
     # Performance
     direct_cache: bool = False,
     max_batches_per_packet: int = 200,
@@ -679,11 +679,11 @@ def batch_all_in_ram(
     src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
     batch_size: int = 2560,
     properties: tp.Iterable[str] = (),
-    padding: tp.Optional[dict[str, float]] = None,
+    padding: dict[str, float] | None = None,
     transform: Transform = identity,
     # rng seeds
-    divs_seed: tp.Optional[int] = None,
-    batch_seed: tp.Optional[int] = None,
+    divs_seed: int | None = None,
+    batch_seed: int | None = None,
     verbose: bool = True,
 ) -> ANIBatchedInMemoryDataset:
     batcher = Batcher.in_ram(verbose)

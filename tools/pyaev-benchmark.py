@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from rich.console import Console
 from tqdm import tqdm
 
-
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,7 +31,7 @@ def run(
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
     optims: tpx.Annotated[
-        tp.Optional[list[Opt]],
+        list[Opt] | None,
         Option(
             "-o",
             "--optim",

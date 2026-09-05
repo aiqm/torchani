@@ -42,7 +42,7 @@ Model = tp.Union[Potential, ANI, ANIq]
 def forces(
     energies: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> Tensor:
     if not coordinates.requires_grad:
@@ -68,7 +68,7 @@ def forces(
 def grads(
     scalars: Tensor,
     coords: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> Tensor:
     return -forces(scalars, coords, retain_graph, create_graph)
@@ -86,7 +86,7 @@ def forces_for_training(energies: Tensor, coordinates: Tensor) -> Tensor:
 def forces_and_hessians(
     energies: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
 ) -> ForcesHessians:
     _forces = forces(
         energies,
@@ -108,7 +108,7 @@ calc_forces_and_hessians = forces_and_hessians
 def hessians(
     forces: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
 ) -> Tensor:
     if not coordinates.requires_grad:
         raise ValueError(
@@ -125,7 +125,7 @@ def hessians(
     # 3A Tensors, each of shape (C,)
     flat_forces_tuple = flat_forces.unbind(dim=1)
     result_list = []
-    _retain_graph: tp.Optional[bool] = True
+    _retain_graph: bool | None = True
     for j, component in enumerate(flat_forces_tuple):
         # For the last component we retain the graph only if instructed to
         if j == (num_components - 1):
@@ -266,7 +266,7 @@ def energies_and_forces(
     coordinates: Tensor,
     cell: Tensor | None = None,
     pbc: Tensor | None = None,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> EnergiesForces:
     saved_requires_grad = coordinates.requires_grad

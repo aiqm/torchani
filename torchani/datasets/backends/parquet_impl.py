@@ -42,8 +42,8 @@ class _PandasStore(Store):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         super().__init__(root, dummy_properties, grouping)
         self._append_ops: list[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
@@ -244,8 +244,8 @@ class _CudfStore(_PandasStore):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         super().__init__(root, dummy_properties, grouping)
         self._engine = cudf

@@ -59,7 +59,7 @@ def _fetch_and_create_builtin_dataset(
     lot: str = "",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
     suffix: str = ".h5",
 ) -> ANIDataset:

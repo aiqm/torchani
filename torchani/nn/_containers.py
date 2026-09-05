@@ -29,7 +29,7 @@ class SingleNN(AtomicContainer):
         symbols: tp.Sequence[str],
         network: AtomicNetwork,
         embed_kind: str = "continuous",
-        embed_dims: tp.Optional[int] = None,
+        embed_dims: int | None = None,
     ):
         super().__init__()
         self.num_species = len(symbols)
@@ -112,7 +112,7 @@ class SingleNN(AtomicContainer):
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
         embed_kind: str = "continuous",
-        embed_dims: tp.Optional[int] = None,
+        embed_dims: int | None = None,
     ) -> tpx.Self:
         if out_dim != 1:
             raise ValueError("out_dim != 1 is not implemented for SingleNN")

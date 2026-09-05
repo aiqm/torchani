@@ -314,10 +314,10 @@ class _ANISubdataset(_ANIDatasetBase):
     def __init__(
         self,
         store_location: StrPath,
-        grouping: tp.Optional[Grouping] = None,
-        backend: tp.Optional[Backend] = None,
+        grouping: Grouping | None = None,
+        backend: Backend | None = None,
         verbose: bool = True,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
     ):
         # dummy_properties must be a dict of the form {'name': {'dtype': dtype,
         # 'is_atomic': is_atomic, 'extra_dims': extra_dims, 'fill_value':
@@ -447,7 +447,7 @@ class _ANISubdataset(_ANIDatasetBase):
             present.update(conformers[element_key].ravel())
         return tuple(sorted(present))
 
-    def _parse_index(self, idx: IdxLike) -> tp.Optional[NDArray[np.int64]]:
+    def _parse_index(self, idx: IdxLike) -> NDArray[np.int64] | None:
         # internally, idx_ is always a numpy array or None, idx can be a tensor
         # or a list or other iterable, which is must be castable to a numpy int
         # array of ndim 1
@@ -468,7 +468,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         group_name: str,
         idx: IdxLike = None,
-        properties: tp.Optional[tp.Iterable[str]] = None,
+        properties: tp.Iterable[str] | None = None,
     ) -> Conformers:
         r"""Get conformers in a given group in the dataset
 
@@ -487,7 +487,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         group_name: str,
         idx: IdxLike = None,
-        properties: tp.Optional[tp.Iterable[str]] = None,
+        properties: tp.Iterable[str] | None = None,
         chem_symbols: bool = False,
         exclude_dummy: bool = False,
     ) -> NumpyConformers:
@@ -686,8 +686,8 @@ class _ANISubdataset(_ANIDatasetBase):
     @_needs_cache_update
     def to_backend(
         self,
-        backend: tp.Optional[Backend] = None,
-        dest_root: tp.Optional[StrPath] = None,
+        backend: Backend | None = None,
+        dest_root: StrPath | None = None,
         verbose: bool = True,
         inplace: bool = False,
     ) -> "_ANISubdataset":
@@ -922,7 +922,7 @@ class _ANISubdataset(_ANIDatasetBase):
         return grouping
 
     def _check_unique_element_key(
-        self, properties: tp.Optional[tp.Iterable[str]] = None
+        self, properties: tp.Iterable[str] | None = None
     ) -> None:
         if properties is None:
             properties = self.properties
@@ -1069,7 +1069,7 @@ class ANIDataset(_ANIDatasetBase):
     def __init__(
         self,
         locations: tp.Union[tp.Iterable[StrPath], StrPath],
-        names: tp.Optional[tp.Union[tp.Iterable[str], str]] = None,
+        names: tp.Union[tp.Iterable[str], str] | None = None,
         **kwargs,
     ):
         super().__init__()

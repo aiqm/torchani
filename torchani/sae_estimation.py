@@ -133,7 +133,7 @@ def approx_saes(
 # Utility for approx_saes
 class _LinearModel(torch.nn.Module):
     m: torch.nn.Parameter
-    b: tp.Optional[torch.nn.Parameter]
+    b: torch.nn.Parameter | None
 
     def __init__(self, num_species: int, fit_intercept: bool = False):
         super().__init__()

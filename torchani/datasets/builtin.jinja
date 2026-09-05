@@ -29,7 +29,7 @@ def {{ ds.name }}(
     lot: str = "{{ ds.default_lot }}",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""

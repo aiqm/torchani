@@ -28,7 +28,7 @@ def TestData(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -50,7 +50,7 @@ def TestDataIons(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -72,7 +72,7 @@ def TestDataForcesDipoles(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -94,7 +94,7 @@ def IonsVeryHeavy(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -118,7 +118,7 @@ def IonsHeavy(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -142,7 +142,7 @@ def IonsLight(
     lot: str = "b973c-def2mtzvp",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -165,7 +165,7 @@ def ANI1q(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -190,7 +190,7 @@ def ANI2qHeavy(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -214,7 +214,7 @@ def ANI1ccx(
     lot: str = "ccsd(t)star-cbs",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -240,7 +240,7 @@ def ANI1x(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -264,7 +264,7 @@ def ANI2x(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -290,7 +290,7 @@ def COMP6v1(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -319,7 +319,7 @@ def COMP6v2(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""
@@ -345,7 +345,7 @@ def ANI1e(
     lot: str = "wb97x-631gd",
     verbose: bool = True,
     download: bool = True,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
     skip_check: bool = False,
 ) -> ANIDataset:
     r"""

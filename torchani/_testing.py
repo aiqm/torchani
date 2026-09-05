@@ -24,7 +24,7 @@ def _get_cls_name(cls: type, idx: int, params: dict[str, tp.Any]) -> str:
 # As an exception, device = None means "both" here
 def expand(
     device: tp.Literal["cpu", "cuda", "both"] = "both",
-    jit: tp.Optional[bool] = None,
+    jit: bool | None = None,
 ):
     devices: tuple[torch.device, ...]
     if device == "both":
@@ -95,7 +95,7 @@ def make_elem_idxs(
     molecs_num: int,
     atoms_num: int,
     symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    seed: int | None = None,
     device: Device = None,
 ) -> Tensor:
     rng = torch.Generator(device="cpu")
@@ -118,7 +118,7 @@ def make_molecs(
     cell_size: float = 10.0,
     pbc: bool = False,
     symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Molecs:
@@ -160,7 +160,7 @@ def make_molec(
     cell_size: float = 10.0,
     pbc: bool = False,
     symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Molecs:
@@ -171,7 +171,7 @@ def make_neighbors(
     atoms: int,
     cutoff: float = 5.2,
     symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Neighbors:
