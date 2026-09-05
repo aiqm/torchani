@@ -46,7 +46,7 @@ class _PandasStore(Store):
         grouping: Grouping | None = None,
     ):
         super().__init__(root, dummy_properties, grouping)
-        self._append_ops: list[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
+        self._append_ops: "list[pandas.DataFrame | cudf.DataFrame]" = []
         self._engine = pandas
         self._data_is_dirty = False
 
@@ -98,7 +98,7 @@ class _PandasStore(Store):
 
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         cache = Cache()
         try:
             group_sizes_df = self.data["group"].value_counts().sort_index()

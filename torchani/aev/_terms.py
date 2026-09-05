@@ -427,7 +427,7 @@ class Angular(_BaseAngular):
         self,
         /,
         cutoff: float,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | tp.Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:
@@ -469,7 +469,7 @@ class Radial(_BaseRadial):
         self,
         /,
         cutoff: float,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | tp.Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:
@@ -496,8 +496,8 @@ class Radial(_BaseRadial):
 
 
 _Models = tp.Literal["ani1x", "ani2x", "ani1ccx"]
-AngularArg = tp.Union[_Models, _BaseAngular]
-RadialArg = tp.Union[_Models, _BaseRadial]
+AngularArg = _Models | _BaseAngular
+RadialArg = _Models | _BaseRadial
 
 
 def _parse_angular_term(angular_term: AngularArg) -> _BaseAngular:

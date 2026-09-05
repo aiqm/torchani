@@ -265,7 +265,7 @@ class PairPotential(BasePairPotential):
         self,
         symbols: tp.Sequence[str],
         *,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | tp.Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
         **kwargs,

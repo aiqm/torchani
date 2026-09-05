@@ -1,6 +1,7 @@
 import typing as tp
 from pathlib import Path
 from functools import partial
+from collections import OrderedDict
 
 import h5py
 from numpy.typing import NDArray
@@ -35,7 +36,7 @@ class _HDF5Store(_HierarchicalStore):
 
     def setup(self, root: Path, mode: str) -> None:
         file = h5py.File(root, mode)
-        grouping: tp.Union[Grouping, tp.Literal["legacy"]] = "legacy"  # default
+        grouping: Grouping | tp.Literal["legacy"] = "legacy"  # default
 
         # This detects Roman's formatting style which doesn't have a
         # 'grouping' key but is still grouped by num atoms.
@@ -80,7 +81,7 @@ class _HDF5Store(_HierarchicalStore):
 
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         cache = Cache()
         # If the dataset is standarized (it is a tree with depth
         # 1, where all groups are directly joined to the root) then it is much faster
@@ -119,7 +120,7 @@ class _HDF5Store(_HierarchicalStore):
     ) -> bool:
         def visitor_fn(
             name: str,
-            object_: tp.Union[h5py.Dataset, h5py.Group],
+            object_: h5py.Dataset | h5py.Group,
             store: "_HDF5Store",
             cache: Cache,
             check_properties: bool,

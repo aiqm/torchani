@@ -8,7 +8,7 @@ from torchani.datasets.backends.zarr_impl import _ZarrStore
 from torchani.datasets.backends.parquet_impl import _PandasStore, _CudfStore
 
 
-_STORE_TYPE: dict[Backend, tp.Type[Store]] = {
+_STORE_TYPE: dict[Backend, type[Store]] = {
     "hdf5": _HDF5Store,
     "zarr": _ZarrStore,
     "pandas": _PandasStore,

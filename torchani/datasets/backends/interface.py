@@ -32,7 +32,7 @@ class UnsetMetadataError(Exception):
 # Keeps track of variables that must be updated each time the datasets get
 # modified or the first time they are read from disk
 class Cache:
-    group_sizes: tp.OrderedDict[str, int]
+    group_sizes: OrderedDict[str, int]
     properties: set[str]
 
     def __init__(self) -> None:
@@ -215,7 +215,7 @@ class Metadata:
     units: dict[str, str]
     dtypes: dict[str, str]
     dims: dict[str, tuple[int, ...]]
-    grouping: tp.Union[Grouping, tp.Literal["legacy"]]
+    grouping: Grouping | tp.Literal["legacy"]
     info: str = ""
 
 
@@ -301,7 +301,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     @abstractmethod
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         pass
 
     @abstractmethod
@@ -497,7 +497,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         self._meta = None
 
     @property
-    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+    def grouping(self) -> Grouping | tp.Literal["legacy"]:
         return self.meta.grouping
 
 
@@ -507,7 +507,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
 class _HierarchicalStore(Store):
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tuple[tp.OrderedDict[str, int], set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         cache = Cache()
         for k, g in self.data.items():
             self._update_properties_cache(cache, g, check_properties)

@@ -1,4 +1,3 @@
-import typing as tp
 from pathlib import Path
 import json
 import tempfile
@@ -54,7 +53,7 @@ batch_size = 256
 _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
 
 
-TmpFileOrDir = tp.Union[tempfile._TemporaryFileWrapper, tempfile.TemporaryDirectory]
+TmpFileOrDir = tempfile._TemporaryFileWrapper | tempfile.TemporaryDirectory
 
 
 class TestDatasetUtils(TestCase):

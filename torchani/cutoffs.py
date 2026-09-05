@@ -117,10 +117,7 @@ class _AltCutoffSmooth(Cutoff):
         return torch.exp(e) / 0.3678794411714423
 
 
-CutoffArg = tp.Union[
-    tp.Literal["global", "dummy", "cosine", "smooth"],
-    Cutoff,
-]
+CutoffArg = tp.Literal["global", "dummy", "cosine", "smooth"] | Cutoff
 
 
 def _parse_cutoff_fn(
