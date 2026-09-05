@@ -12,7 +12,6 @@ import warnings
 import torch
 from torch import Tensor
 import ase
-import ase.units
 from ase.calculators.calculator import (
     Calculator as _AseCalculator,
     all_changes as _ALL_CHANGES,
@@ -20,6 +19,7 @@ from ase.calculators.calculator import (
 
 from torchani.annotations import StressKind, Device, DType
 from torchani.neighbors import Neighbors
+from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
 
 
@@ -33,7 +33,7 @@ class Calculator(_AseCalculator):
 
         import torchani
         model = torchani.models.ANI1x()
-        calc = model.ase()  # Convert model into its ASE Calculator form
+        calc = model.ase()  # Convert model into its "ASE Calculator" form
 
     Arguments:
         model (`torchani.arch.ANI`): neural network potential model
@@ -41,10 +41,9 @@ class Calculator(_AseCalculator):
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in `ase.Atoms`
             object with the wrapped positions.
-        stress_kind (str): Strategy to calculate stress, valid options are *fdotr*,
-            *scaling*, and *numerical*. The fdotr approach does not need the cell's box
-            information and can be used for multiple domians when running parallel on
-            multi-GPUs.
+        stress_kind (``"fdotr"``|``"scaling"``|``"numerical"``): Strategy to calculate
+            stress, . The fdotr approach only needs the cell volume, so it can be used
+            by domain-decomposition approaches when running parallel on multi-GPUs.
     """
 
     # NOTE: 'free energy' means smth slightly different for ASE
@@ -81,7 +80,7 @@ class Calculator(_AseCalculator):
         atoms: ase.Atoms | None = None,
         properties: list[str] = ["energy"],
         system_changes: list[str] = _ALL_CHANGES,
-    ):
+    ) -> None:
         # NOTE: If atoms is passed, then the
         # superclass overwrites self.atoms with it
         super().calculate(atoms, properties, system_changes)
@@ -101,15 +100,16 @@ class Calculator(_AseCalculator):
             crds = map_to_central(crds, cell, pbc)
             self.atoms.set_positions(crds.squeeze(0).detach().cpu().numpy())
 
-        # Forwards pass
+        # Forwards pass. In the rare case where numerical stress is
+        # required *and nothing else*, this is wasted, but this is a very
+        # uncommon scenario, not worth optimizing for
         if "stress" in properties:
             if cell is None or pbc is None:
                 raise ValueError("Can't require stress if not using PBC")
 
             if self._stress_kind == "scaling":
                 eye = torch.eye(3, dtype=self._dtype, device=self._device)
-                # Sym not strictly needed but done for numeric robustness
-                defo_grad = eye + 0.5 * (strain + strain.T)
+                defo_grad = eye + strain
                 crds = crds @ defo_grad
                 cell = cell @ defo_grad
 
@@ -126,9 +126,8 @@ class Calculator(_AseCalculator):
         else:
             out = self.model((species, crds), cell, pbc)
 
-        energy = out.energies * ase.units.Hartree
         # Check if properties requires a backwards pass, if so, run it
-        if self._calc_needs_autograd(properties):
+        if self._properties_need_autograd(properties):
             # [crds, scaling|diff_vec]
             inputs = self._dummy_autograd_inputs(num=2)
             if "forces" in properties:
@@ -138,13 +137,15 @@ class Calculator(_AseCalculator):
                     inputs[1] = diff_vec
                 elif self._stress_kind == "scaling":
                     inputs[1] = strain
-            grads = torch.autograd.grad(energy.squeeze(), inputs, allow_unused=True)
+            grads = torch.autograd.grad(
+                out.energies.squeeze(), inputs, allow_unused=True
+            )
 
         # Set all calculated properties in the "results" mapping
         if "energy" in properties:
-            self._set_result("energy", energy)
+            self._set_result("energy", out.energies)
         if "free_energy" in properties:
-            self._set_result("free_energy", energy)
+            self._set_result("free_energy", out.energies)
         if "forces" in properties:
             self._set_result("forces", -grads[0])
         if "stress" in properties:
@@ -155,14 +156,22 @@ class Calculator(_AseCalculator):
                 virial = grads[1]
             elif self._stress_kind == "fdotr":
                 virial = grads[1].transpose(0, 1) @ diff_vec  # grads[1] == dE/ddiff_vec
+            # NOTE: All paths guarantee a symmetric virial, but numerical errors can
+            # lead to not *exactly* symmetric virials in the autograd paths. Symmetrize
+            # here to avoid numerical problems
+            virial = 0.5 * (virial + virial.T)
             self._set_result("stress", virial / volume)
 
-    def _calc_needs_autograd(self, properties: list[str]) -> bool:
+    def _properties_need_autograd(self, properties: list[str]) -> bool:
         return "forces" in properties or (
             "stress" in properties and self._stress_kind != "numerical"
         )
 
-    def _set_result(self, key: str, value: Tensor) -> None:
+    def _set_result(
+        self, key: str, value: Tensor, hartree_units_input: bool = True
+    ) -> None:
+        if hartree_units_input:
+            value = value * HARTREE_TO_ASE_EV
         if value.ndim in (0, 1):
             self.results[key] = value.item()
         else:
@@ -197,13 +206,13 @@ class Calculator(_AseCalculator):
 
             # Off diagonal terms
             x = torch.eye(3, dtype=self._dtype, device=self._device)  # Reset
-            j = i - 2
+            j = i - 2  # relies on python negative index wrapping
             x[i, j] = x[j, i] = +0.5 * eps
             eplus = self.model((species, crds @ x), cell @ x, pbc).energies
             x[i, j] = x[j, i] = -0.5 * eps
             eminus = self.model((species, crds @ x), cell @ x, pbc).energies
             virial[i, j] = virial[j, i] = (eplus - eminus) / (2 * eps)
-        return virial * ase.units.Hartree
+        return virial
 
     def _dummy_autograd_inputs(self, num: int) -> list[Tensor]:
         return [
