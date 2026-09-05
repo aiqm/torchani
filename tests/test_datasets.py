@@ -1,4 +1,3 @@
-import typing as tp
 from pathlib import Path
 import json
 import tempfile
