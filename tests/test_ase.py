@@ -200,7 +200,7 @@ class TestVibrationsASE(ANITestCase):
             species = data["species"]
             modes_expect = data["modes"]
             freqs_expect = data["freqs"]
-        molecule = to_ase(species, coordinates, calc=model.ase())
+        molecule = Atoms(numbers=species, positions=coordinates, calculator=model.ase())
         # Compute vibrational frequencies with ASE
         vib = Vibrations(molecule)
         vib.run()
