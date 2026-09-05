@@ -58,8 +58,8 @@ def rmse_is_better(scheduler: ReduceLROnPlateau, rmse: float, best: float) -> bo
 
 
 def _parse_device_and_dtype(
-    device: tp.Optional["str"] = None,
-    dtype: tp.Optional["str"] = None,
+    device: str | None = None,
+    dtype: str | None = None,
 ) -> tuple[Device, DType]:
 
     if dtype == "f32" or dtype is None:
@@ -214,7 +214,7 @@ def fast_masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
 
 def pad_atomic_properties(
     properties: tp.Sequence[tp.Mapping[str, Tensor]],
-    padding_values: tp.Optional[dict[str, float]] = None,
+    padding_values: dict[str, float] | None = None,
 ) -> dict[str, Tensor]:
     r"""
     Combine a sequence of properties together into single tensor.

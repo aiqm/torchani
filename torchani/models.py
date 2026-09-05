@@ -81,7 +81,7 @@ __all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2x
 class _ModelFactory(tp.Protocol):
     def __call__(
         self,
-        model_index: tp.Optional[int] = None,
+        model_index: int | None = None,
         neighborlist: NeighborlistArg = "all_pairs",
         strategy: str = "pyaev",
         periodic_table_index: bool = True,
@@ -92,7 +92,7 @@ class _ModelFactory(tp.Protocol):
 
 
 def ANI1x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -129,7 +129,7 @@ def ANI1x(
 
 
 def ANI1ccx(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -166,7 +166,7 @@ def ANI1ccx(
 
 
 def ANI2x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -202,7 +202,7 @@ def ANI2x(
 
 
 def ANImbis(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -258,7 +258,7 @@ def ANImbis(
 
 
 def ANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -289,7 +289,7 @@ def ANI2xr(
 
 
 def ANI2dr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -320,13 +320,13 @@ def ANI2dr(
 
 
 def ANIr2s(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
     device: Device = None,
     dtype: DType = None,
-    solvent: tp.Optional[str] = None,
+    solvent: str | None = None,
 ) -> ANI:
     r""":meta private:"""
     # r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
@@ -367,7 +367,7 @@ def ANIr2s(
 
 
 def ANIr2s_ch3cn(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -387,7 +387,7 @@ def ANIr2s_ch3cn(
 
 
 def ANIr2s_chcl3(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -407,7 +407,7 @@ def ANIr2s_chcl3(
 
 
 def ANIr2s_water(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -427,7 +427,7 @@ def ANIr2s_water(
 
 
 def SnnANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -460,7 +460,7 @@ def SnnANI2xr(
 
 
 def ANI1xnr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,

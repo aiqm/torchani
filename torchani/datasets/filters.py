@@ -26,7 +26,7 @@ def filter_by_high_force(
     delete_inplace: bool = False,
     verbose: bool = True,
     device: Device = None,
-) -> tp.Optional[tuple[list[Conformers], dict[str, Tensor]]]:
+) -> tuple[list[Conformers], dict[str, Tensor]] | None:
     r"""
     Filter outlier conformations in a dataset, either by force components or
     force magnitude

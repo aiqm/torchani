@@ -60,7 +60,7 @@ class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
     def __init__(
         self,
         *args,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
         **kwargs,
     ) -> None:
         self._dummy_properties = (
@@ -173,7 +173,7 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
 # of a directory with some files
 class Location:
     def __init__(self, root: StrPath, suffix: str = ""):
-        self._root: tp.Optional[Path] = None
+        self._root: Path | None = None
         self._suffix = suffix
         self.root = Path(root).resolve()
 
@@ -264,8 +264,8 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         if not self.BACKEND_AVAILABLE:
             raise ValueError(f"{self.backend} could not be found")
@@ -274,11 +274,11 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
             dict() if dummy_properties is None else dummy_properties
         )
 
-        self._meta: tp.Optional[Metadata] = None
-        self._meta_mode: tp.Optional[str] = None
+        self._meta: Metadata | None = None
+        self._meta_mode: str | None = None
 
-        self._data: tp.Optional[Data] = None
-        self._data_mode: tp.Optional[str] = None
+        self._data: Data | None = None
+        self._data_mode: str | None = None
 
         self.location = self._build_location(root, self.suffix)
 
@@ -335,8 +335,8 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     @classmethod
     def make_tmp(
         cls,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ) -> tpx.Self:
         if grouping is None:
             grouping = "by_num_atoms"
@@ -358,8 +358,8 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     def make_new(
         cls,
         root: StrPath,
-        dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ) -> tpx.Self:
         if grouping is None:
             grouping = "by_num_atoms"

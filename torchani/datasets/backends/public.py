@@ -21,9 +21,9 @@ _SUFFIXES: dict[str, Backend] = {".h5": "hdf5", ".zarr": "zarr", ".pqdir": "pand
 def create_store(
     # root can be the string "tmp" to create a temporary store
     root: StrPath,
-    backend: tp.Optional[Backend] = None,
-    grouping: tp.Optional[Grouping] = None,
-    dummy_properties: tp.Optional[dict[str, tp.Any]] = None,
+    backend: Backend | None = None,
+    grouping: Grouping | None = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
 ) -> Store:
     if backend is None:
         try:

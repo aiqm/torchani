@@ -449,7 +449,7 @@ class PythonMNP(torch.autograd.Function):
         assert num_species == len(atomic_networks)
         assert num_species == len(stream_list)
         energy_list = torch.zeros(num_species, dtype=aev.dtype, device=aev.device)
-        event_list: list[tp.Optional[torch.cuda.Event]] = [
+        event_list: list[torch.cuda.Event | None] = [
             torch.cuda.Event() for i in range(num_species)
         ]
         current_stream = torch.cuda.current_stream()
@@ -501,7 +501,7 @@ class PythonMNP(torch.autograd.Function):
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
-        event_list: list[tp.Optional[torch.cuda.Event]] = [
+        event_list: list[torch.cuda.Event | None] = [
             torch.cuda.Event() for j, _ in enumerate(stream_list)
         ]
 

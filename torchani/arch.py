@@ -858,18 +858,18 @@ class Assembler:
         neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
     ) -> None:
-        self._global_cutoff_fn: tp.Optional[Cutoff] = CutoffSmooth(2)
+        self._global_cutoff_fn: Cutoff | None = CutoffSmooth(2)
 
         self._neighborlist = _parse_neighborlist(neighborlist)
-        self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
+        self._aevcomp: _AEVComputerWrapper | None = None
         self._potentials: dict[str, _PotentialWrapper] = {}
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
         self._self_energies: dict[str, float] = {}
-        self._container: tp.Optional[_AtomicContainerWrapper] = None
-        self._charge_container: tp.Optional[_AtomicContainerWrapper] = None
-        self._charge_normalizer: tp.Optional[BaseChargeNormalizer] = None
+        self._container: _AtomicContainerWrapper | None = None
+        self._charge_container: _AtomicContainerWrapper | None = None
+        self._charge_normalizer: BaseChargeNormalizer | None = None
         self._symbols: tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
@@ -955,7 +955,7 @@ class Assembler:
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
         kwargs: dict[str, tp.Any] = {},
-        normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        normalizer: BaseChargeNormalizer | None = None,
     ) -> None:
         ctor = {
             "ani1x": "like_1x",
@@ -1005,7 +1005,7 @@ class Assembler:
         name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
-        kwargs: tp.Optional[dict[str, tp.Any]] = None,
+        kwargs: dict[str, tp.Any] | None = None,
     ) -> None:
         r"""Add a potential to the constructed ANI model"""
         if name in self._potentials:
@@ -1059,7 +1059,7 @@ class Assembler:
         else:
             neural_networks = Ensemble(containers)
 
-        charge_networks: tp.Optional[AtomicContainer] = None
+        charge_networks: AtomicContainer | None = None
         if self._charge_container is not None:
             charge_networks = self._charge_container.make(self.symbols, aevcomp.out_dim)
 

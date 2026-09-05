@@ -371,7 +371,7 @@ class NeurochemInfo:
 
 
 def download_model_parameters(
-    root: tp.Optional[Path] = None, verbose: bool = True
+    root: Path | None = None, verbose: bool = True
 ) -> None:
     root = root or neurochem_dir()
     if any(root.iterdir()):
@@ -391,7 +391,7 @@ def download_model_parameters(
 
 def modules_from_info(
     info: NeurochemInfo,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
 ) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
@@ -422,7 +422,7 @@ def modules_from_info(
 
 def modules_from_model_name(
     model_name: str,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
 ) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""Creates the necessary modules to generate a pre-trained ANI model
@@ -439,7 +439,7 @@ def modules_from_model_name(
 
 def modules_from_info_file(
     info_file: Path,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
 ) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""
@@ -455,7 +455,7 @@ def modules_from_info_file(
 
 def load_model_from_info_file(
     info_file: StrPath,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
@@ -477,7 +477,7 @@ def load_model_from_info_file(
 
 def load_model_from_name(
     model_name: str,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
