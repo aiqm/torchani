@@ -269,8 +269,8 @@ def to_ase(
             raise ValueError("Only single structure supported")
         coordinates = coordinates.squeeze(0)
     return ase.Atoms(
-        numbers=species.squeeze(0).detach().cpu().numpy(),
-        positions=coordinates.squeeze(0).cpu().numpy(),
+        numbers=species.detach().cpu().numpy(),
+        positions=coordinates.cpu().numpy(),
         cell=cell.detach().cpu().numpy() if cell is not None else None,
         pbc=pbc.cpu().numpy() if pbc is not None else None,
         calculator=calc,
