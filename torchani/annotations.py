@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 IdxLike = Tensor | NDArray[np.int_] | None | tp.Iterable[int] | int
 
 Conformers = tp.MutableMapping[str, Tensor]
-NumberOrStrArray = NDArray[np.int_] | NDArray[np.float64] | NDArray[np.str_]
+NumberOrStrArray = tp.Union[NDArray[np.int_] | NDArray[np.float64] | NDArray[np.str_]]
 NumpyConformers = tp.MutableMapping[str, NumberOrStrArray]
 MixedConformers = tp.MutableMapping[str, Tensor | NumberOrStrArray]
 
