@@ -168,7 +168,8 @@ hartree2kcalpermol.__doc__ = (
     + f"\n\n1 Hartree = {hartree2kcalpermol(1)} kcal/mol"
 )
 hartree2kjoulepermol.__doc__ = (
-    str(hartree2kjoulepermol) + f"\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol"
+    str(hartree2kjoulepermol.__doc__)
+    + f"\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol"
 )
 ev2kjoulepermol.__doc__ = (
     str(ev2kjoulepermol.__doc__) + f"\n\n1 eV = {ev2kjoulepermol(1)} kJ/mol"
