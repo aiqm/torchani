@@ -86,26 +86,22 @@ def bohr2angstrom(x):
 def sqrt_mhessian2invcm(x):
     r"""Converts sqrt(mass-scaled hessian units) into cm^-1
 
-    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
-    which are sqrt(units of the mass-scaled hessian matrix)
-    into units of inverse centimeters.
+    Converts from units of sqrt(Hartree / (amu * Angstrom^2)) which are sqrt(units of
+    the mass-scaled hessian matrix) into units of inverse centimeters.
 
-    Take into account that to convert the actual eigenvalues of the hessian
-    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)"""
+    Take into account that to convert the actual eigenvalues of the hessian into
+    wavenumbers it is necessary to multiply by an extra factor of 1 / (2 * pi)"""
     return x * SQRT_MHESSIAN_TO_INVCM
 
 
 def sqrt_mhessian2milliev(x):
     r"""Converts sqrt(mass-scaled hessian units) into meV
 
-    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
-    which are sqrt(units of the mass-scaled hessian matrix)
-    into units of milli-electronvolts.
+    Converts from units of sqrt(Hartree / (amu * Angstrom^2)) which are sqrt(units of
+    the mass-scaled hessian matrix) into units of milli-electronvolts.
 
-    Take into account that to convert the actual eigenvalues of the hessian
-    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)"""
+    Take into account that to convert the actual eigenvalues of the hessian into
+    wavenumbers it is necessary to multiply by an extra factor of 1 / (2 * pi)"""
     return x * SQRT_MHESSIAN_TO_MILLIEV
 
 
