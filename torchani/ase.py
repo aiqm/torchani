@@ -175,7 +175,8 @@ class Calculator(AseCalculator):
         crds: Tensor,
         cell: Tensor | None,
         pbc: Tensor | None,
-        eps: float = 1e-6,
+        # A bit of a larger value for numerical stability
+        eps: float = 1e-3,
     ) -> Tensor:
         if cell is None or pbc is None:
             raise ValueError("Cell is required for calculating numerical virial")
