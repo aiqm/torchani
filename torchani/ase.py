@@ -14,7 +14,7 @@ from torch import Tensor
 import ase
 import ase.units
 from ase.calculators.calculator import (
-    Calculator as AseCalculator,
+    Calculator as _AseCalculator,
     all_changes as _ALL_CHANGES,
 )
 
@@ -23,7 +23,7 @@ from torchani.neighbors import Neighbors
 from torchani.utils import map_to_central
 
 
-class Calculator(AseCalculator):
+class Calculator(_AseCalculator):
     """TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
@@ -47,8 +47,8 @@ class Calculator(AseCalculator):
             multi-GPUs.
     """
 
-    # NOTE: 'free energy' seems to mean smth slightly different in ASE context
-    # it is what is get_potential_energy(force_consistent=True) returns
+    # NOTE: 'free energy' means smth slightly different for ASE
+    # it is what get_potential_energy(force_consistent=True) returns
     implemented_properties = ["energy", "free_energy", "forces", "stress"]
 
     def __init__(
@@ -59,10 +59,15 @@ class Calculator(AseCalculator):
             raise ValueError("ASE models must have periodic_table_index=True")
         if stress_kind not in ["fdotr", "scaling", "numerical"]:
             raise ValueError(f"Unsupported stress kind {stress_kind}")
-        param = next(model.parameters())
+        param = next(model.parameters(), None)
+        if param is None:
+            self._device = torch.device("cpu")
+            self._dtype = torch.get_default_dtype()
+        else:
+            self._device = param.device
+            self._dtype = param.dtype
+
         self.model = model
-        self._device = param.device
-        self._dtype = param.dtype
         self._overwrite = overwrite
         self._stress_kind = stress_kind
 
@@ -78,7 +83,7 @@ class Calculator(AseCalculator):
         system_changes: list[str] = _ALL_CHANGES,
     ):
         # NOTE: If atoms is passed, then the
-        # superclass overwrites self.atoms with the passed atoms
+        # superclass overwrites self.atoms with it
         super().calculate(atoms, properties, system_changes)
         if self.atoms is None:
             raise ValueError("Can't calculate if not attached to Atoms")
@@ -117,12 +122,12 @@ class Calculator(AseCalculator):
                 neighbors = Neighbors(neighbors.indices, diff_vec.norm(2, -1), diff_vec)
 
             _idxs = self.model.species_converter(species)
-            energy = self.model.compute_from_neighbors(_idxs, crds, neighbors).energies
+            out = self.model.compute_from_neighbors(_idxs, crds, neighbors)
         else:
-            energy = self.model((species, crds), cell, pbc).energies
-        energy = energy * ase.units.Hartree
+            out = self.model((species, crds), cell, pbc)
 
-        # Check if properties requires a backwards pass, if so run it
+        energy = out.energies * ase.units.Hartree
+        # Check if properties requires a backwards pass, if so, run it
         if self._calc_needs_autograd(properties):
             # [crds, scaling|diff_vec]
             inputs = self._dummy_autograd_inputs(num=2)
