@@ -22,9 +22,11 @@ from torchani.neighbors import Neighbors
 from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
 
+__all__ = ["Calculator", "to_ase", "from_ase"]
+
 
 class Calculator(AseCalculator):
-    """TorchANI calculator for ASE
+    r"""TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
     ``ANI.ase`` method.
@@ -38,12 +40,19 @@ class Calculator(AseCalculator):
     Arguments:
         model (`torchani.arch.ANI`): neural network potential model
             that convert coordinates into energies.
-        overwrite (bool): After wrapping atoms into central box, whether
-            to replace the original positions stored in `ase.Atoms`
-            object with the wrapped positions.
-        stress_kind ("fdotr"|"scaling"|"numerical"): Strategy to calculate
-            stress, . The fdotr approach only needs the cell volume, so it can be used
-            by domain-decomposition approaches when running parallel on multi-GPUs.
+        overwrite (bool):
+            **Deprecated since version 2.9.0**. After wrapping atoms into central box,
+            replace the original positions in the `ase.Atoms` object with the wrapped
+            positions.
+        stress_kind ("fdotr"|"scaling"|"numerical"): Strategy used to calculate
+            stress. The "fdotr" approach only requires the cell volume, so it can
+            be used with domain-decomposition approaches when running in parallel
+            on multiple GPUs. The "scaling" approach uses the analytic gradient
+            with respect to the strain :math:`\epsilon`, evaluated at
+            :math:`\epsilon = 0`, after applying the deformation
+            :math:`h' = h(I + \epsilon)` to the cell and
+            :math:`\mathbf{r}_i^T = \mathbf{r}_i^T(I + \epsilon)` to the atomic
+            coordinates.
     """
 
     # NOTE: 'free energy' means smth slightly different for ASE
@@ -67,6 +76,16 @@ class Calculator(AseCalculator):
             self._dtype = param.dtype
 
         self.model = model
+        if overwrite:
+            warnings.warn(
+                "'overwrite' is deprecated. It will be removed in TorchANI 2.10",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            warnings.warn(
+                "'overwrite' set. When using PBC, info on crossing PBC *will be lost*",
+                stacklevel=2,
+            )
         self._overwrite = overwrite
         self._stress_kind = stress_kind
 
@@ -96,7 +115,6 @@ class Calculator(AseCalculator):
             strain.requires_grad_(True)
 
         if self._overwrite and (cell is not None) and (pbc is not None):
-            warnings.warn("'overwrite' set, info about crossing PBC *will be lost*")
             crds = map_to_central(crds, cell, pbc)
             self.atoms.set_positions(crds.squeeze(0).detach().cpu().numpy())
 
@@ -225,15 +243,9 @@ def from_ase(
     atoms: ase.Atoms, device: Device = None, dtype: DType = None
 ) -> tuple[Tensor, Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None, None]:
     species = torch.tensor(
-        atoms.get_atomic_numbers(),
-        dtype=torch.long,
-        device=device,
+        atoms.get_atomic_numbers(), dtype=torch.long, device=device
     ).unsqueeze(0)
-    crds = torch.tensor(
-        atoms.get_positions(),
-        device=device,
-        dtype=dtype,
-    ).unsqueeze(0)
+    crds = torch.tensor(atoms.get_positions(), device=device, dtype=dtype).unsqueeze(0)
     cell = torch.tensor(atoms.get_cell(complete=True).array, dtype=dtype, device=device)
     pbc = torch.tensor(atoms.get_pbc(), dtype=torch.bool, device=device)
     if not pbc.any():
