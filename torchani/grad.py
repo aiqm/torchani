@@ -36,7 +36,7 @@ __all__ = [
     "calc_forces_and_hessians",  # alias
 ]
 
-Model = tp.Union[Potential, ANI, ANIq]
+Model = Potential | ANI | ANIq
 
 
 def forces(
@@ -291,7 +291,7 @@ def energies_and_forces(
 
 
 def single_point(
-    model: tp.Union[ANI, ANIq],
+    model: ANI | ANIq,
     species: Tensor,
     coordinates: Tensor,
     cell: Tensor | None = None,

@@ -101,7 +101,7 @@ _get_num_conformers = partial(
 )
 
 
-def _to_strpath_list(obj: tp.Union[tp.Iterable[StrPath], StrPath]) -> list[StrPath]:
+def _to_strpath_list(obj: tp.Iterable[StrPath] | StrPath) -> list[StrPath]:
     try:
         # This will raise an exception if obj is tp.Iterable[StrPath]
         list_ = [fspath(obj)]  # type: ignore
@@ -122,11 +122,11 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         # change if a property is renamed or deleted. num_conformers and
         # num_conformer_groups are all calculated on the fly to guarantee
         # synchronization with "group_sizes".
-        self._group_sizes: tp.OrderedDict[str, int] = OrderedDict()
+        self._group_sizes: OrderedDict[str, int] = OrderedDict()
         self._properties: set[str] = set()
 
     @property
-    def group_sizes(self) -> tp.OrderedDict[str, int]:
+    def group_sizes(self) -> OrderedDict[str, int]:
         return self._group_sizes.copy()
 
     @property
@@ -151,7 +151,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         return len(self._group_sizes.keys())
 
     @property
-    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+    def grouping(self) -> Grouping | tp.Literal["legacy"]:
         raise NotImplementedError
 
     def __getitem__(self, key: str) -> Conformers:
@@ -627,7 +627,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         dest_key: str,
         is_atomic: bool = False,
-        extra_dims: tp.Union[int, tuple[int, ...]] = tuple(),
+        extra_dims: int | tuple[int, ...] = tuple(),
         fill_value: int = 0,
         dtype: DTypeLike = np.int64,
     ) -> "_ANISubdataset":
@@ -911,7 +911,7 @@ class _ANISubdataset(_ANIDatasetBase):
         return self
 
     @property
-    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+    def grouping(self) -> Grouping | tp.Literal["legacy"]:
         r"""Get the dataset grouping
 
         Grouping is a string that describes how conformers are grouped in
@@ -1068,8 +1068,8 @@ class ANIDataset(_ANIDatasetBase):
 
     def __init__(
         self,
-        locations: tp.Union[tp.Iterable[StrPath], StrPath],
-        names: tp.Union[tp.Iterable[str], str] | None = None,
+        locations: tp.Iterable[StrPath] | StrPath,
+        names: tp.Iterable[str] | str | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -1104,7 +1104,7 @@ class ANIDataset(_ANIDatasetBase):
         return cls(locations=locations, names=names, **kwargs)
 
     @property
-    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+    def grouping(self) -> Grouping | tp.Literal["legacy"]:
         return self._first_subds.grouping
 
     @contextmanager

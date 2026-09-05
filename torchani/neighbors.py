@@ -954,18 +954,15 @@ class VerletCellList(CellList):
         return bool((dist_squared < half_skin_squared).all())
 
 
-NeighborlistArg = tp.Union[
-    tp.Literal[
-        "all_pairs",
-        "adaptive",
-        "fast_adaptive",
-        "cell_list",
-        "fast_cell_list",
-        "verlet_cell_list",
-        "base",
-    ],
-    Neighborlist,
-]
+NeighborlistArg = tp.Literal[
+    "all_pairs",
+    "adaptive",
+    "fast_adaptive",
+    "cell_list",
+    "fast_cell_list",
+    "verlet_cell_list",
+    "base",
+] | Neighborlist
 
 
 def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:

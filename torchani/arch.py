@@ -1318,7 +1318,7 @@ def _fetch_state_dict(
     state_dict_file: str,
     local: bool = False,
     private: bool = False,
-) -> tp.OrderedDict[str, Tensor]:
+) -> OrderedDict[str, Tensor]:
     # NOTE: torch.hub caches remote state_dicts after first download
     if local:
         dict_ = torch.load(

@@ -522,7 +522,7 @@ def sort_by_atomic_num(it: tp.Iterable[str]) -> tuple[str, ...]:
     return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
 
 
-def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
+def merge_state_dicts(paths: tp.Iterable[Path]) -> OrderedDict[str, Tensor]:
     r"""Merge multiple single-model state dicts into an ensemble state dict"""
     if any(not path.is_file() for path in paths):
         raise ValueError("All passed paths must be existing files with state dicts")
@@ -625,7 +625,7 @@ class EnergyShifter(torch.nn.Module):
 def _validate_user_kwargs(
     clsname: str,
     names_dict: dict[str, tp.Sequence[str]],
-    kwargs: dict[str, tp.Union[tuple, list, float]],
+    kwargs: dict[str, tuple | list | float],
     trainable: tp.Sequence[str],
 ) -> None:
     _num_tensors = sum(len(seq) for seq in names_dict.values())

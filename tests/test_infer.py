@@ -39,7 +39,7 @@ class TestInfer(ANITestCase):
         warnings.resetwarnings()
 
     def _build_ani2x(
-        self, idx: tp.Optional[int] = None, mnp: bool = False, infer: bool = False
+        self, idx: int | None = None, mnp: bool = False, infer: bool = False
     ):
         if mnp and not MNP_IS_INSTALLED:
             raise unittest.SkipTest("MNP extension is not available, skipping MNP test")

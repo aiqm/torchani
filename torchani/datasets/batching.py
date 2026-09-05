@@ -67,7 +67,7 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
         return 0
 
     def _limit_batches(
-        self, batches: list[_T], limit: tp.Union[int, float]
+        self, batches: list[_T], limit: int | float
     ) -> list[_T]:
         if isinstance(limit, float):
             if not (0.0 <= limit <= 1.0):
@@ -90,7 +90,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
         self,
         batches: tp.Sequence[Conformers],
         transform: Transform = identity,
-        limit: tp.Union[int, float] = 1.0,
+        limit: int | float = 1.0,
         split: str = "division",
         drop_last: bool = False,
     ) -> None:
@@ -147,7 +147,7 @@ class ANIBatchedDataset(BatchedDataset):
         store_dir: StrPath,
         split: str = "division",
         transform: Transform = identity,
-        limit: tp.Union[int, float] = 1.0,
+        limit: int | float = 1.0,
         properties: tp.Sequence[str] = (),
         drop_last: bool = False,
     ):
@@ -238,7 +238,7 @@ class Div:
 class Batcher:
     def __init__(
         self,
-        dest_root: tp.Union[Path, tp.Literal["ram"], tp.Literal["default"]] = "default",
+        dest_root: Path | tp.Literal["ram"] | tp.Literal["default"] = "default",
         max_batches_per_packet: int = 200,
         verbose: bool = False,
     ) -> None:
@@ -266,7 +266,7 @@ class Batcher:
 
     def divide_and_batch(
         self,
-        src: tp.Union[tp.Iterable[StrPath], StrPath, ANIDataset],
+        src: tp.Iterable[StrPath] | StrPath | ANIDataset,
         dest_dir: str = "",
         # Dataset modifications and options
         splits: dict[str, float] | None = None,
@@ -619,7 +619,7 @@ class Batcher:
 
 # Kept for bw compat
 def create_batched_dataset(
-    src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
+    src: tp.Collection[StrPath] | StrPath | ANIDataset,
     dest_path: StrPath | None = None,
     # Dataset modifications and options
     batch_size: int = 2560,
@@ -638,7 +638,7 @@ def create_batched_dataset(
     verbose: bool = True,
     _shuffle: bool = True,
 ) -> dict[str, BatchedDataset]:
-    dest_root: tp.Union[Path, tp.Literal["ram"]]
+    dest_root: Path | tp.Literal["ram"]
 
     if direct_cache:
         dest_root = "ram"
@@ -676,7 +676,7 @@ def create_batched_dataset(
 
 
 def batch_all_in_ram(
-    src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
+    src: tp.Collection[StrPath] | StrPath | ANIDataset,
     batch_size: int = 2560,
     properties: tp.Iterable[str] = (),
     padding: dict[str, float] | None = None,

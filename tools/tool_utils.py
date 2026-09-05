@@ -172,7 +172,7 @@ def time_func(
 
 def time_functions(
     names_models: tp.Sequence[
-        tuple[tp.Union[str, tuple[str, ...]], torch.nn.Module]
+        tuple[str | tuple[str, ...], torch.nn.Module]
     ],
     timers: dict[str, float],
     sync: bool = False,
