@@ -13,7 +13,7 @@ import torch
 from torch import Tensor
 import ase
 from ase.calculators.calculator import (
-    Calculator as _AseCalculator,
+    Calculator as AseCalculator,
     all_changes as _ALL_CHANGES,
 )
 
@@ -23,7 +23,7 @@ from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
 
 
-class Calculator(_AseCalculator):
+class Calculator(AseCalculator):
     """TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
@@ -239,3 +239,27 @@ def from_ase(
     if not pbc.any():
         return species, crds, None, None
     return species, crds, cell, pbc
+
+
+def to_ase(
+    species: Tensor,
+    coordinates: Tensor,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
+    calc: AseCalculator | None = None,
+) -> ase.Atoms:
+    if species.ndim == 2:
+        if coordinates.size(0) != 1:
+            raise ValueError("Only single structure supported")
+        species = species.squeeze(0)
+    if coordinates.ndim == 3:
+        if coordinates.size(0) != 1:
+            raise ValueError("Only single structure supported")
+        coordinates = coordinates.squeeze(0)
+    return ase.Atoms(
+        numbers=species.squeeze(0).detach().cpu().numpy(),
+        positions=coordinates.squeeze(0).cpu().numpy(),
+        cell=cell.detach().cpu().numpy() if cell is not None else None,
+        pbc=pbc.cpu().numpy() if pbc is not None else None,
+        calculator=calc,
+    )
