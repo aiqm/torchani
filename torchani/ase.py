@@ -21,6 +21,7 @@ from torchani.annotations import StressKind, Device, DType
 from torchani.neighbors import Neighbors
 from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
+from torchani._numerical import numerical_virial
 
 __all__ = ["Calculator", "to_ase", "from_ase"]
 
@@ -169,7 +170,7 @@ class Calculator(AseCalculator):
         if "stress" in properties:
             volume = torch.linalg.det(cell).abs()
             if self._stress_kind == "numerical":
-                virial = self._numerical_virial(species, crds, cell, pbc)
+                virial = numerical_virial(self.model, species, crds, cell, pbc)
             elif self._stress_kind == "scaling":
                 virial = grads[1]
             elif self._stress_kind == "fdotr":
@@ -197,41 +198,6 @@ class Calculator(AseCalculator):
                 value = value.squeeze(0)
             self.results[key] = value.detach().cpu().numpy()
 
-    # Calculate virial numerically based on the finite-difference method.
-    # NOTE: Mostly copied from ASE calculators.fd code, but their codebase changes a
-    # lot, so reproduced herefor consistency across ASE versions
-    # Also this version is pure torch
-    def _numerical_virial(
-        self,
-        species: Tensor,
-        crds: Tensor,
-        cell: Tensor | None,
-        pbc: Tensor | None,
-        # A bit of a larger value for numerical stability
-        eps: float = 1e-3,
-    ) -> Tensor:
-        if cell is None or pbc is None:
-            raise ValueError("Cell is required for calculating numerical virial")
-        virial = torch.zeros((3, 3), dtype=self._dtype, device=self._device)
-        for i in range(3):
-            # Diagonal terms
-            x = torch.eye(3, dtype=self._dtype, device=self._device)
-            x[i, i] = 1.0 + eps
-            eplus = self.model((species, crds @ x), cell @ x, pbc).energies
-            x[i, i] = 1.0 - eps
-            eminus = self.model((species, crds @ x), cell @ x, pbc).energies
-            virial[i, i] = (eplus - eminus) / (2 * eps)
-
-            # Off diagonal terms
-            x = torch.eye(3, dtype=self._dtype, device=self._device)  # Reset
-            j = i - 2  # relies on python negative index wrapping
-            x[i, j] = x[j, i] = +0.5 * eps
-            eplus = self.model((species, crds @ x), cell @ x, pbc).energies
-            x[i, j] = x[j, i] = -0.5 * eps
-            eminus = self.model((species, crds @ x), cell @ x, pbc).energies
-            virial[i, j] = virial[j, i] = (eplus - eminus) / (2 * eps)
-        return virial
-
     def _dummy_autograd_inputs(self, num: int) -> list[Tensor]:
         return [
             torch.empty(0, dtype=self._dtype, device=self._device, requires_grad=True)
@@ -242,12 +208,16 @@ class Calculator(AseCalculator):
 def from_ase(
     atoms: ase.Atoms, device: Device = None, dtype: DType = None
 ) -> tuple[Tensor, Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None, None]:
-    species = torch.tensor(
-        atoms.get_atomic_numbers(), dtype=torch.long, device=device
-    ).unsqueeze(0)
-    crds = torch.tensor(atoms.get_positions(), device=device, dtype=dtype).unsqueeze(0)
-    cell = torch.tensor(atoms.get_cell(complete=True).array, dtype=dtype, device=device)
-    pbc = torch.tensor(atoms.get_pbc(), dtype=torch.bool, device=device)
+    species = torch.from_numpy(atoms.get_atomic_numbers()).unsqueeze(0)
+    crds = torch.from_numpy(atoms.get_positions()).unsqueeze(0)
+    cell = torch.from_numpy(atoms.get_cell(complete=True).array)
+    pbc = torch.from_numpy(atoms.get_pbc())
+
+    # These are no-ops if device/dtype are None
+    species = species.to(device=device)
+    crds = crds.to(dtype=dtype, device=device)
+    cell = cell.to(dtype=dtype, device=device)
+    pbc = pbc.to(device=device)
     if not pbc.any():
         return species, crds, None, None
     return species, crds, cell, pbc

@@ -20,7 +20,6 @@ from torchani.annotations import Device, DType
 from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.tuples import SpeciesEnergies
 
-
 __all__ = [
     "download_and_extract",
     "strip_redundant_padding",
