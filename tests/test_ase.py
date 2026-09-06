@@ -22,7 +22,8 @@ from torchani._testing import ANITestCase, expand
 from torchani.arch import ANI
 from torchani.models import ANI1x, ANI2dr
 from torchani.potentials import DummyPotential
-from torchani.ase import to_ase
+from torchani.ase import to_ase, from_ase
+from torchani._numerical import numerical_stress, numerical_forces
 
 
 def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
@@ -32,31 +33,6 @@ def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
     elif param.args[2] == "all_pairs":
         nl = "allpairs"
     return f"{fn.__name__}_fdotr_{param.args[0]}_repdisp_{param.args[1]}_{nl}"
-
-
-def numeric_forces(
-    atoms: Atoms,
-    num_atoms: int,
-    eps: float = 1e-6,
-) -> NDArray[np.float64]:
-    r"""
-    Calculate numerical forces on atoms along a specific direction, based
-    on the source code of ase, since this fn is now pvt in their source.
-    """
-    force = np.zeros((num_atoms, 3), dtype=np.float64)
-    p0 = atoms.get_positions()
-    for i in range(num_atoms):
-        for j in range(3):
-            p = p0.copy()
-            p[i, j] = p0[i, j] + eps
-            atoms.set_positions(p, apply_constraint=False)
-            eplus = atoms.get_potential_energy()
-            p[i, j] = p0[i, j] - eps
-            atoms.set_positions(p, apply_constraint=False)
-            eminus = atoms.get_potential_energy()
-            force[i, j] = (eminus - eplus) / (2 * eps)
-    atoms.set_positions(p0, apply_constraint=False)
-    return force
 
 
 @expand(jit=False)
@@ -114,7 +90,12 @@ class TestASE(ANITestCase):
         calculator = model.ase()
         atoms.calc = calculator
         dyn = Langevin(
-            atoms, timestep=0.5 * units.fs, temperature_K=3820, friction=0.002, rng=prng
+            atoms,
+            timestep=0.5 * units.fs,
+            temperature_K=3820,
+            friction=0.002,
+            rng=prng,
+            fixcm=False,
         )
         dyn.run(steps)
         f = atoms.get_forces()
@@ -125,9 +106,16 @@ class TestASE(ANITestCase):
             num_atoms = 10
         else:
             num_atoms = len(atoms)
-
-        fn = numeric_forces(atoms, num_atoms, 0.001)
-        self.assertEqual(f[:num_atoms, :], fn, rtol=0.1, atol=0.1)
+        species, coords, cell, pbc = from_ase(atoms, self._device)
+        f_numeric = (
+            numerical_forces(model, species, coords, cell, pbc, first_n_atoms=num_atoms)
+            .detach()
+            .cpu()
+            .numpy()
+            .squeeze(0)
+            * units.Hartree
+        )
+        self.assertEqual(f[:num_atoms, :], f_numeric, rtol=0.1, atol=0.1)
 
     @parameterized.expand(
         product((True, False), (True, False), ("all_pairs", "cell_list")),
@@ -177,9 +165,15 @@ class TestASE(ANITestCase):
         )
 
         def test_stress():
-            stress = benzene.get_stress()
-            numerical_stress = calculator.calculate_numerical_stress(benzene)
-            self.assertEqual(stress, numerical_stress)
+            stress = benzene.get_stress(voigt=False)
+            species, coords, cell, pbc = from_ase(benzene, self._device)
+            _numerical_stress = (
+                numerical_stress(model, species, coords, cell, pbc, eps=1e-6)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            self.assertEqual(stress, _numerical_stress * units.Hartree)
 
         dyn.attach(test_stress, interval=2)
         dyn.run(10)
