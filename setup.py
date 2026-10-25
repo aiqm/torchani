@@ -141,7 +141,7 @@ TORCHANI_FLAGS = {"ext", "ext-all-sms", "ext-debug", "ext-no-opt"}
 # Ampere: 80, 86 (3d gen TensorCore)
 # Ada Lovelace, Hopper: 89 (4th gen TensorCore)
 # Blackwell: 100 (5th gen TensorCore)
-SUPPORTED_SMS = {"60", "61", "70", "75", "80", "86", "89", "100"}
+SUPPORTED_SMS = {"60", "61", "70", "75", "80", "86", "89", "100", "120"}
 for sm in SUPPORTED_SMS:
     TORCHANI_FLAGS.add(f"ext-sm{sm}")
 
