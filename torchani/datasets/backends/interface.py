@@ -32,8 +32,8 @@ class UnsetMetadataError(Exception):
 # Keeps track of variables that must be updated each time the datasets get
 # modified or the first time they are read from disk
 class Cache:
-    group_sizes: tp.OrderedDict[str, int]
-    properties: tp.Set[str]
+    group_sizes: OrderedDict[str, int]
+    properties: set[str]
 
     def __init__(self) -> None:
         self.group_sizes = OrderedDict()
@@ -60,7 +60,7 @@ class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
     def __init__(
         self,
         *args,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
         **kwargs,
     ) -> None:
         self._dummy_properties = (
@@ -99,7 +99,7 @@ class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
     # creates a dummy property on the fly
     def _make_dummy_property(
         self,
-        extra_dims: tp.Tuple[int, ...] = tuple(),
+        extra_dims: tuple[int, ...] = tuple(),
         is_atomic: bool = False,
         fill_value: float = 0.0,
         dtype=np.int64,
@@ -110,7 +110,7 @@ class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
             species = self._getitem_impl("numbers")
         if species.ndim != 2:
             raise RuntimeError("Dummy properties are not supported for legacy grouping")
-        shape: tp.Tuple[int, ...] = (species.shape[0],)
+        shape: tuple[int, ...] = (species.shape[0],)
         if is_atomic:
             shape += (species.shape[1],)
         return np.full(shape + extra_dims, fill_value, dtype)
@@ -173,7 +173,7 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
 # of a directory with some files
 class Location:
     def __init__(self, root: StrPath, suffix: str = ""):
-        self._root: tp.Optional[Path] = None
+        self._root: Path | None = None
         self._suffix = suffix
         self.root = Path(root).resolve()
 
@@ -212,10 +212,10 @@ Data = tp.Any
 
 @dataclass
 class Metadata:
-    units: tp.Dict[str, str]
-    dtypes: tp.Dict[str, str]
-    dims: tp.Dict[str, tp.Tuple[int, ...]]
-    grouping: tp.Union[Grouping, tp.Literal["legacy"]]
+    units: dict[str, str]
+    dtypes: dict[str, str]
+    dims: dict[str, tuple[int, ...]]
+    grouping: Grouping | tp.Literal["legacy"]
     info: str = ""
 
 
@@ -264,8 +264,8 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         if not self.BACKEND_AVAILABLE:
             raise ValueError(f"{self.backend} could not be found")
@@ -274,11 +274,11 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
             dict() if dummy_properties is None else dummy_properties
         )
 
-        self._meta: tp.Optional[Metadata] = None
-        self._meta_mode: tp.Optional[str] = None
+        self._meta: Metadata | None = None
+        self._meta_mode: str | None = None
 
-        self._data: tp.Optional[Data] = None
-        self._data_mode: tp.Optional[str] = None
+        self._data: Data | None = None
+        self._data_mode: str | None = None
 
         self.location = self._build_location(root, self.suffix)
 
@@ -301,7 +301,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     @abstractmethod
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         pass
 
     @abstractmethod
@@ -329,14 +329,14 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         self.location.root = root
 
     @property
-    def dummy_properties(self) -> tp.Dict[str, tp.Any]:
+    def dummy_properties(self) -> dict[str, tp.Any]:
         return self._dummy_properties.copy()
 
     @classmethod
     def make_tmp(
         cls,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ) -> tpx.Self:
         if grouping is None:
             grouping = "by_num_atoms"
@@ -358,8 +358,8 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     def make_new(
         cls,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ) -> tpx.Self:
         if grouping is None:
             grouping = "by_num_atoms"
@@ -397,7 +397,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         return meta
 
     # Getter for "data" guarantees that "data, data_mode" are set up
-    def get_data(self) -> tp.Tuple[Data, str]:
+    def get_data(self) -> tuple[Data, str]:
         if self._data is None:
             raise UnsetDataError("Data not set")
         if self._data_mode is None:
@@ -409,7 +409,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         self._meta_mode = mode
 
     # Getter for "meta" guarantees that "meta, meta_mode" are set up
-    def get_meta(self) -> tp.Tuple[Metadata, str]:
+    def get_meta(self) -> tuple[Metadata, str]:
         if self._meta is None:
             raise UnsetMetadataError("Metadata not set")
         if self._meta_mode is None:
@@ -497,7 +497,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         self._meta = None
 
     @property
-    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+    def grouping(self) -> Grouping | tp.Literal["legacy"]:
         return self.meta.grouping
 
 
@@ -507,7 +507,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
 class _HierarchicalStore(Store):
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         cache = Cache()
         for k, g in self.data.items():
             self._update_properties_cache(cache, g, check_properties)

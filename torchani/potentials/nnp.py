@@ -1,5 +1,3 @@
-import typing as tp
-
 from torch import Tensor
 
 from torchani.tuples import EnergiesScalars
@@ -25,7 +23,7 @@ class NNPotential(Potential):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
@@ -40,7 +38,7 @@ class MergedChargesNNPotential(NNPotential):
         self,
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -55,7 +53,7 @@ class MergedChargesNNPotential(NNPotential):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         # AtomicContainer is assumed to output a tensor with a final dimension "2"
@@ -78,7 +76,7 @@ class SeparateChargesNNPotential(NNPotential):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         charge_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -94,7 +92,7 @@ class SeparateChargesNNPotential(NNPotential):
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)

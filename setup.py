@@ -41,10 +41,10 @@ def maybe_download_cub(torch_include_dirs: tp.Iterable[str]) -> str:
 
 
 def cuaev_extension_kwargs(
-    sms: tp.Set[str],
+    sms: set[str],
     debug: bool,
     opt: bool,
-) -> tp.Dict[str, tp.Any]:
+) -> dict[str, tp.Any]:
     print("-" * 75)
     print(f"Will build cuAEV with support for SMs: {', '.join(sms)}")
 
@@ -67,7 +67,10 @@ def cuaev_extension_kwargs(
     for arg in nvcc_args:
         print(f"    {arg}")
 
-    cxx_args = ["-std=c++17"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20"]
+    else:
+        cxx_args = ["-std=c++17"]
     print("C++ compiler args:")
     for arg in cxx_args:
         print(f"    {arg}")
@@ -79,13 +82,16 @@ def cuaev_extension_kwargs(
     )
 
 
-def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
+def mnp_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("-" * 75)
     print("Will build MNP")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++17", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
@@ -97,13 +103,16 @@ def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     )
 
 
-def clist_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
+def clist_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("-" * 75)
     print("Will build Cell List")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++17", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
@@ -153,7 +162,7 @@ def strip_argv():
             sys.argv.remove(arg)
 
 
-def setup_kwargs() -> tp.Dict[str, tp.Any]:
+def setup_kwargs() -> dict[str, tp.Any]:
     # setuptools executes this file:
     # - 3 times in case of build-isolation mode
     #   (egg_info, dist_info, (editable|bdist)_wheel)
@@ -185,7 +194,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
         strip_argv()
         return dict()
 
-    def collect_all_sms() -> tp.Set[str]:
+    def collect_all_sms() -> set[str]:
         print("-" * 75)
         print("Will add all SMs torch supports")
         sms = {"60", "61", "70"}
@@ -201,11 +210,11 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
             sms.add("100")
         return sms
 
-    def collect_compatible_sms() -> tp.Set[str]:
+    def collect_compatible_sms() -> set[str]:
         print("-" * 75)
         print("Will try to find compatible CUDA devices visible to torch")
         devices = torch.cuda.device_count()
-        sms: tp.Set[str] = set()
+        sms: set[str] = set()
         for i in range(devices):
             sm_tuple = torch.cuda.get_device_capability(i)
             if sm_tuple >= (5, 0):
@@ -219,7 +228,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
         return collect_all_sms()
 
     # Flags for requesting specific SMs
-    sms: tp.Set[str] = set()
+    sms: set[str] = set()
     TORCHANI_BUILD_SMS = os.getenv("TORCHANI_SMS", "").split(",")
     for sm in SUPPORTED_SMS:
         if f"ext-sm{sm}" in sys.argv or sm in TORCHANI_BUILD_SMS:
@@ -267,8 +276,8 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
     clist_kwargs = clist_extension_kwargs(debug=debug)
 
     # CUB needed to build the cuAEV, download it if not found bundled with Torch
-    include_paths_kwargs: tp.Dict[str, tp.Any]
-    if float(".".join(torch.__version__.split(".")[:2])) >= 2.7:
+    include_paths_kwargs: dict[str, tp.Any]
+    if tuple(map(int, torch.__version__.split(".")[:2])) >= (2, 7):
         include_paths_kwargs = {"device_type": "cuda"}
     else:
         include_paths_kwargs = {"cuda": True}

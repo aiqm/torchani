@@ -7,7 +7,7 @@ from torch import Tensor
 
 class EnergiesScalars(tp.NamedTuple):
     energies: Tensor
-    scalars: tp.Optional[Tensor] = None
+    scalars: Tensor | None = None
 
 
 class EnergiesForces(tp.NamedTuple):

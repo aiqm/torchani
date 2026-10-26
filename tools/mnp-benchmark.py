@@ -24,7 +24,7 @@ if not MNP_IS_INSTALLED:
 
 
 def _build_ani2x(
-    idx: tp.Optional[int] = None,
+    idx: int | None = None,
     mnp: bool = False,
     infer: bool = False,
     jit: bool = False,
@@ -45,10 +45,7 @@ def _build_ani2x(
 
 
 def benchmark(
-    table: Table,
-    jit: bool = False,
-    device: Device = None,
-    idx: tp.Optional[int] = None,
+    table: Table, jit: bool = False, device: Device = None, idx: int | None = None
 ) -> None:
     """
     Sample benchmark result on 2080 Ti

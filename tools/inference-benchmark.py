@@ -8,7 +8,6 @@ from pathlib import Path
 from rich.console import Console
 from tqdm import tqdm
 
-
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -25,11 +24,11 @@ class Opt(Enum):
 @app.command()
 def cmd(
     file: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Argument(help=".xyz file to use for the benchmark", show_default=False),
     ] = None,
     optims: tpx.Annotated[
-        tp.Optional[tp.List[Opt]],
+        list[Opt] | None,
         Option(
             "-o",
             "--optim",
@@ -129,7 +128,7 @@ def cmd(
     model = ANI1x(
         model_index=0, device=device, strategy=strategy, neighborlist=neighborlist
     )
-    models: tp.Dict[Opt, ANI] = {}
+    models: dict[Opt, ANI] = {}
     for opt in optims:
         if opt is Opt.NONE:
             models[opt] = model

@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from rich.console import Console
 from tqdm import tqdm
 
-
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,7 +31,7 @@ def run(
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
     optims: tpx.Annotated[
-        tp.Optional[tp.List[Opt]],
+        list[Opt] | None,
         Option(
             "-o",
             "--optim",
@@ -85,7 +84,7 @@ def run(
 
     # Set up required models for benchmark
     symbols = SYMBOLS_2X
-    models: tp.Dict[str, tp.Any] = {}
+    models: dict[str, tp.Any] = {}
     if Opt.PY in optims:
         models["pyaev"] = AEVComputer.like_2x(
             strategy="pyaev", num_species=len(symbols)

@@ -7,21 +7,27 @@ consult the user guide.
     https://wiki.fysik.dtu.dk/ase
 """
 
-import typing as tp
 import warnings
 
 import torch
 from torch import Tensor
-import ase.units
-from ase.calculators.calculator import Calculator as AseCalculator, all_changes
+import ase
+from ase.calculators.calculator import (
+    Calculator as AseCalculator,
+    all_changes as _ALL_CHANGES,
+)
 
-from torchani.annotations import StressKind
+from torchani.annotations import StressKind, Device, DType
 from torchani.neighbors import Neighbors
+from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
+from torchani._numerical import numerical_virial
+
+__all__ = ["Calculator", "to_ase", "from_ase"]
 
 
 class Calculator(AseCalculator):
-    """TorchANI calculator for ASE
+    r"""TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
     ``ANI.ase`` method.
@@ -30,136 +36,212 @@ class Calculator(AseCalculator):
 
         import torchani
         model = torchani.models.ANI1x()
-        calc = model.ase()  # Convert model into its ASE Calculator form
+        calc = model.ase()  # Convert model into its "ASE Calculator" form
 
     Arguments:
         model (`torchani.arch.ANI`): neural network potential model
             that convert coordinates into energies.
-        overwrite (bool): After wrapping atoms into central box, whether
-            to replace the original positions stored in `ase.Atoms`
-            object with the wrapped positions.
-        stress_kind (str): Strategy to calculate stress, valid options are *fdotr*,
-            *scaling*, and *numerical*. The fdotr approach does not need the cell's box
-            information and can be used for multiple domians when running parallel on
-            multi-GPUs.
+        overwrite (bool):
+            **Deprecated since version 2.9.0**. After wrapping atoms into central box,
+            replace the original positions in the `ase.Atoms` object with the wrapped
+            positions.
+        stress_kind ("fdotr"|"scaling"|"numerical"): Strategy used to calculate
+            stress. The "fdotr" approach only requires the cell volume, so it can
+            be used with domain-decomposition approaches when running in parallel
+            on multiple GPUs. The "scaling" approach uses the analytic gradient
+            with respect to the strain :math:`\epsilon`, evaluated at
+            :math:`\epsilon = 0`, after applying the deformation
+            :math:`h' = h(I + \epsilon)` to the cell and
+            :math:`\mathbf{r}_i^T = \mathbf{r}_i^T(I + \epsilon)` to the atomic
+            coordinates.
     """
 
+    # NOTE: 'free energy' means smth slightly different for ASE
+    # it is what get_potential_energy(force_consistent=True) returns
     implemented_properties = ["energy", "free_energy", "forces", "stress"]
 
     def __init__(
-        self,
-        model,
-        overwrite: bool = False,
-        stress_kind: StressKind = "scaling",
+        self, model, overwrite: bool = False, stress_kind: StressKind = "scaling"
     ):
         super().__init__()
-        self.model = model
-        param = next(self.model.parameters())
-        self.device = param.device
-        self.dtype = param.dtype
-        if not model.periodic_table_index:
+        if hasattr(model, "periodic_table_index") and not model.periodic_table_index:
             raise ValueError("ASE models must have periodic_table_index=True")
-
-        self.overwrite = overwrite
-        self.stress_kind = stress_kind
-
-    def calculate(self, atoms=None, properties=["energy"], system_changes=all_changes):
-        super().calculate(atoms, properties, system_changes)
-        self.results = {}  # clear results, added by WardLT
-        assert self.atoms is not None  # mypy
-        needs_stress = "stress" in properties
-        needs_forces = "forces" in properties
-        species = torch.tensor(
-            self.atoms.get_atomic_numbers(),
-            dtype=torch.long,
-            device=self.device,
-        ).unsqueeze(0)
-        coords = torch.tensor(
-            self.atoms.get_positions(),
-            device=self.device,
-            dtype=self.dtype,
-            requires_grad=needs_forces,
-        )
-        cell: tp.Optional[Tensor] = torch.tensor(
-            self.atoms.get_cell(complete=True).array,
-            dtype=self.dtype,
-            device=self.device,
-        )
-        pbc: tp.Optional[Tensor] = torch.tensor(
-            self.atoms.get_pbc(), dtype=torch.bool, device=self.device
-        )
-        assert pbc is not None
-        assert cell is not None
-
-        if pbc.any() and self.overwrite:
-            warnings.warn("'overwrite' set, info about crossing PBC *will be lost*")
-            coords = map_to_central(coords, cell, pbc)
-            self.atoms.set_positions(coords.detach().cpu().reshape(-1, 3).numpy())
-
-        if not pbc.any():
-            cell = None
-            pbc = None
-
-        if needs_stress and self.stress_kind == "scaling":
-            scaling = torch.eye(
-                3, requires_grad=True, dtype=self.dtype, device=self.device
-            )
-            coords = coords @ scaling
-        coords = coords.unsqueeze(0)
-
-        if needs_stress:
-            elem_idxs = self.model.species_converter(species)
-            if self.stress_kind == "scaling":
-                cell = cell @ scaling
-            neighbors = self.model.neighborlist(
-                self.model.cutoff, species, coords, cell, pbc
-            )
-            if self.stress_kind == "fdotr":
-                neighbors.diff_vectors.requires_grad_(True)
-                neighbors = Neighbors(
-                    neighbors.indices,
-                    neighbors.diff_vectors.norm(2, -1),
-                    neighbors.diff_vectors,
-                )
-            result = self.model.compute_from_neighbors(elem_idxs, coords, neighbors)
-            energy = result.energies
+        if stress_kind not in ["fdotr", "scaling", "numerical"]:
+            raise ValueError(f"Unsupported stress kind {stress_kind}")
+        param = next(model.parameters(), None)
+        if param is None:
+            self._device = torch.device("cpu")
+            self._dtype = torch.get_default_dtype()
         else:
-            energy = self.model((species, coords), cell, pbc).energies
-        energy = energy * ase.units.Hartree
-        self.results["energy"] = energy.item()
+            self._device = param.device
+            self._dtype = param.dtype
 
-        # Unclear what free_energy means in ASE, it is returned from
-        # get_potential_energy(force_consistent=True), and required for
-        # calculate_numerical_stress
-        self.results["free_energy"] = energy.item()
-        if needs_forces:
-            self.results["forces"] = self._forces(coords, energy, retain=needs_stress)
-        if needs_stress:
-            volume = self.atoms.get_volume()
-            if self.stress_kind == "fdotr":
-                # Neighbors must be not-none if stress is needed
-                self.results["stress"] = self._stress_fdotr(
-                    neighbors.diff_vectors, energy, volume
-                )
-            elif self.stress_kind == "numerical":
-                self.results["stress"] = self.calculate_numerical_stress(self.atoms)
-            elif self.stress_kind == "scaling":
-                self.results["stress"] = self._stress_scaling(energy, scaling, volume)
-            else:
-                raise ValueError(f"Unsupported stress kind {self.stress_kind}")
+        self.model = model
+        if overwrite:
+            warnings.warn(
+                "'overwrite' is deprecated. It will be removed in TorchANI 2.10",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            warnings.warn(
+                "'overwrite' set. When using PBC, info on crossing PBC *will be lost*",
+                stacklevel=2,
+            )
+        self._overwrite = overwrite
+        self._stress_kind = stress_kind
 
-    @staticmethod
-    def _forces(coords, energy, retain):
-        forces = -torch.autograd.grad(energy.squeeze(), coords, retain_graph=retain)[0]
-        return forces.squeeze(0).detach().cpu().numpy()
+    # NOTE: The ASE default is _ALL_CHANGES ==
+    # ["positions", "numbers", "cell", "pbc", "initial_charges", "initial_magmoms"]
+    # NOTE: It is a bad idea to use mutables (e.g. lists) as defaults, but this is what
+    # ASE does Since the functions don't mutate the arguments, it is harmless, (but
+    # error-prone and a potential source of bugs, so be careful)
+    def calculate(
+        self,
+        atoms: ase.Atoms | None = None,
+        properties: list[str] = ["energy"],
+        system_changes: list[str] = _ALL_CHANGES,
+    ) -> None:
+        # NOTE: If atoms is passed, then the
+        # superclass overwrites self.atoms with it
+        super().calculate(atoms, properties, system_changes)
+        if self.atoms is None:
+            raise ValueError("Can't calculate if not attached to Atoms")
 
-    @staticmethod
-    def _stress_fdotr(diff_vectors, energy, volume):
-        dEdR = torch.autograd.grad(energy.squeeze(), diff_vectors)[0]
-        virial = dEdR.transpose(0, 1) @ diff_vectors
-        return (virial / volume).detach().cpu().numpy()
+        species, crds, cell, pbc = from_ase(self.atoms, self._device, self._dtype)
+        if "forces" in properties:
+            crds.requires_grad_(True)
 
-    @staticmethod
-    def _stress_scaling(energy, scaling, volume):
-        stress = torch.autograd.grad(energy.squeeze(), scaling)[0] / volume
-        return stress.detach().cpu().numpy()
+        strain = crds.new_zeros((3, 3))
+        if "stress" in properties and self._stress_kind == "scaling":
+            strain.requires_grad_(True)
+
+        if self._overwrite and (cell is not None) and (pbc is not None):
+            crds = map_to_central(crds, cell, pbc)
+            self.atoms.set_positions(crds.squeeze(0).detach().cpu().numpy())
+
+        # Forwards pass. In the rare case where numerical stress is
+        # required *and nothing else*, this is wasted, but this is a very
+        # uncommon scenario, not worth optimizing for
+        if "stress" in properties:
+            if cell is None or pbc is None:
+                raise ValueError("Can't require stress if not using PBC")
+
+            if self._stress_kind == "scaling":
+                eye = torch.eye(3, dtype=self._dtype, device=self._device)
+                defo_grad = eye + strain
+                crds = crds @ defo_grad
+                cell = cell @ defo_grad
+
+            _cutoff = self.model.cutoff
+            neighbors = self.model.neighborlist(_cutoff, species, crds, cell, pbc)
+
+            if self._stress_kind == "fdotr":
+                diff_vec = neighbors.diff_vectors
+                diff_vec.requires_grad_(True)
+                neighbors = Neighbors(neighbors.indices, diff_vec.norm(2, -1), diff_vec)
+
+            _idxs = self.model.species_converter(species)
+            out = self.model.compute_from_neighbors(_idxs, crds, neighbors)
+        else:
+            out = self.model((species, crds), cell, pbc)
+
+        # Check if properties requires a backwards pass, if so, run it
+        if self._properties_need_autograd(properties):
+            # [crds, scaling|diff_vec]
+            inputs = self._dummy_autograd_inputs(num=2)
+            if "forces" in properties:
+                inputs[0] = crds
+            if "stress" in properties:
+                if self._stress_kind == "fdotr":
+                    inputs[1] = diff_vec
+                elif self._stress_kind == "scaling":
+                    inputs[1] = strain
+            grads = torch.autograd.grad(
+                out.energies.squeeze(), inputs, allow_unused=True
+            )
+
+        # Set all calculated properties in the "results" mapping
+        if "energy" in properties:
+            self._set_result("energy", out.energies)
+        if "free_energy" in properties:
+            self._set_result("free_energy", out.energies)
+        if "forces" in properties:
+            self._set_result("forces", -grads[0])
+        if "stress" in properties:
+            volume = torch.linalg.det(cell).abs()
+            if self._stress_kind == "numerical":
+                virial = numerical_virial(self.model, species, crds, cell, pbc)
+            elif self._stress_kind == "scaling":
+                virial = grads[1]
+            elif self._stress_kind == "fdotr":
+                virial = grads[1].transpose(0, 1) @ diff_vec  # grads[1] == dE/ddiff_vec
+            # NOTE: All paths guarantee a symmetric virial, but numerical errors can
+            # lead to not *exactly* symmetric virials in the autograd paths. Symmetrize
+            # here to avoid numerical problems
+            virial = 0.5 * (virial + virial.T)
+            self._set_result("stress", virial / volume)
+
+    def _properties_need_autograd(self, properties: list[str]) -> bool:
+        return "forces" in properties or (
+            "stress" in properties and self._stress_kind != "numerical"
+        )
+
+    def _set_result(
+        self, key: str, value: Tensor, hartree_units_input: bool = True
+    ) -> None:
+        if hartree_units_input:
+            value = value * HARTREE_TO_ASE_EV
+        if value.ndim in (0, 1):
+            self.results[key] = value.item()
+        else:
+            if value.ndim == 3:
+                value = value.squeeze(0)
+            self.results[key] = value.detach().cpu().numpy()
+
+    def _dummy_autograd_inputs(self, num: int) -> list[Tensor]:
+        return [
+            torch.empty(0, dtype=self._dtype, device=self._device, requires_grad=True)
+            for _ in range(num)
+        ]
+
+
+def from_ase(
+    atoms: ase.Atoms, device: Device = None, dtype: DType = None
+) -> tuple[Tensor, Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None, None]:
+    species = torch.from_numpy(atoms.get_atomic_numbers()).unsqueeze(0)
+    crds = torch.from_numpy(atoms.get_positions()).unsqueeze(0)
+    cell = torch.from_numpy(atoms.get_cell(complete=True).array)
+    pbc = torch.from_numpy(atoms.get_pbc())
+
+    # These are no-ops if device/dtype are None
+    species = species.to(device=device)
+    crds = crds.to(dtype=dtype, device=device)
+    cell = cell.to(dtype=dtype, device=device)
+    pbc = pbc.to(device=device)
+    if not pbc.any():
+        return species, crds, None, None
+    return species, crds, cell, pbc
+
+
+def to_ase(
+    species: Tensor,
+    coordinates: Tensor,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
+    calc: AseCalculator | None = None,
+) -> ase.Atoms:
+    if species.ndim == 2:
+        if coordinates.size(0) != 1:
+            raise ValueError("Only single structure supported")
+        species = species.squeeze(0)
+    if coordinates.ndim == 3:
+        if coordinates.size(0) != 1:
+            raise ValueError("Only single structure supported")
+        coordinates = coordinates.squeeze(0)
+    return ase.Atoms(
+        numbers=species.detach().cpu().numpy(),
+        positions=coordinates.cpu().numpy(),
+        cell=cell.detach().cpu().numpy() if cell is not None else None,
+        pbc=pbc.cpu().numpy() if pbc is not None else None,
+        calculator=calc,
+    )

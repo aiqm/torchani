@@ -4,6 +4,7 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+from typing import Annotated
 import os
 from enum import Enum
 import shutil
@@ -69,19 +70,26 @@ class DeviceKind(Enum):
 @main.command("build-extensions")
 def _build_extensions(
     sms: tpx.Annotated[
-        tp.Optional[tp.List[str]],
+        list[str] | None,
         Option(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
         ),
     ] = None,
+    all_sms: Annotated[
+        bool,
+        Option("--all-sms/ ", help="Build for all PyTorch supported sms"),
+    ] = False,
 ) -> None:
     r"""Build CUDA and C++ extensions"""
     import torch
     import torchani.paths
     from torch.utils.cpp_extension import load
 
+    if all_sms:
+        sms = ["7.0", "7.5", "8.0", "8.9", "9.0", "10.0", "12.0"]
+
     if sms is not None:
-        os.environ["TORCH_CUDA_ARCH_LIST"] = ",".join(sms)
+        os.environ["TORCH_CUDA_ARCH_LIST"] = ";".join(sms)
 
     nvcc_args = ["--expt-extended-lambda"]
     nvcc_args.extend(
@@ -153,11 +161,11 @@ def _build_extensions(
 @main.command(hidden=True)
 def opt(
     paths: tpx.Annotated[
-        tp.List[Path],
+        list[Path],
         Argument(),
     ],
     output_path: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
     model_key: tpx.Annotated[
@@ -165,11 +173,11 @@ def opt(
         Option("-m", "--model"),
     ] = "ANI2x",
     device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
     dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
     forces: tpx.Annotated[
@@ -191,7 +199,7 @@ def opt(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -225,13 +233,13 @@ def opt(
 @main.command()
 def sp(
     paths: tpx.Annotated[
-        tp.List[Path],
+        list[Path],
         Argument(
             help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
         ),
     ],
     output_path: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
     model_key: tpx.Annotated[
@@ -239,11 +247,11 @@ def sp(
         Option("-m", "--model"),
     ] = "ANI2x",
     device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
     dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
     atomic_charges: tpx.Annotated[
@@ -271,7 +279,7 @@ def sp(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -329,13 +337,13 @@ def sp(
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
     names: tpx.Annotated[
-        tp.Optional[tp.List[_DatasetId]],
+        list[_DatasetId] | None,
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
     lots: tpx.Annotated[
-        tp.Optional[tp.List[_LotId]],
+        list[_LotId] | None,
         Option(
             "-l",
             "--lot",
@@ -347,7 +355,7 @@ def data_pull(
         ),
     ] = None,
     ds_dir: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option(
             "-d",
             "--datasets-dir",
@@ -446,7 +454,7 @@ def data_clean() -> None:
 def data_rm(
     name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[_LotId],
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
 ) -> None:
@@ -496,7 +504,7 @@ def data_ls(
 def data_info(
     name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[_LotId],
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
     check: tpx.Annotated[
@@ -531,7 +539,7 @@ def data_info(
 )
 def data_pack(
     src_dir: tpx.Annotated[Path, Argument()],
-    dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
+    dest: tpx.Annotated[Path | None, Option("-o")] = None,
     name: tpx.Annotated[str, Option("-n", "--name")] = "",
     lot: tpx.Annotated[str, Option("-l", "--lot")] = "",
     suffix: tpx.Annotated[
@@ -568,7 +576,7 @@ def data_pack(
     csv_path = dest_dir / f"{name}.md5s.csv"
     json_path = dest_dir / f"{name}.json"
 
-    data_dict: tp.Dict[str, tp.Any] = {
+    data_dict: dict[str, tp.Any] = {
         name: {
             "lot": {
                 lot: {

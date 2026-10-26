@@ -23,7 +23,7 @@ def exact_saes(
     fraction: float = 1.0,
     fit_intercept: bool = False,
     device: Device = None,
-) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
+) -> tuple[Tensor, Tensor | None]:
     r"""Calculate SAEs of a dataset
 
     Given a `torchani.datasets.BatchedDataset` class, this function calculates
@@ -83,7 +83,7 @@ def approx_saes(
     device: Device = None,
     max_epochs: int = 1,
     lr: float = 0.01,
-) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
+) -> tuple[Tensor, Tensor | None]:
     r"""Calculate SAEs of a dataset in an approximate manner, using SGD
 
     Given a `torchani.datasets.BatchedDataset` class, this function calculates
@@ -133,7 +133,7 @@ def approx_saes(
 # Utility for approx_saes
 class _LinearModel(torch.nn.Module):
     m: torch.nn.Parameter
-    b: tp.Optional[torch.nn.Parameter]
+    b: torch.nn.Parameter | None
 
     def __init__(self, num_species: int, fit_intercept: bool = False):
         super().__init__()

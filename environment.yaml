@@ -29,7 +29,7 @@ dependencies:
   - gcc_linux-64=12.2
   # (comment the cuda-toolkit line for macOS)
   # CUDA Toolkit must be present in host, for instance, by installing:
-  - nvidia::cuda-toolkit=12.9
+  - nvidia::cuda-toolkit=13.0
 
   ## Running torchani/tests ##
   - coverage  # code coverage
@@ -61,6 +61,6 @@ dependencies:
   # Pytorch (using pip)
   - pip:
     # (Remove the following line for macOs)
-    - --index-url https://download.pytorch.org/whl/cu129
+    - --index-url https://download.pytorch.org/whl/cu130
     - --extra-index-url https://pypi.python.org/simple
-    - torch==2.8.*
+    - torch==2.13.*

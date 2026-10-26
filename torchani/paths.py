@@ -1,6 +1,5 @@
 r"""Locations used by TorchANI to cache various resources"""
 
-import typing as tp
 import os
 from pathlib import Path
 from torchani.annotations import StrPath
@@ -8,7 +7,7 @@ from torchani.annotations import StrPath
 _RESOURCES = Path(__file__).resolve().parent / "resources"
 
 
-def set_data_dir(data_dir: tp.Optional[StrPath] = None) -> None:
+def set_data_dir(data_dir: StrPath | None = None) -> None:
     r"""Manually set the root location of resources"""
     if data_dir is None:
         os.environ["TORCHANI_DATA_DIR"] = ""

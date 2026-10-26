@@ -8,22 +8,22 @@ from torchani.datasets.backends.zarr_impl import _ZarrStore
 from torchani.datasets.backends.parquet_impl import _PandasStore, _CudfStore
 
 
-_STORE_TYPE: tp.Dict[Backend, tp.Type[Store]] = {
+_STORE_TYPE: dict[Backend, type[Store]] = {
     "hdf5": _HDF5Store,
     "zarr": _ZarrStore,
     "pandas": _PandasStore,
     "cudf": _CudfStore,
 }
 
-_SUFFIXES: tp.Dict[str, Backend] = {".h5": "hdf5", ".zarr": "zarr", ".pqdir": "pandas"}
+_SUFFIXES: dict[str, Backend] = {".h5": "hdf5", ".zarr": "zarr", ".pqdir": "pandas"}
 
 
 def create_store(
     # root can be the string "tmp" to create a temporary store
     root: StrPath,
-    backend: tp.Optional[Backend] = None,
-    grouping: tp.Optional[Grouping] = None,
-    dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+    backend: Backend | None = None,
+    grouping: Grouping | None = None,
+    dummy_properties: dict[str, tp.Any] | None = None,
 ) -> Store:
     if backend is None:
         try:

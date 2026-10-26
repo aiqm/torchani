@@ -1,7 +1,6 @@
 r"""Convenience functions for reading and writing molecules in ".xyz" format"""
 
 import shlex
-import typing as tp
 from pathlib import Path
 
 import torch
@@ -23,7 +22,7 @@ def write_xyz(
     species: Tensor,
     coordinates: Tensor,
     dest: StrPath,
-    cell: tp.Optional[Tensor] = None,
+    cell: Tensor | None = None,
     pad: bool = False,
     pad_coord_value: float = 0.0,
     pad_species_value: int = 100,
@@ -86,7 +85,7 @@ def read_xyz(
     pad_species_value: int = 100,
     dividing_char: str = ">",
     return_comments: bool = False,
-) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
+) -> tuple[Tensor, Tensor, Tensor | None, Tensor | None]:
     r"""Read an xyz file with possibly many molecules. Return them in tensor form
 
     Returns a (species, coordinates) tuple of tensors. The shapes of the tensors are (C,
@@ -101,9 +100,9 @@ def read_xyz(
     Cell is read from the first conformation.
     """
     path = Path(path).resolve()
-    cell: tp.Optional[Tensor] = None
-    properties: tp.List[tp.Dict[str, Tensor]] = []
-    comments_list: tp.List[str] = []
+    cell: Tensor | None = None
+    properties: list[dict[str, Tensor]] = []
+    comments_list: list[str] = []
     with open(path, mode="rt", encoding="utf-8") as f:
         lines = iter(f)
         conformation_num = 0

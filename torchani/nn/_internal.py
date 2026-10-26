@@ -40,9 +40,9 @@ class Sequential(torch.nn.ModuleList):
 
     def forward(
         self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        input_: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ):
         r"""Return the result of chaining together the calculation of the modules"""
         for module in self:
@@ -55,7 +55,7 @@ class _ZeroANINetworks(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -70,7 +70,7 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:

@@ -75,7 +75,7 @@ __all__ = [
 # def2-TZVPP/C which is not the exact same as CCSD(T)*/CBS but is close enough
 # for atomic energies. For H I set the E to -0.5 since that is the exact
 # nonrelativistic solution and I believe CC can't really converge for H.
-GSAES: tp.Dict[str, tp.Dict[str, float]] = {
+GSAES: dict[str, dict[str, float]] = {
     "b973c-def2mtzvp": {
         "H": -0.506930113968,
         "C": -37.81441001258,
@@ -203,14 +203,14 @@ with open(_resources_dir() / "functional_d3bj_constants.json", mode="rt") as f:
 
 
 # Populate convenience variables here
-ATOMIC_NUMBER: tp.Dict[str, int] = {}
-ATOMIC_HARDNESS: tp.Dict[str, float] = {}
-ATOMIC_ELECTRONEGATIVITY: tp.Dict[str, float] = {}
-ATOMIC_MASS: tp.Dict[str, float] = {}
-ATOMIC_SQRT_EMPIRICAL_CHARGE: tp.Dict[str, float] = {}
-ATOMIC_COVALENT_RADIUS: tp.Dict[str, float] = {}
-ATOMIC_XTB_REPULSION_ALPHA: tp.Dict[str, float] = {}
-ATOMIC_XTB_REPULSION_YEFF: tp.Dict[str, float] = {}
+ATOMIC_NUMBER: dict[str, int] = {}
+ATOMIC_HARDNESS: dict[str, float] = {}
+ATOMIC_ELECTRONEGATIVITY: dict[str, float] = {}
+ATOMIC_MASS: dict[str, float] = {}
+ATOMIC_SQRT_EMPIRICAL_CHARGE: dict[str, float] = {}
+ATOMIC_COVALENT_RADIUS: dict[str, float] = {}
+ATOMIC_XTB_REPULSION_ALPHA: dict[str, float] = {}
+ATOMIC_XTB_REPULSION_YEFF: dict[str, float] = {}
 
 
 for symbol, values in ATOMIC_CONSTANTS.items():
@@ -251,7 +251,7 @@ PERIODIC_TABLE = ("",) + tuple(
 
 def mapping_to_znumber_indexed_seq(
     symbols_map: tp.Mapping[str, float]
-) -> tp.Tuple[float, ...]:
+) -> tuple[float, ...]:
     r"""
     Sort the values of {symbol: value} mapping by atomic number and output a
     tuple with the sorted values.
@@ -277,7 +277,7 @@ def mapping_to_znumber_indexed_seq(
 
 def znumber_indexed_seq_to_mapping(
     seq: tp.Sequence[float],
-) -> tp.Dict[str, float]:
+) -> dict[str, float]:
     r"""
     Inverse of mapping_to_znumber_indexed_list. The first element of the input
     must be NaN. Example:
