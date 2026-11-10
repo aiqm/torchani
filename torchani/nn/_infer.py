@@ -109,7 +109,7 @@ class BmmEnsemble(AtomicContainer):
                 )
 
         n = len(idxs)
-        if torch.arange(n) != torch.tensor(idxs):
+        if idxs != list(range(n)):
             raise ValueError("For infer models, idxs must be [0, 1, ...]")
 
         self.active_members_idxs = idxs

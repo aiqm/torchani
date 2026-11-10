@@ -7,6 +7,7 @@ import torch
 from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x
 from torchani.grad import energies_and_forces, forces
+from torchani.nn import ANINetworks, AtomicNetwork, BmmEnsemble, Ensemble
 
 
 @expand()
@@ -35,6 +36,46 @@ class TestEnsemble(ANITestCase):
 
                 self.assertEqual(energies_mean, energies_expect)
                 self.assertEqual(forces_mean, forces_expect)
+
+
+@expand()
+class TestBmmEnsembleActiveMembers(ANITestCase):
+    def setUp(self):
+        torch.manual_seed(0)
+        symbols = ("H", "C")
+        self.members = [
+            ANINetworks({s: AtomicNetwork((8, 4, 3, 1), bias=True) for s in symbols})
+            for _ in range(4)
+        ]
+        self.bmm = self._setup(BmmEnsemble(Ensemble(self.members)))
+        self.elem_idxs = torch.tensor([[0, 1, 1, 0, 1]], device=self.device)
+        self.aevs = torch.randn(1, 5, 8, device=self.device)
+
+    def testPrefixSelectionIsAccepted(self):
+        self.bmm.set_active_members([0, 1])
+        self.assertEqual(list(self.bmm.active_members_idxs), [0, 1])
+
+    def testPrefixSelectionAveragesFirstMembers(self):
+        # eager BmmEnsemble.forward calls torch.cuda.nvtx, absent in CPU-only builds
+        if not (self.jit or torch.cuda.is_available()):
+            self.skipTest("eager BmmEnsemble.forward needs a CUDA build of torch")
+        for n in (1, 2, 3, 4):
+            self.bmm.set_active_members(list(range(n)))
+            expect = Ensemble(self.members[:n]).to(self.device)(
+                self.elem_idxs, self.aevs
+            )
+            self.assertEqual(self.bmm(self.elem_idxs, self.aevs), expect)
+
+    def testNonPrefixSelectionRaises(self):
+        with self.assertRaisesRegex(Exception, "idxs must be"):
+            self.bmm.set_active_members([1, 0])
+        with self.assertRaisesRegex(Exception, "idxs must be"):
+            self.bmm.set_active_members([1, 2])
+
+    def testOutOfRangeRaises(self):
+        with self.assertRaisesRegex(Exception, "should be 0 <= idx"):
+            self.bmm.set_active_members([0, 4])
+
 
 
 if __name__ == "__main__":
