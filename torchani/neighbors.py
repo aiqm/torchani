@@ -77,9 +77,8 @@ def narrow_down(
     result is a set of "true  neighbors"
     """
     mask = elem_idxs == -1
-    if not torch.compiler.is_compiling() and mask.any():
-        # Discard dumy atoms to prevent wasting resources in calculating
-        # dummy distances
+    if torch.compiler.is_compiling() or mask.any():
+        # Discard dummy atoms if they exist
         mask = mask.view(-1)[neighbor_idxs.view(-1)].view(2, -1)
         non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
         neighbor_idxs = neighbor_idxs.index_select(1, non_dummy_pairs)
