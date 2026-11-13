@@ -62,3 +62,6 @@ exclude = "(build/.*|tests/.*|tools/.*|docs/src/examples_autogen/.*|docs/build/.
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning"
+markers = [
+    "pt2: slow torch.compile tests, skipped unless selected with -m pt2",
+]
