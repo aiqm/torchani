@@ -195,15 +195,16 @@ class BasePairPotential(Potential):
         molecs_num, atoms_num = elem_idxs.shape
         if atomic:
             energies = neighbors.distances.new_zeros(molecs_num * atoms_num)
-            energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
-            energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
+            energies.scatter_add_(0, neighbors.indices[0], pair_energies / 2)
+            energies.scatter_add_(0, neighbors.indices[1], pair_energies / 2)
             energies = energies.view(molecs_num, atoms_num)
         else:
             energies = neighbors.distances.new_zeros(molecs_num)
             molecs_idxs = torch.div(
                 neighbors.indices[0], elem_idxs.shape[1], rounding_mode="floor"
             )
-            energies.index_add_(0, molecs_idxs, pair_energies)
+            # scatter_add_ since inductor-cpu fails with index_add_ to 1-elem tensors
+            energies.scatter_add_(0, molecs_idxs, pair_energies)
         return EnergiesScalars(energies)
 
     @staticmethod

@@ -258,9 +258,17 @@ def _all_pairs_pbc_shifts(cutoff: float, cell: Tensor, pbc: Tensor) -> Tensor:
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc, num_repeats, num_repeats.new_zeros(()))
-    r1 = torch.arange(1, num_repeats[0].item() + 1, device=cell.device)
-    r2 = torch.arange(1, num_repeats[1].item() + 1, device=cell.device)
-    r3 = torch.arange(1, num_repeats[2].item() + 1, device=cell.device)
+    repeats_a = int(num_repeats[0].item())
+    repeats_b = int(num_repeats[1].item())
+    repeats_c = int(num_repeats[2].item())
+    # Avoid inductor guessing a huge size for these during compilation
+    if not torch.jit.is_scripting() and torch.compiler.is_compiling():
+        torch._dynamo.override_optimization_hint(repeats_a, 1)
+        torch._dynamo.override_optimization_hint(repeats_b, 1)
+        torch._dynamo.override_optimization_hint(repeats_c, 1)
+    r1 = torch.arange(1, repeats_a + 1, device=cell.device)
+    r2 = torch.arange(1, repeats_b + 1, device=cell.device)
+    r3 = torch.arange(1, repeats_c + 1, device=cell.device)
     o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat(
         [
@@ -454,7 +462,7 @@ def cell_list(
     # Set up grid shape each step. Cheap and avoids state in the cls
     grid_shape = setup_grid(cell.detach(), cutoff)
     if pbc is not None:
-        if (grid_shape == 0).any():
+        if not torch.compiler.is_compiling() and (grid_shape == 0).any():
             raise RuntimeError("Cell is too small to perform pbc calculations")
     else:
         grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
@@ -766,9 +774,16 @@ def image_pairs_within(
     # - Some of the extra pairs may have out-of-bounds idxs
     # Screen the incorrect, unneeded pairs in the next step.
     # shapes are (2, cp-max) and (2, H*cp-max)
-    image_pairs_in_fullest_bucket = torch.tril_indices(
-        count_in_grid_max, count_in_grid_max, offset=-1, device=device
-    )
+    if torch.compiler.is_compiling():
+        # Slower than tril_indices, which doesn't support data-dependent sizes
+        _arange = torch.arange(count_in_grid_max, device=device)
+        image_pairs_in_fullest_bucket = (
+            (_arange.view(-1, 1) > _arange.view(1, -1)).nonzero().t()
+        )
+    else:
+        image_pairs_in_fullest_bucket = torch.tril_indices(
+            count_in_grid_max, count_in_grid_max, offset=-1, device=device
+        )
     _image_pairs_within = (
         image_pairs_in_fullest_bucket.view(2, 1, -1)
         + cumcount_in_haspairs.view(1, -1, 1)
@@ -1051,7 +1066,12 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
     zcounts = torch.cat((counts.new_zeros(1), counts))
     dev = zcounts.device
     counts_max: int = int(zcounts.max())  # Dynamo can't get past this
-    max_local_pairs = torch.tril_indices(counts_max, counts_max, -1, device=dev)
+    if torch.compiler.is_compiling():
+        # Slower than tril_indices, which doesn't support data-dependent sizes
+        _arange = torch.arange(counts_max, device=dev)
+        max_local_pairs = (_arange.view(-1, 1) > _arange.view(1, -1)).nonzero().t()
+    else:
+        max_local_pairs = torch.tril_indices(counts_max, counts_max, -1, device=dev)
     mask = torch.arange(max_local_pairs.shape[1], device=dev) < pair_sizes.view(-1, 1)
     sort_local_pairs = max_local_pairs.repeat(1, pair_sizes.shape[0])[:, mask.view(-1)]
     sort_local_pairs += torch.cumsum(zcounts, dim=0).index_select(0, pair_indices)

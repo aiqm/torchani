@@ -30,12 +30,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip3 install torch==2.8 --index-url https://download.pytorch.org/whl/cpu
+          pip3 install torch==2.13 --index-url https://download.pytorch.org/whl/cpu
           pip install -r dev_requirements.txt
           pip install -v .
 
       - name: Run tests on CPU
-        run: pytest ./tests
+        run: pytest ./tests -m "pt2 or not pt2"
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip3 install torch==2.8 --index-url https://download.pytorch.org/whl/cpu
+          pip3 install torch==2.13 --index-url https://download.pytorch.org/whl/cpu
           pip install -r dev_requirements.txt
           pip install -v .
 

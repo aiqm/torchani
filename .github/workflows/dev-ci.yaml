@@ -55,7 +55,7 @@ jobs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "pytest ."
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "pytest . -m 'pt2 or not pt2'"
   docs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
