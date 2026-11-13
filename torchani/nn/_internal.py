@@ -81,7 +81,9 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
         scalars = aev.new_zeros(flat_elem_idxs.shape)
         for i, m in enumerate(self.atomics.values()):
             selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
-            if selected_idxs.shape[0] > 0:
+            # Not branching under compile: zero-filled grads of empty index_select
+            # are optimized away, but compiled networks are slightly slower
+            if torch.compiler.is_compiling() or selected_idxs.shape[0] > 0:
                 input_ = aev.index_select(0, selected_idxs)
                 scalars.index_add_(0, selected_idxs, m(input_)[:, 1].view(-1))
         scalars = scalars.view_as(elem_idxs)

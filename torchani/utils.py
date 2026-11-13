@@ -171,6 +171,8 @@ def species_to_formula(species: NDArray[np.str_]) -> list[str]:
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
     r"""Cumulative sum just like `torch.cumsum`, but result starts from 0"""
+    if torch.compiler.is_compiling():
+        return torch.cumsum(input_, dim=0) - input_
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
@@ -188,7 +190,7 @@ def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
     tensor = tensor.view(-1)
     num_splits = math.ceil(tensor.numel() / chunk_size)
 
-    if num_splits <= 1:
+    if torch.compiler.is_compiling() or num_splits <= 1:
         return tensor.nonzero().view(-1)
 
     # Split tensor into chunks, and for each chunk find nonzero elements and
