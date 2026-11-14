@@ -39,6 +39,7 @@ add_library(
     aev.h
     cuaev.cpp
     aev.cu
+    aev_cpu.cpp
     cuaev_cub.cuh
 )
 set_property(TARGET cuaev PROPERTY PREFIX "")

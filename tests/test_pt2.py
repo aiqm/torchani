@@ -28,6 +28,7 @@ from torchani.neighbors import (
     Triples,
 )
 from torchani.aev import ANIRadial, ANIAngular, AEVComputer
+from torchani.csrc import CUAEV_IS_INSTALLED
 
 SYMBOLS = ("H", "C", "N", "O")
 
@@ -188,11 +189,47 @@ class TestCompile(ANITestCasePT2):
         molec = make_molec(6, cell_size=6.0, pbc=True, seed=1234, device=self.device)
         self._assert_compiled_model_matches(model.to(self.device), molec)
 
+    def _skip_if_no_cuaev(self) -> None:
+        if not CUAEV_IS_INSTALLED or self.device.type != "cuda":
+            self.skipTest("cuAEV is only compiled for CUDA")
+
+    def testModelCUAEVFused(self) -> None:
+        self._skip_if_no_cuaev()
+        model = simple_ani(
+            SYMBOLS, "wb97x-631gd", repulsion=False, strategy="cuaev-fused"
+        )
+        molecs = make_molecs(2, 6, seed=1234, device=self.device)
+        molecs.atomic_nums[1, -2:] = -1
+        self._assert_compiled_model_matches(model.to(self.device), molecs)
+
+    def testModelCUAEVHalfNbrlistPBC(self) -> None:
+        self._skip_if_no_cuaev()
+        model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="cuaev")
+        molec = make_molec(6, cell_size=6.0, pbc=True, seed=1234, device=self.device)
+        self._assert_compiled_model_matches(model.to(self.device), molec)
+
+    def testCUAEVFullNbrlist(self) -> None:
+        self._skip_if_no_cuaev()
+        aev_computer = AEVComputer.like_2x(strategy="cuaev").to(self.device)
+        molec = make_molec(10, seed=1234, device=self.device)
+        elem_idxs = make_elem_idxs(1, 10, seed=1234).to(self.device)
+        neighbors = AllPairs()(5.1, elem_idxs, molec.coords)
+        full_nbrlist = AEVComputer._half_to_full_nbrlist(neighbors.indices)
+        self._assert_compiled_matches(
+            aev_computer._compute_cuaev_with_full_nbrlist,
+            elem_idxs,
+            molec.coords,
+            *full_nbrlist,
+        )
+
     @unittest.skip("Data-dependent branching and module state mutation")
     def testVerletCellList(self) -> None:
         pass
 
-    @unittest.skip("C++ ops have no fake kernels, and TorchBind classes no fake class")
+    @unittest.skip(
+        "mnp and cell_list ops have no fake kernels,"
+        " and TorchBind classes no fake class"
+    )
     def testCppExtensions(self) -> None:
         pass
 

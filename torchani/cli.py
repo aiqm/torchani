@@ -117,7 +117,11 @@ def _build_extensions(
     build_dir.mkdir(exist_ok=True, parents=True)
     _ = load(
         name="cuaev",
-        sources=[f"{this_dir}/csrc/cuaev.cpp", f"{this_dir}/csrc/aev.cu"],
+        sources=[
+            f"{this_dir}/csrc/cuaev.cpp",
+            f"{this_dir}/csrc/aev.cu",
+            f"{this_dir}/csrc/aev_cpu.cpp",
+        ],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
         extra_cuda_cflags=nvcc_args,

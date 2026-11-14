@@ -21,7 +21,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Build Docker image (with NO extensions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ env.TAG }}
   build-image-ext:
@@ -29,7 +29,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Build Docker image (with extensions, for SM75)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ env.EXT_TAG }}
           build-args: BUILD_EXT=sm75

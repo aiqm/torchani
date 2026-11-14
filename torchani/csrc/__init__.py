@@ -64,5 +64,8 @@ if os.getenv("TORCHANI_NO_WARN_EXTENSIONS") != "1":
             " you may add `export TORCHANI_NO_WARN_EXTENSIONS=1` to your .bashrc"
         )
 
+if CUAEV_IS_INSTALLED:
+    import torchani.csrc._cuaev_fake  # noqa: F401
+
 
 __all__ = ["CUAEV_IS_INSTALLED", "MNP_IS_INSTALLED", "CLIST_IS_INSTALLED"]
