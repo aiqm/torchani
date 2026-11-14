@@ -1912,11 +1912,9 @@ void cuaev_forward_with_half_nbrlist(
 
   // postProcessNbrList
   if (deltaJ_t.dtype() == torch::kFloat32) {
-    launch_postProcessExternalHalfNbrList_kernel<float>(
-        species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+    launch_postProcessExternalHalfNbrList_kernel<float>(species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   } else {
-    launch_postProcessExternalHalfNbrList_kernel<double>(
-        species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+    launch_postProcessExternalHalfNbrList_kernel<double>(species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   }
 
   // Merge two cubMax streamSync into one
