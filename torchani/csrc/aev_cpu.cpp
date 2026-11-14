@@ -257,16 +257,99 @@ Tensor run_with_full_nbrlist_aten(
       species, centers, sides, deltas, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cos_cutoff);
 }
 
+// The CUDA impl of the ops also returns the tensors its backward needs, after the aev
+static std::vector<Tensor> run_aten_op(
+    const Tensor& coordinates,
+    const Tensor& species,
+    double Rcr,
+    double Rca,
+    const Tensor& EtaR,
+    const Tensor& ShfR,
+    const Tensor& EtaA,
+    const Tensor& Zeta,
+    const Tensor& ShfA,
+    const Tensor& ShfZ,
+    int64_t num_species,
+    bool use_cos_cutoff) {
+  return {run_aten(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cos_cutoff)};
+}
+
+static std::vector<Tensor> run_with_half_nbrlist_aten_op(
+    const Tensor& species,
+    const Tensor& atomIJ,
+    const Tensor& diff_vectors,
+    const Tensor& distances,
+    double Rcr,
+    double Rca,
+    const Tensor& EtaR,
+    const Tensor& ShfR,
+    const Tensor& EtaA,
+    const Tensor& Zeta,
+    const Tensor& ShfA,
+    const Tensor& ShfZ,
+    int64_t num_species,
+    bool use_cos_cutoff) {
+  return {run_with_half_nbrlist_aten(
+      species,
+      atomIJ,
+      diff_vectors,
+      distances,
+      Rcr,
+      Rca,
+      EtaR,
+      ShfR,
+      EtaA,
+      Zeta,
+      ShfA,
+      ShfZ,
+      num_species,
+      use_cos_cutoff)};
+}
+
+static std::vector<Tensor> run_with_full_nbrlist_aten_op(
+    const Tensor& coordinates,
+    const Tensor& species,
+    const Tensor& atomI,
+    const Tensor& atomJ,
+    const Tensor& numJPerI,
+    double Rcr,
+    double Rca,
+    const Tensor& EtaR,
+    const Tensor& ShfR,
+    const Tensor& EtaA,
+    const Tensor& Zeta,
+    const Tensor& ShfA,
+    const Tensor& ShfZ,
+    int64_t num_species,
+    bool use_cos_cutoff) {
+  return {run_with_full_nbrlist_aten(
+      coordinates,
+      species,
+      atomI,
+      atomJ,
+      numJPerI,
+      Rcr,
+      Rca,
+      EtaR,
+      ShfR,
+      EtaA,
+      Zeta,
+      ShfA,
+      ShfZ,
+      num_species,
+      use_cos_cutoff)};
+}
+
 // The ATen implementation is differentiable, so it is also registered to AutogradCPU,
 // where autograd tracks the ops it calls
 TORCH_LIBRARY_IMPL(cuaev, CPU, m) {
-  m.impl("run", run_aten);
-  m.impl("run_with_half_nbrlist", run_with_half_nbrlist_aten);
-  m.impl("run_with_full_nbrlist", run_with_full_nbrlist_aten);
+  m.impl("run", run_aten_op);
+  m.impl("run_with_half_nbrlist", run_with_half_nbrlist_aten_op);
+  m.impl("run_with_full_nbrlist", run_with_full_nbrlist_aten_op);
 }
 
 TORCH_LIBRARY_IMPL(cuaev, AutogradCPU, m) {
-  m.impl("run", run_aten);
-  m.impl("run_with_half_nbrlist", run_with_half_nbrlist_aten);
-  m.impl("run_with_full_nbrlist", run_with_full_nbrlist_aten);
+  m.impl("run", run_aten_op);
+  m.impl("run_with_half_nbrlist", run_with_half_nbrlist_aten_op);
+  m.impl("run_with_full_nbrlist", run_with_full_nbrlist_aten_op);
 }

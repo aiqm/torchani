@@ -3,8 +3,7 @@
 #include <torch/extension.h>
 
 // AEV implementation written with differentiable ATen ops. It works for tensors in any device.
-// It is registered as the CPU impl of the cuaev ops, and it is also used to compute higher order
-// derivatives that the CUDA kernels don't support.
+// It is registered as the CPU impl of the cuaev ops.
 
 torch::Tensor run_aten(
     const torch::Tensor& coordinates,

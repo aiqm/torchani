@@ -113,8 +113,8 @@ struct alignas(2 * sizeof(int)) AtomI {
 };
 
 struct NeighborList {
-  int nJ;
-  int maxNumJPerI;
+  int nJ = 0;
+  int maxNumJPerI = 0;
 
   Tensor atomJ_t; // only j index
   Tensor numJPerI_t;
@@ -191,32 +191,8 @@ struct Result {
       Tensor species_t,
       NeighborList radialNbr,
       NeighborList angularNbr);
-  Result(tensor_list tensors);
   Result(Tensor grad_target_t, Tensor species_t);
   Result();
-  operator tensor_list() {
-    return {
-        Tensor(), // aev_t got removed
-        atomI_t,
-        startIdxJ_t,
-        torch::tensor(nI),
-        grad_target_t,
-        species_t,
-        torch::tensor(radialNbr.nJ),
-        torch::tensor(radialNbr.maxNumJPerI),
-        radialNbr.atomJ_t,
-        radialNbr.numJPerI_t,
-        radialNbr.distJ_t,
-        radialNbr.deltaJ_t,
-        radialNbr.pairIdxJ_t,
-        torch::tensor(angularNbr.nJ),
-        torch::tensor(angularNbr.maxNumJPerI),
-        angularNbr.atomJ_t,
-        angularNbr.numJPerI_t,
-        angularNbr.distJ_t,
-        angularNbr.deltaJ_t,
-        angularNbr.pairIdxJ_t};
-  }
 };
 
 // cuda kernels
@@ -277,8 +253,6 @@ Tensor aev_backward(const Tensor& grad_e_aev, const AEVScalarParams& aev_params,
 Tensor aev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
 // Autograd functions
-// Op that produced a Result. Used to recompute the AEV with ATen ops for higher order derivatives
-enum class CuaevOp : int64_t { Fused, HalfNbrlist, FullNbrlist };
 
 class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd> {
  public:
@@ -286,16 +260,15 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
       AutogradContext* ctx,
       Tensor grad_e_aev,
       Tensor grad_target,
+      Tensor species,
       const AEVScalarParams& aev_params,
-      tensor_list result_tensors,
-      tensor_list aten_inputs,
-      CuaevOp op);
+      tensor_list saved);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
 class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
  public:
-  static Tensor forward(
+  static tensor_list forward(
       AutogradContext* ctx,
       const Tensor& coordinates_t,
       const Tensor& species_t,
@@ -305,7 +278,7 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
 
 class CuaevWithHalfNbrlistAutograd : public torch::autograd::Function<CuaevWithHalfNbrlistAutograd> {
  public:
-  static Tensor forward(
+  static tensor_list forward(
       AutogradContext* ctx,
       const Tensor& species_t,
       const Tensor& atomIJ_t,
@@ -317,7 +290,7 @@ class CuaevWithHalfNbrlistAutograd : public torch::autograd::Function<CuaevWithH
 
 class CuaevWithFullNbrlistAutograd : public torch::autograd::Function<CuaevWithFullNbrlistAutograd> {
  public:
-  static Tensor forward(
+  static tensor_list forward(
       AutogradContext* ctx,
       const Tensor& coordinates_t,
       const Tensor& species_t,

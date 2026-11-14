@@ -1797,9 +1797,12 @@ void cuaev_forward(
   // buffer to store all the pairwise distance (Rij)
   Tensor atomJ_t = torch::empty(total_natom_pairs, d_options.dtype(torch::kInt32));
   Tensor distJ_t = torch::empty(total_natom_pairs, d_options.dtype(coordinates_t.dtype()));
+  // TODO: The returned buffers are zero-initialized only so that the ops pass opcheck (only the
+  // first nI / nJ entries are written and read), which costs a memset per buffer. A different
+  // design (e.g. returning only the written entries) may be better.
   // radial and angular share the same data of atomI, startIdxJ and nI
-  result.atomI_t = torch::empty(total_atoms * 2, d_options.dtype(torch::kInt32));
-  result.startIdxJ_t = torch::empty(total_atoms, d_options.dtype(torch::kInt32));
+  result.atomI_t = torch::zeros(total_atoms * 2, d_options.dtype(torch::kInt32));
+  result.startIdxJ_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   // radial and angular numJPerI counter, radial_num_per_atom ranges from 10 - 60
   result.radialNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   result.angularNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
@@ -1812,12 +1815,12 @@ void cuaev_forward(
   }
 
   // create radial and angular neighborlist
-  result.radialNbr.atomJ_t = torch::empty(result.radialNbr.nJ, d_options.dtype(torch::kInt32));
-  result.radialNbr.distJ_t = torch::empty(result.radialNbr.nJ, d_options.dtype(coordinates_t.dtype()));
-  result.radialNbr.deltaJ_t = torch::empty(result.radialNbr.nJ * 3, d_options.dtype(coordinates_t.dtype()));
-  result.angularNbr.atomJ_t = torch::empty(result.radialNbr.nJ, d_options.dtype(torch::kInt32));
-  result.angularNbr.distJ_t = torch::empty(result.radialNbr.nJ, d_options.dtype(coordinates_t.dtype()));
-  result.angularNbr.deltaJ_t = torch::empty(result.radialNbr.nJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.radialNbr.atomJ_t = torch::zeros(result.radialNbr.nJ, d_options.dtype(torch::kInt32));
+  result.radialNbr.distJ_t = torch::zeros(result.radialNbr.nJ, d_options.dtype(coordinates_t.dtype()));
+  result.radialNbr.deltaJ_t = torch::zeros(result.radialNbr.nJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.angularNbr.atomJ_t = torch::zeros(result.radialNbr.nJ, d_options.dtype(torch::kInt32));
+  result.angularNbr.distJ_t = torch::zeros(result.radialNbr.nJ, d_options.dtype(coordinates_t.dtype()));
+  result.angularNbr.deltaJ_t = torch::zeros(result.radialNbr.nJ * 3, d_options.dtype(coordinates_t.dtype()));
   // postProcessNbrList
   if (coordinates_t.dtype() == torch::kFloat32) {
     launch_postProcessNbrList1_kernel<float>(coordinates_t, species_t, aev_params, result, atomJ_t, distJ_t);
@@ -1891,9 +1894,12 @@ void cuaev_forward_with_half_nbrlist(
   at::globalContext().lazyInitCUDA();
 #endif
 
+  // TODO: The returned buffers are zero-initialized only so that the ops pass opcheck (only the
+  // first nI / nJ entries are written and read), which costs a memset per buffer. A different
+  // design (e.g. returning only the written entries) may be better.
   // radial and angular share the same data of atomI, startIdxJ and nI
-  result.atomI_t = torch::empty(total_atoms * 2, d_options.dtype(torch::kInt32));
-  result.startIdxJ_t = torch::empty(total_atoms, d_options.dtype(torch::kInt32));
+  result.atomI_t = torch::zeros(total_atoms * 2, d_options.dtype(torch::kInt32));
+  result.startIdxJ_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   // radial and angular numJPerI counter, radial_num_per_atom ranges from 10 - 60
   result.radialNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   result.angularNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
@@ -1901,14 +1907,19 @@ void cuaev_forward_with_half_nbrlist(
   // ------------ difference starts here ------------
   // The passed atomIJ_t currently only have IJ, which will be duplicated for JI later
   int num_atomIJ = atomIJ_t.size(1) * 2;
-  result.radialNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.radialNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
-  result.radialNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
-  result.angularNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.angularNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
-  result.angularNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
-  result.radialNbr.pairIdxJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.angularNbr.pairIdxJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.radialNbr.atomJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.radialNbr.distJ_t = torch::zeros(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
+  result.radialNbr.deltaJ_t = torch::zeros(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
+  result.angularNbr.atomJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.angularNbr.distJ_t = torch::zeros(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
+  result.angularNbr.deltaJ_t = torch::zeros(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
+  result.radialNbr.pairIdxJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.angularNbr.pairIdxJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+
+  // With no pairs the aev is zero
+  if (num_atomIJ == 0) {
+    return;
+  }
 
   // postProcessNbrList
   if (deltaJ_t.dtype() == torch::kFloat32) {
@@ -1986,21 +1997,24 @@ void cuaev_forward_with_full_nbrlist(
   at::globalContext().lazyInitCUDA();
 #endif
 
+  // TODO: The returned buffers are zero-initialized only so that the ops pass opcheck (only the
+  // first nI / nJ entries are written and read), which costs a memset per buffer. A different
+  // design (e.g. returning only the written entries) may be better.
   // radial and angular share the same data of atomI, startIdxJ and nI
-  result.atomI_t = torch::empty(total_atoms * 2, d_options.dtype(torch::kInt32));
-  result.startIdxJ_t = torch::empty(total_atoms, d_options.dtype(torch::kInt32));
+  result.atomI_t = torch::zeros(total_atoms * 2, d_options.dtype(torch::kInt32));
+  result.startIdxJ_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   // radial and angular numJPerI counter, radial_num_per_atom ranges from 10 - 60
   result.radialNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
   result.angularNbr.numJPerI_t = torch::zeros(total_atoms, d_options.dtype(torch::kInt32));
 
   // ------------ difference starts here ------------
   int num_atomIJ = atomJ_t.size(0);
-  result.radialNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.radialNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
-  result.radialNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
-  result.angularNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.angularNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
-  result.angularNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.radialNbr.atomJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.radialNbr.distJ_t = torch::zeros(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
+  result.radialNbr.deltaJ_t = torch::zeros(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.angularNbr.atomJ_t = torch::zeros(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.angularNbr.distJ_t = torch::zeros(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
+  result.angularNbr.deltaJ_t = torch::zeros(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
 
   // postProcessNbrList
   if (coordinates_t.dtype() == torch::kFloat32) {
@@ -2039,6 +2053,9 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   auto grad_coord = torch::zeros(grad_target_t.sizes(), grad_target_t.options().requires_grad(false)); // [2, 5, 3]
   TORCH_CHECK(grad_output.is_contiguous(), "grad_output's data is not contiguous");
+  if (result.nI == 0) {
+    return grad_coord;
+  }
 
   // launch radial and angular backward kernels
   if (grad_target_t.dtype() == torch::kFloat32) {
@@ -2070,6 +2087,9 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       {species_t.size(0), species_t.size(1), aev_length},
       grad_target_t.options().requires_grad(false)); // [2, 5, 384]
   TORCH_CHECK(grad_force.is_contiguous(), "grad_force's data is not contiguous");
+  if (result.nI == 0) {
+    return grad_grad_aev;
+  }
 
   // launch radial and angular double_backward kernels
   if (grad_target_t.dtype() == torch::kFloat32) {

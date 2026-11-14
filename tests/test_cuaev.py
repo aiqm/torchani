@@ -6,6 +6,7 @@ import unittest
 import pickle
 
 import torch
+from torch.library import opcheck
 from parameterized import parameterized_class
 
 from torchani._testing import ANITestCase, expand
@@ -84,6 +85,20 @@ class TestCUAEVStrategy(ANITestCase):
             m.set_strategy("cuaev-fused")
             _ = m(self.znum_input)[1]
 
+    # Regression test, the half nbrlist used to fail with no pairs within the cutoff
+    @skipIfNoCUAEV
+    def testNoPairsWithinCutoff(self) -> None:
+        species = torch.tensor([[1, 2]], device=self.device)
+        coords = torch.tensor(
+            [[[0.0, 0.0, 0.0], [20.0, 0.0, 0.0]]], device=self.device
+        ).requires_grad_(True)
+        for strategy in ["cuaev-fused", "cuaev-interface"]:
+            m = self._setup(AEVComputer.like_2x(strategy=strategy))
+            aev = m(species, coords)
+            grad = torch.autograd.grad(aev.sum(), coords)[0]
+            self.assertEqual(aev, torch.zeros_like(aev))
+            self.assertEqual(grad, torch.zeros_like(grad))
+
     @skipIfNoCUAEV
     def testAEVChangeStrat(self) -> None:
         m = self._setup(AEVComputer.like_2x(strategy="cuaev-interface"))
@@ -130,7 +145,7 @@ class TestCUAEVNoGPU(TestCase):
                 ShfZ.flatten(),
                 num_species,
                 True,
-            )
+            )[0]
 
         self.assertIn("cuaev::run", str(torch.jit.script(f).graph))
 
@@ -783,16 +798,6 @@ class TestCUAEV(TestCase):
         pbc = torch.tensor([True, True, True], device=self.device)
         return species, coordinates, cell, pbc
 
-    def _hessian(self, aev_fn, coordinates):
-        coordinates = coordinates.clone().requires_grad_(True)
-        energy = self.nn(aev_fn(coordinates) ** 2).sum()
-        forces = torch.autograd.grad(energy, coordinates, create_graph=True)[0]
-        rows = []
-        for force in forces.flatten():
-            row = torch.autograd.grad(force, coordinates, retain_graph=True)[0]
-            rows.append(row.flatten())
-        return torch.stack(rows)
-
     def _virial(self, aev_computer, species, coordinates, cell, pbc):
         strain = torch.zeros(3, 3, device=self.device, dtype=self.dtype)
         strain.requires_grad_(True)
@@ -810,60 +815,6 @@ class TestCUAEV(TestCase):
         )
         aev = aev_computer.compute_from_neighbors(species, coordinates, neighbors)
         return torch.autograd.grad(self.nn(aev).sum(), diff_vectors)[0]
-
-    def testHessian(self):
-        coordinates = torch.rand([2, 8, 3], device=self.device, dtype=self.dtype) * 4
-        species = torch.tensor(
-            [[0, 1, 2, 3, 0, 1, 0, 0], [1, 1, 0, 2, 3, 0, -1, -1]], device=self.device
-        )
-        hessian = self._hessian(
-            lambda c: self.aev_computer_1x(species, c), coordinates
-        )
-        for strategy in ["cuaev-fused", "cuaev-interface"]:
-            cuaev_computer = AEVComputer.like_1x(
-                cutoff_fn=self.cutoff_fn, strategy=strategy
-            ).to(self.device, self.dtype)
-            cu_hessian = self._hessian(
-                lambda c: cuaev_computer(species, c), coordinates
-            )
-            self.assertEqual(
-                cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance
-            )
-
-    def testHessianPBC(self):
-        species, coordinates, cell, pbc = self._small_pbc_system()
-        cuaev_computer = AEVComputer.like_1x(
-            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
-        ).to(self.device, self.dtype)
-        hessian = self._hessian(
-            lambda c: self.aev_computer_1x(species, c, cell, pbc), coordinates
-        )
-        cu_hessian = self._hessian(
-            lambda c: cuaev_computer(species, c, cell, pbc), coordinates
-        )
-        self.assertEqual(cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance)
-
-    def testHessianFullNbrList(self):
-        species, coordinates, _, _ = self._small_pbc_system()
-        cuaev_computer = AEVComputer.like_1x(
-            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
-        ).to(self.device, self.dtype)
-        atom_index12 = cuaev_computer.neighborlist(
-            self.cutoff_1x, species, coordinates
-        ).indices
-        ilist_unique, jlist, numneigh = cuaev_computer._half_to_full_nbrlist(
-            atom_index12
-        )
-        hessian = self._hessian(
-            lambda c: self.aev_computer_1x(species, c), coordinates
-        )
-        cu_hessian = self._hessian(
-            lambda c: cuaev_computer._compute_cuaev_with_full_nbrlist(
-                species, c, ilist_unique, jlist, numneigh
-            ),
-            coordinates,
-        )
-        self.assertEqual(cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance)
 
     def testStressPBC(self):
         species, coordinates, cell, pbc = self._small_pbc_system()
@@ -922,6 +873,70 @@ class TestCUAEV(TestCase):
         # self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
         # self.assertEqual(cuaev_grad, aev_grad, atol=self.tolerance,
         # rtol=self.tolerance)
+
+
+@skipIfNoCUAEV
+@expand(device="cuda", jit=False)
+class TestCUAEVOpcheck(ANITestCase):
+    def setUp(self) -> None:
+        aev_computer = AEVComputer.like_1x().to(self.device)
+        self.params = (
+            aev_computer.radial.cutoff,
+            aev_computer.angular.cutoff,
+            aev_computer.radial.eta,
+            aev_computer.radial.shifts,
+            aev_computer.angular.eta,
+            aev_computer.angular.zeta,
+            aev_computer.angular.shifts,
+            aev_computer.angular.sections,
+            aev_computer.num_species,
+            True,
+        )
+        self.species = make_tensor(
+            (1, 12), device=self.device, dtype=torch.int32, low=0, high=4
+        )
+        self.coords = make_tensor(
+            (1, 12, 3), device=self.device, dtype=torch.float32, low=0, high=4
+        )
+        self.neighbors = aev_computer.neighborlist(
+            aev_computer.radial.cutoff, self.species.long(), self.coords
+        )
+
+    def testRun(self) -> None:
+        coords = self.coords.clone().requires_grad_(True)
+        opcheck(torch.ops.cuaev.run.default, (coords, self.species, *self.params))
+
+    def testRunWithHalfNbrlist(self) -> None:
+        diff_vectors = self.neighbors.diff_vectors.clone().requires_grad_(True)
+        args = (
+            self.species,
+            self.neighbors.indices.to(torch.int32),
+            diff_vectors,
+            self.neighbors.distances,
+            *self.params,
+        )
+        opcheck(torch.ops.cuaev.run_with_half_nbrlist.default, args)
+
+    def testRunWithFullNbrlist(self) -> None:
+        coords = self.coords.clone().requires_grad_(True)
+        full_nbrlist = AEVComputer._half_to_full_nbrlist(self.neighbors.indices)
+        args = (
+            coords,
+            self.species,
+            *(t.to(torch.int32) for t in full_nbrlist),
+            *self.params,
+        )
+        opcheck(torch.ops.cuaev.run_with_full_nbrlist.default, args)
+
+    def testBackwardAndDoubleBackward(self) -> None:
+        outputs = torch.ops.cuaev.run(self.coords, self.species, *self.params)
+        aev = outputs[0]
+        saved = outputs[1:]
+        grad_aev = torch.rand_like(aev)
+        grad_force = torch.rand_like(self.coords)
+        args = (self.coords, self.species, saved, *self.params)
+        opcheck(torch.ops.cuaev._backward.default, (grad_aev, *args))
+        opcheck(torch.ops.cuaev._double_backward.default, (grad_force, *args))
 
 
 if __name__ == "__main__":

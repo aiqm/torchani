@@ -352,7 +352,7 @@ class AEVComputer(torch.nn.Module):
         # If we reach this part of the code then the radial and
         # angular terms must be Standard*, so these tensors will exist
         return torch.ops.cuaev.run(
-            coordinates,
+            coordinates.contiguous(),
             species.to(torch.int32),
             self.radial.cutoff,
             self.angular.cutoff,
@@ -364,7 +364,7 @@ class AEVComputer(torch.nn.Module):
             self.angular.sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
-        )
+        )[0]
 
     @jit_unused_if_no_cuaev()
     def _cuaev_compute_from_neighbors(
@@ -377,9 +377,9 @@ class AEVComputer(torch.nn.Module):
         # both the coordinates and the cell (PBC shifts)
         return torch.ops.cuaev.run_with_half_nbrlist(
             species.to(torch.int32),
-            neighbors.indices.to(torch.int32),
-            neighbors.diff_vectors,
-            neighbors.distances,
+            neighbors.indices.to(torch.int32).contiguous(),
+            neighbors.diff_vectors.contiguous(),
+            neighbors.distances.contiguous(),
             self.radial.cutoff,
             self.angular.cutoff,
             self.radial.eta,
@@ -390,7 +390,7 @@ class AEVComputer(torch.nn.Module):
             self.angular.sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
-        )
+        )[0]
 
     # NOTE: This function is for testing purposes or for usage with the LAMMPS interface
     # Computing aev with full nbrlist that is from
@@ -415,11 +415,11 @@ class AEVComputer(torch.nn.Module):
         if coordinates.shape[0] != 1:
             raise ValueError("cuAEV with full neighborlist doesn't support batches")
         return torch.ops.cuaev.run_with_full_nbrlist(
-            coordinates,
+            coordinates.contiguous(),
             species.to(torch.int32),
-            ilist_unique.to(torch.int32),
-            jlist.to(torch.int32),
-            numneigh.to(torch.int32),
+            ilist_unique.to(torch.int32).contiguous(),
+            jlist.to(torch.int32).contiguous(),
+            numneigh.to(torch.int32).contiguous(),
             self.radial.cutoff,
             self.angular.cutoff,
             self.radial.eta,
@@ -430,10 +430,14 @@ class AEVComputer(torch.nn.Module):
             self.angular.sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
-        )
+        )[0]
 
     @jit_unused_if_no_cuaev()
     def _prepare_cuaev_execution(self, species: Tensor, branch: str) -> None:
+        if torch.compiler.is_compiling() and species.device.type == "cpu":
+            raise RuntimeError(
+                "cuAEV doesn't support torch.compile on CPU, use strategy='pyaev'"
+            )
         if self._print_aev_branch:
             print(f"Executing branch: cuAEV {branch}")
 
