@@ -76,7 +76,11 @@ def cuaev_extension_kwargs(
         print(f"    {arg}")
     return dict(
         name="torchani.cuaev",
-        sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu", "torchani/csrc/aev_cpu.cpp"],
+        sources=[
+            "torchani/csrc/cuaev.cpp",
+            "torchani/csrc/aev.cu",
+            "torchani/csrc/aev_cpu.cpp",
+        ],
         include_dirs=[os.path.abspath("torchani/csrc/")],
         extra_compile_args={"cxx": cxx_args, "nvcc": nvcc_args},
     )
@@ -128,18 +132,14 @@ def will_not_build_extensions_warning(torch_import_error: bool = False) -> None:
     print("-" * 75)
     if torch_import_error:
         print("Torch could not be imported")
-    print(
-        textwrap.dedent(
-            """
+    print(textwrap.dedent("""
             Will not install TorchANI extensions (cuAEV and MNP)
             To build the extensions with the pip frontend:
             - Make sure Torch binaries compiled with CUDA support are installed
             - Make sure a compatible CUDA Toolkit version is available
             - Add the --no-build-isolation flag to pip
             - Add --config-settings=--global-option=ext (verbatim) flag to pip
-            """
-        ).strip()
-    )
+            """).strip())
     print("-" * 75)
 
 
