@@ -1,6 +1,6 @@
 #pragma once
 
-#include <torch/extension.h>
+#include <torch/all.h>
 
 // AEV implementation written with differentiable ATen ops. It works for tensors in any device.
 // It is registered as the CPU impl of the cuaev ops.

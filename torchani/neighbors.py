@@ -1065,7 +1065,16 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
     # for all pairs of its 'local, sorted-order' side-atoms
     zcounts = torch.cat((counts.new_zeros(1), counts))
     dev = zcounts.device
-    counts_max: int = int(zcounts.max())  # Dynamo can't get past this
+    counts_max: int = int(zcounts.max())  # Non-strict torch.export can't get past this
+    # Upper bounds for data-dependent sizes. Without them, AOTInductor derives size
+    # bounds that overflow int64 (e.g. counts_max ** 2 * num_neigh) and fails to
+    # compile. The caps are never hit in practice: real systems have ~100 neighbors
+    # per atom, and 2**31 pairs would need ~34 GB just for the indices
+    num_neigh = neighbors.indices.shape[1]
+    torch._check(num_neigh <= 2**31)
+    torch._check(counts_max <= 4096)
+    torch._check(unique_central_idxs.shape[0] <= 2 * num_neigh)
+    torch._check(pair_indices.shape[0] <= 4096 * num_neigh)
     if torch.compiler.is_compiling():
         # Slower than tril_indices, which doesn't support data-dependent sizes
         _arange = torch.arange(counts_max, device=dev)
@@ -1074,13 +1083,13 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
         max_local_pairs = torch.tril_indices(counts_max, counts_max, -1, device=dev)
     mask = torch.arange(max_local_pairs.shape[1], device=dev) < pair_sizes.view(-1, 1)
     sort_local_pairs = max_local_pairs.repeat(1, pair_sizes.shape[0])[:, mask.view(-1)]
+    torch._check(sort_local_pairs.shape[1] == pair_indices.shape[0])
     sort_local_pairs += torch.cumsum(zcounts, dim=0).index_select(0, pair_indices)
 
     # Convert back from sorted-idxs to atom-idxs
     local_pairs = rev_idxs[sort_local_pairs]
 
     # compute mapping between representation of central-other to pair
-    num_neigh = neighbors.indices.shape[1]
     # tensor[bool].mul_(2).sub_(1) converts True False -> 1, -1
     # Casting to int8 seems to make this operation a tiny bit faster (not sure why)
     sign12 = (local_pairs < num_neigh).to(torch.int8) * 2 - 1

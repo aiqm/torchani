@@ -2,7 +2,7 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
 #include <cuda_runtime_api.h>
-#include <torch/extension.h>
+#include <torch/all.h>
 
 #include "aev.h"
 #include "cuaev_cub.cuh"
