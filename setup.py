@@ -76,7 +76,7 @@ def cuaev_extension_kwargs(
         print(f"    {arg}")
     return dict(
         name="torchani.cuaev",
-        sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu"],
+        sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu", "torchani/csrc/aev_cpu.cpp"],
         include_dirs=[os.path.abspath("torchani/csrc/")],
         extra_compile_args={"cxx": cxx_args, "nvcc": nvcc_args},
     )

@@ -86,6 +86,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
         param.requires_grad_(True)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    params = list(model.parameters())
 
     # enable timers
 
@@ -163,7 +164,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
             # Run backward
             sync_cuda(synchronize)
             loss_start = time.time()
-            loss.backward()
+            loss.backward(inputs=params)
             sync_cuda(synchronize)
             loss_time += time.time() - loss_start
 

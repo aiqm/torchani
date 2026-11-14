@@ -471,6 +471,28 @@ __global__ void cuAngularAEVs(
   }
 }
 
+// Cotangent of the vector delta = pos_j - pos_i of a neighbor entry, for double backward.
+// It is built from per-atom cotangents, or for the half nbrlist from per-pair cotangents,
+// where pairIdxJ holds idxs into the duplicated pairs: idxs < num_pairs have delta = -deltaJ
+template <typename DataT>
+__device__ __forceinline__ typename MyVec3<DataT>::type entry_cotangent(
+    const typename MyVec3<DataT>::type* grad,
+    const int* pairIdxJ,
+    int num_pairs,
+    int entry,
+    int flat_i,
+    int flat_j) {
+  if (pairIdxJ != nullptr) {
+    int pair_idx = pairIdxJ[entry];
+    typename MyVec3<DataT>::type g = grad[pair_idx % num_pairs];
+    DataT sign = pair_idx < num_pairs ? -1 : 1;
+    return MyVec3<DataT>::make_vec3(sign * g.x, sign * g.y, sign * g.z);
+  }
+  typename MyVec3<DataT>::type g_i = grad[flat_i];
+  typename MyVec3<DataT>::type g_j = grad[flat_j];
+  return MyVec3<DataT>::make_vec3(g_j.x - g_i.x, g_j.y - g_i.y, g_j.z - g_i.z);
+}
+
 template <
     bool is_double_backward,
     int BLOCK_X,
@@ -497,6 +519,8 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
     const AtomI* __restrict__ atom_i,
     int* numJPerI,
     int* startIdxJ,
+    const int* __restrict__ pairIdxJ,
+    int num_pairs,
     DataT Rca,
     int angular_length,
     int angular_sublength,
@@ -562,14 +586,12 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
   int i = aI.i;
 
   Vec3type spos_i_grad;
-  Vec3type grad_force_i;
 
   // initlize share memories
   if (is_double_backward) {
     for (int iaev = tIdx; iaev < angular_length; iaev += blockDim.x * blockDim.y) {
       saev[iaev] = 0;
     }
-    grad_force_i = grad_force_3[mol_idx * max_natoms_per_mol + i];
   } else {
     for (int iaev = tIdx; iaev < angular_length; iaev += blockDim.x * blockDim.y) {
       saev[iaev] = grad_output[mol_idx][i][radial_length + iaev];
@@ -673,16 +695,19 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
                 DataT(2.0) * (a * vik_factor * (svec[kk].z * vij_vik_dot - svec[jj].z * Rik * Rik) + svec[kk].z * bk);
 
             if (is_double_backward) {
-              int atomj_idx = atomJ[start_idx + jj];
-              int atomk_idx = atomJ[start_idx + kk];
-              Vec3type grad_force_j = grad_force_3[mol_idx * max_natoms_per_mol + atomj_idx];
-              Vec3type grad_force_k = grad_force_3[mol_idx * max_natoms_per_mol + atomk_idx];
-              grad_vij_x *= (grad_force_j.x - grad_force_i.x);
-              grad_vij_y *= (grad_force_j.y - grad_force_i.y);
-              grad_vij_z *= (grad_force_j.z - grad_force_i.z);
-              grad_vik_x *= (grad_force_k.x - grad_force_i.x);
-              grad_vik_y *= (grad_force_k.y - grad_force_i.y);
-              grad_vik_z *= (grad_force_k.z - grad_force_i.z);
+              int flat_i = mol_idx * max_natoms_per_mol + i;
+              int flat_j = mol_idx * max_natoms_per_mol + atomJ[start_idx + jj];
+              int flat_k = mol_idx * max_natoms_per_mol + atomJ[start_idx + kk];
+              Vec3type ddelta_j =
+                  entry_cotangent<DataT>(grad_force_3, pairIdxJ, num_pairs, start_idx + jj, flat_i, flat_j);
+              Vec3type ddelta_k =
+                  entry_cotangent<DataT>(grad_force_3, pairIdxJ, num_pairs, start_idx + kk, flat_i, flat_k);
+              grad_vij_x *= ddelta_j.x;
+              grad_vij_y *= ddelta_j.y;
+              grad_vij_z *= ddelta_j.z;
+              grad_vik_x *= ddelta_k.x;
+              grad_vik_y *= ddelta_k.y;
+              grad_vik_z *= ddelta_k.z;
               atomicAdd(
                   &saev[subaev_offset + ishfr * nShfZ + itheta],
                   grad_vij_x + grad_vij_y + grad_vij_z + grad_vik_x + grad_vik_y + grad_vik_z);
@@ -750,17 +775,27 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
       spos_i_grad.y += __shfl_down_sync(0xFFFFFFFF, spos_i_grad.y, offset);
       spos_i_grad.z += __shfl_down_sync(0xFFFFFFFF, spos_i_grad.z, offset);
     }
-    if (laneIdx == 0) {
+    // For the half nbrlist, grad_coord holds the gradient wrt the pairs, shape (1, pairs, 3),
+    // and the contribution of atom i is already part of the per-pair gradients
+    if (laneIdx == 0 && pairIdxJ == nullptr) {
       atomicAdd(&grad_coord[mol_idx][atomi_idx][0], spos_i_grad.x);
       atomicAdd(&grad_coord[mol_idx][atomi_idx][1], spos_i_grad.y);
       atomicAdd(&grad_coord[mol_idx][atomi_idx][2], spos_i_grad.z);
     }
 
     for (int jj = tIdx; jj < jnum; jj += blockDim.x * blockDim.y) {
-      int atomj_idx = atomJ[start_idx + jj];
-      atomicAdd(&grad_coord[mol_idx][atomj_idx][0], spos_j_grad[jj].x);
-      atomicAdd(&grad_coord[mol_idx][atomj_idx][1], spos_j_grad[jj].y);
-      atomicAdd(&grad_coord[mol_idx][atomj_idx][2], spos_j_grad[jj].z);
+      if (pairIdxJ != nullptr) {
+        int pair_idx = pairIdxJ[start_idx + jj];
+        DataT sign = pair_idx < num_pairs ? -1 : 1;
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][0], sign * spos_j_grad[jj].x);
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][1], sign * spos_j_grad[jj].y);
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][2], sign * spos_j_grad[jj].z);
+      } else {
+        int atomj_idx = atomJ[start_idx + jj];
+        atomicAdd(&grad_coord[mol_idx][atomj_idx][0], spos_j_grad[jj].x);
+        atomicAdd(&grad_coord[mol_idx][atomj_idx][1], spos_j_grad[jj].y);
+        atomicAdd(&grad_coord[mol_idx][atomj_idx][2], spos_j_grad[jj].z);
+      }
     }
   }
 }
@@ -849,6 +884,8 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
     const AtomI* __restrict__ atom_i,
     const int* __restrict__ numJPerI,
     const int* __restrict__ startIdxJ,
+    const int* __restrict__ pairIdxJ,
+    int num_pairs,
     DataT Rcr,
     int radial_length,
     int radial_sublength,
@@ -878,15 +915,13 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
 
   if (is_double_backward) {
     Vec3type* grad_force = reinterpret_cast<Vec3type*>(&grad_coord_or_force[0][0][0]);
-    Vec3type dforce_i = grad_force[mol_idx * max_natoms_per_mol + i];
     for (int jj = tIdx; jj < jnum; jj += blockDim.x * blockDim.y) {
       DataT Rij = distJ[start_idx + jj];
-      int j = atomJ[start_idx + jj];
-      Vec3type dforce_j = grad_force[mol_idx * max_natoms_per_mol + j];
+      int flat_i = mol_idx * max_natoms_per_mol + i;
+      int flat_j = mol_idx * max_natoms_per_mol + atomJ[start_idx + jj];
+      Vec3type ddelta = entry_cotangent<DataT>(grad_force, pairIdxJ, num_pairs, start_idx + jj, flat_i, flat_j);
       Vec3type delta = deltaJ_p_3[start_idx + jj];
-      s_grad_dist[jj] = ((dforce_j.x - dforce_i.x) * delta.x + (dforce_j.y - dforce_i.y) * delta.y +
-                         (dforce_j.z - dforce_i.z) * delta.z) /
-          Rij;
+      s_grad_dist[jj] = (ddelta.x * delta.x + ddelta.y * delta.y + ddelta.z * delta.z) / Rij;
     }
     for (int iaev = tIdx; iaev < radial_length; iaev += blockDim.x * blockDim.y) {
       saev[iaev] = 0;
@@ -954,6 +989,16 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
       DataT grad_dist_coord_y = delta.y / Rij;
       DataT grad_dist_coord_z = delta.z / Rij;
       DataT grad_radial_dist_item = s_grad_dist[jj];
+
+      // For the half nbrlist, grad_coord holds the gradient wrt the pairs, shape (1, pairs, 3)
+      if (pairIdxJ != nullptr) {
+        int pair_idx = pairIdxJ[start_idx + jj];
+        DataT sign = pair_idx < num_pairs ? -1 : 1;
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][0], sign * grad_radial_dist_item * grad_dist_coord_x);
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][1], sign * grad_radial_dist_item * grad_dist_coord_y);
+        atomicAdd(&grad_coord[0][pair_idx % num_pairs][2], sign * grad_radial_dist_item * grad_dist_coord_z);
+        continue;
+      }
 
       atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
       atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
@@ -1145,6 +1190,8 @@ __global__ void postProcessExternalHalfNbrList(
     DataT* __restrict__ angular_deltaJ,
     int* __restrict__ radial_numJPerI,
     int* __restrict__ angular_numJPerI,
+    int* __restrict__ radial_pairIdxJ,
+    int* __restrict__ angular_pairIdxJ,
     // constants
     DataT Rcr,
     DataT Rca,
@@ -1187,11 +1234,13 @@ __global__ void postProcessExternalHalfNbrList(
       radial_atomJ[start_i + pidx_r] = j;
       radial_distJ[start_i + pidx_r] = dist;
       radial_deltaJ_3[start_i + pidx_r] = delta;
+      radial_pairIdxJ[start_i + pidx_r] = sortidx_2P;
       if (dist <= Rca) {
         int pidx_a = atomicAdd(&s_angular_pcounter_i[ii], 1);
         angular_atomJ[start_i + pidx_a] = j;
         angular_distJ[start_i + pidx_a] = dist;
         angular_deltaJ_3[start_i + pidx_a] = delta;
+        angular_pairIdxJ[start_i + pidx_a] = sortidx_2P;
       }
     }
   }
@@ -1400,7 +1449,6 @@ void launch_postProcessNbrList2_kernel(
 
 template <typename DataT>
 void launch_postProcessExternalHalfNbrList_kernel(
-    const Tensor& coordinates_t,
     const Tensor& species_t,
     const Tensor& atomIJ_t,
     const Tensor& deltaJ_t,
@@ -1408,7 +1456,7 @@ void launch_postProcessExternalHalfNbrList_kernel(
     const AEVScalarParams& aev_params,
     Result& result) {
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
-  auto d_options = torch::dtype(torch::kUInt8).device(coordinates_t.device());
+  auto d_options = torch::dtype(torch::kUInt8).device(deltaJ_t.device());
 
   // constants
   const int n_molecules = species_t.size(0);
@@ -1472,6 +1520,8 @@ void launch_postProcessExternalHalfNbrList_kernel(
       (DataT*)result.angularNbr.deltaJ_t.data_ptr(),
       (int*)result.radialNbr.numJPerI_t.data_ptr(),
       (int*)result.angularNbr.numJPerI_t.data_ptr(),
+      (int*)result.radialNbr.pairIdxJ_t.data_ptr(),
+      (int*)result.angularNbr.pairIdxJ_t.data_ptr(),
       // constants
       DataT(aev_params.Rcr),
       DataT(aev_params.Rca),
@@ -1573,13 +1623,16 @@ void launch_cuAngularAEVs_kernel(
 
 template <typename DataT, bool is_double_backward, bool use_cos_cutoff>
 void launch_cuRadialAEVs_backward_or_doublebackward_kernel(
-    const Tensor& coordinates_t,
+    const Tensor& grad_target_t,
     const Tensor& species_t,
     const AEVScalarParams& aev_params,
     const Tensor& grad_output,
     const Result& result,
     Tensor& grad_input) {
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
+  const Tensor& pairIdxJ_t = result.radialNbr.pairIdxJ_t;
+  const int* pairIdxJ = pairIdxJ_t.defined() ? (int*)pairIdxJ_t.data_ptr() : nullptr;
+  int num_pairs = grad_target_t.size(1);
 
   constexpr dim3 block_radial(4, 16, 1);
   int smem_radial =
@@ -1598,6 +1651,8 @@ void launch_cuRadialAEVs_backward_or_doublebackward_kernel(
             (AtomI*)result.atomI_t.data_ptr(),
             (int*)result.radialNbr.numJPerI_t.data_ptr(),
             (int*)result.startIdxJ_t.data_ptr(),
+            pairIdxJ,
+            num_pairs,
             DataT(aev_params.Rcr),
             aev_params.radial_length,
             aev_params.radial_sublength,
@@ -1617,6 +1672,8 @@ void launch_cuRadialAEVs_backward_or_doublebackward_kernel(
             (AtomI*)result.atomI_t.data_ptr(),
             (int*)result.radialNbr.numJPerI_t.data_ptr(),
             (int*)result.startIdxJ_t.data_ptr(),
+            pairIdxJ,
+            num_pairs,
             DataT(aev_params.Rcr),
             aev_params.radial_length,
             aev_params.radial_sublength,
@@ -1627,13 +1684,16 @@ void launch_cuRadialAEVs_backward_or_doublebackward_kernel(
 
 template <typename DataT, bool is_double_backward, bool use_cos_cutoff>
 void launch_cuAngularAEVs_backward_or_doublebackward_kernel(
-    const Tensor& coordinates_t,
+    const Tensor& grad_target_t,
     const Tensor& species_t,
     const AEVScalarParams& aev_params,
     const Tensor& grad_output,
     const Result& result,
     Tensor& grad_input) {
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
+  const Tensor& pairIdxJ_t = result.angularNbr.pairIdxJ_t;
+  const int* pairIdxJ = pairIdxJ_t.defined() ? (int*)pairIdxJ_t.data_ptr() : nullptr;
+  int num_pairs = grad_target_t.size(1);
 
   auto cal_smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sm_aev = sizeof(DataT) * (aev_params.angular_length);
@@ -1669,6 +1729,8 @@ void launch_cuAngularAEVs_backward_or_doublebackward_kernel(
           (AtomI*)result.atomI_t.data_ptr(),
           (int*)result.angularNbr.numJPerI_t.data_ptr(),
           (int*)result.startIdxJ_t.data_ptr(),
+          pairIdxJ,
+          num_pairs,
           DataT(aev_params.Rca),
           aev_params.angular_length,
           aev_params.angular_sublength,
@@ -1692,7 +1754,7 @@ void cuaev_forward(
     Result& result) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) &&
-          (coordinates_t.dtype() != torch::kFloat32 || coordinates_t.dtype() != torch::kFloat64),
+          (coordinates_t.dtype() == torch::kFloat32 || coordinates_t.dtype() == torch::kFloat64),
       "Unsupported input type");
   TORCH_CHECK(
       aev_params.EtaR_t.size(0) == 1 && aev_params.EtaA_t.size(0) == 1 && aev_params.Zeta_t.size(0) == 1,
@@ -1782,7 +1844,6 @@ void cuaev_forward(
 
 template <bool use_cos_cutoff>
 void cuaev_forward_with_half_nbrlist(
-    const Tensor& coordinates_t,
     const Tensor& species_t,
     const Tensor& atomIJ_t,
     const Tensor& deltaJ_t,
@@ -1791,26 +1852,26 @@ void cuaev_forward_with_half_nbrlist(
     Result& result) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) &&
-          (coordinates_t.dtype() != torch::kFloat32 || coordinates_t.dtype() != torch::kFloat64),
+          (deltaJ_t.dtype() == torch::kFloat32 || deltaJ_t.dtype() == torch::kFloat64),
       "Unsupported input type");
   TORCH_CHECK(
       aev_params.EtaR_t.size(0) == 1 && aev_params.EtaA_t.size(0) == 1 && aev_params.Zeta_t.size(0) == 1,
       "cuda extension is currently not supported for the specified "
       "configuration");
   TORCH_CHECK(
-      coordinates_t.device() == species_t.device() && coordinates_t.device() == aev_params.EtaR_t.device() &&
-          coordinates_t.device() == aev_params.EtaA_t.device(),
-      "coordinates, species, and aev_params should be on the same device");
+      deltaJ_t.device() == species_t.device() && deltaJ_t.device() == aev_params.EtaR_t.device() &&
+          deltaJ_t.device() == aev_params.EtaA_t.device(),
+      "deltaJ, species, and aev_params should be on the same device");
   TORCH_CHECK(atomIJ_t.size(0) == 2, "atomIJ_t's shape should be (2, P)");
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
   const int n_molecules = species_t.size(0);
   const int max_natoms_per_mol = species_t.size(1);
   int total_atoms = n_molecules * max_natoms_per_mol;
-  TORCH_CHECK(coordinates_t.is_contiguous(), "Coordinate data is not contiguous");
+  TORCH_CHECK(deltaJ_t.is_contiguous() && distJ_t.is_contiguous(), "deltaJ and distJ should be contiguous");
 
   // TODO replace zeros with empty
-  result.aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
+  result.aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, deltaJ_t.options());
 
   // return if species is empty
   if (species_t.numel() == 0) {
@@ -1819,10 +1880,10 @@ void cuaev_forward_with_half_nbrlist(
 
   // some shapes
   int max_numj_per_i_in_Rcr = min(max_natoms_per_mol, MAX_NUMJ_PER_I_IN_RCR);
-  auto d_options = torch::dtype(torch::kUInt8).device(coordinates_t.device());
+  auto d_options = torch::dtype(torch::kUInt8).device(deltaJ_t.device());
 
   // set cuda device and stream
-  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAGuard device_guard(deltaJ_t.device().index());
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 #if ((TORCH_VERSION_MAJOR >= 2) && (TORCH_VERSION_MINOR >= 7))
   at::globalContext().lazyInitDevice(at::kCUDA);
@@ -1841,19 +1902,21 @@ void cuaev_forward_with_half_nbrlist(
   // The passed atomIJ_t currently only have IJ, which will be duplicated for JI later
   int num_atomIJ = atomIJ_t.size(1) * 2;
   result.radialNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.radialNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
-  result.radialNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.radialNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
+  result.radialNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
   result.angularNbr.atomJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
-  result.angularNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(coordinates_t.dtype()));
-  result.angularNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(coordinates_t.dtype()));
+  result.angularNbr.distJ_t = torch::empty(num_atomIJ, d_options.dtype(deltaJ_t.dtype()));
+  result.angularNbr.deltaJ_t = torch::empty(num_atomIJ * 3, d_options.dtype(deltaJ_t.dtype()));
+  result.radialNbr.pairIdxJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
+  result.angularNbr.pairIdxJ_t = torch::empty(num_atomIJ, d_options.dtype(torch::kInt32));
 
   // postProcessNbrList
-  if (coordinates_t.dtype() == torch::kFloat32) {
+  if (deltaJ_t.dtype() == torch::kFloat32) {
     launch_postProcessExternalHalfNbrList_kernel<float>(
-        coordinates_t, species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+        species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   } else {
     launch_postProcessExternalHalfNbrList_kernel<double>(
-        coordinates_t, species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+        species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   }
 
   // Merge two cubMax streamSync into one
@@ -1864,12 +1927,12 @@ void cuaev_forward_with_half_nbrlist(
   cudaStreamSynchronize(stream);
 
   // launch radial and angular kernels
-  if (coordinates_t.dtype() == torch::kFloat32) {
-    launch_cuRadialAEVs_kernel<float, use_cos_cutoff>(coordinates_t, species_t, aev_params, result);
-    launch_cuAngularAEVs_kernel<float, use_cos_cutoff>(coordinates_t, species_t, aev_params, result);
+  if (deltaJ_t.dtype() == torch::kFloat32) {
+    launch_cuRadialAEVs_kernel<float, use_cos_cutoff>(deltaJ_t, species_t, aev_params, result);
+    launch_cuAngularAEVs_kernel<float, use_cos_cutoff>(deltaJ_t, species_t, aev_params, result);
   } else {
-    launch_cuRadialAEVs_kernel<double, use_cos_cutoff>(coordinates_t, species_t, aev_params, result);
-    launch_cuAngularAEVs_kernel<double, use_cos_cutoff>(coordinates_t, species_t, aev_params, result);
+    launch_cuRadialAEVs_kernel<double, use_cos_cutoff>(deltaJ_t, species_t, aev_params, result);
+    launch_cuAngularAEVs_kernel<double, use_cos_cutoff>(deltaJ_t, species_t, aev_params, result);
   }
 }
 
@@ -1884,7 +1947,7 @@ void cuaev_forward_with_full_nbrlist(
     Result& result) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) &&
-          (coordinates_t.dtype() != torch::kFloat32 || coordinates_t.dtype() != torch::kFloat64),
+          (coordinates_t.dtype() == torch::kFloat32 || coordinates_t.dtype() == torch::kFloat64),
       "Unsupported input type");
   TORCH_CHECK(
       aev_params.EtaR_t.size(0) == 1 && aev_params.EtaA_t.size(0) == 1 && aev_params.Zeta_t.size(0) == 1,
@@ -1970,26 +2033,26 @@ void cuaev_forward_with_full_nbrlist(
 template <bool use_cos_cutoff>
 Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result) {
   using namespace torch::indexing;
-  Tensor coordinates_t = result.coordinates_t;
+  Tensor grad_target_t = result.grad_target_t;
   Tensor species_t = result.species_t;
 
-  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAGuard device_guard(grad_target_t.device().index());
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
-  auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
+  auto grad_coord = torch::zeros(grad_target_t.sizes(), grad_target_t.options().requires_grad(false)); // [2, 5, 3]
   TORCH_CHECK(grad_output.is_contiguous(), "grad_output's data is not contiguous");
 
   // launch radial and angular backward kernels
-  if (coordinates_t.dtype() == torch::kFloat32) {
+  if (grad_target_t.dtype() == torch::kFloat32) {
     launch_cuRadialAEVs_backward_or_doublebackward_kernel<float, false, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_output, result, grad_coord);
+        grad_target_t, species_t, aev_params, grad_output, result, grad_coord);
     launch_cuAngularAEVs_backward_or_doublebackward_kernel<float, false, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_output, result, grad_coord);
+        grad_target_t, species_t, aev_params, grad_output, result, grad_coord);
   } else {
     launch_cuRadialAEVs_backward_or_doublebackward_kernel<double, false, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_output, result, grad_coord);
+        grad_target_t, species_t, aev_params, grad_output, result, grad_coord);
     launch_cuAngularAEVs_backward_or_doublebackward_kernel<double, false, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_output, result, grad_coord);
+        grad_target_t, species_t, aev_params, grad_output, result, grad_coord);
   }
 
   return grad_coord;
@@ -1998,36 +2061,36 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 template <bool use_cos_cutoff>
 Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result) {
   using namespace torch::indexing;
-  Tensor coordinates_t = result.coordinates_t;
+  Tensor grad_target_t = result.grad_target_t;
   Tensor species_t = result.species_t;
 
-  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAGuard device_guard(grad_target_t.device().index());
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
   auto grad_grad_aev = torch::zeros(
-      {coordinates_t.size(0), coordinates_t.size(1), aev_length},
-      coordinates_t.options().requires_grad(false)); // [2, 5, 384]
+      {species_t.size(0), species_t.size(1), aev_length},
+      grad_target_t.options().requires_grad(false)); // [2, 5, 384]
   TORCH_CHECK(grad_force.is_contiguous(), "grad_force's data is not contiguous");
 
   // launch radial and angular double_backward kernels
-  if (coordinates_t.dtype() == torch::kFloat32) {
+  if (grad_target_t.dtype() == torch::kFloat32) {
     launch_cuRadialAEVs_backward_or_doublebackward_kernel<float, true, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_force, result, grad_grad_aev);
+        grad_target_t, species_t, aev_params, grad_force, result, grad_grad_aev);
     launch_cuAngularAEVs_backward_or_doublebackward_kernel<float, true, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_force, result, grad_grad_aev);
+        grad_target_t, species_t, aev_params, grad_force, result, grad_grad_aev);
   } else {
     launch_cuRadialAEVs_backward_or_doublebackward_kernel<double, true, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_force, result, grad_grad_aev);
+        grad_target_t, species_t, aev_params, grad_force, result, grad_grad_aev);
     launch_cuAngularAEVs_backward_or_doublebackward_kernel<double, true, use_cos_cutoff>(
-        coordinates_t, species_t, aev_params, grad_force, result, grad_grad_aev);
+        grad_target_t, species_t, aev_params, grad_force, result, grad_grad_aev);
   }
 
   return grad_grad_aev;
 }
 
 // Explicit Template Instantiation
-Result CuaevComputer::forward(const Tensor& coordinates_t, const Tensor& species_t) {
+Result aev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params) {
   Result result(coordinates_t, species_t);
   if (aev_params.use_cos_cutoff)
     cuaev_forward<true>(coordinates_t, species_t, aev_params, result);
@@ -2036,26 +2099,27 @@ Result CuaevComputer::forward(const Tensor& coordinates_t, const Tensor& species
   return result;
 }
 
-Result CuaevComputer::forward_with_half_nbrlist(
-    const Tensor& coordinates_t,
+Result aev_forward_with_half_nbrlist(
     const Tensor& species_t,
     const Tensor& atomIJ_t,
     const Tensor& deltaJ_t,
-    const Tensor& distJ_t) {
-  Result result(coordinates_t, species_t);
+    const Tensor& distJ_t,
+    const AEVScalarParams& aev_params) {
+  Result result(deltaJ_t.view({1, -1, 3}), species_t);
   if (aev_params.use_cos_cutoff)
-    cuaev_forward_with_half_nbrlist<true>(coordinates_t, species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+    cuaev_forward_with_half_nbrlist<true>(species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   else
-    cuaev_forward_with_half_nbrlist<false>(coordinates_t, species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
+    cuaev_forward_with_half_nbrlist<false>(species_t, atomIJ_t, deltaJ_t, distJ_t, aev_params, result);
   return result;
 }
 
-Result CuaevComputer::forward_with_full_nbrlist(
+Result aev_forward_with_full_nbrlist(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const Tensor& atomI_t,
     const Tensor& atomJ_t,
-    const Tensor& numJPerI_t) {
+    const Tensor& numJPerI_t,
+    const AEVScalarParams& aev_params) {
   Result result(coordinates_t, species_t);
   if (aev_params.use_cos_cutoff)
     cuaev_forward_with_full_nbrlist<true>(coordinates_t, species_t, atomI_t, atomJ_t, numJPerI_t, aev_params, result);
@@ -2064,14 +2128,14 @@ Result CuaevComputer::forward_with_full_nbrlist(
   return result;
 }
 
-Tensor CuaevComputer::backward(const Tensor& grad_e_aev, const Result& result) {
+Tensor aev_backward(const Tensor& grad_e_aev, const AEVScalarParams& aev_params, const Result& result) {
   if (aev_params.use_cos_cutoff)
     return cuaev_backward<true>(grad_e_aev, aev_params, result); // force
   else
     return cuaev_backward<false>(grad_e_aev, aev_params, result); // force
 }
 
-Tensor CuaevComputer::double_backward(const Tensor& grad_force, const Result& result) {
+Tensor aev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result) {
   if (aev_params.use_cos_cutoff)
     return cuaev_double_backward<true>(grad_force, aev_params, result); // grad_grad_aev
   else
