@@ -227,7 +227,8 @@ class TestCompile(ANITestCasePT2):
         pass
 
     @unittest.skip(
-        "mnp and cell_list ops have no fake kernels, and TorchBind classes no fake class"
+        "mnp and cell_list ops have no fake kernels,"
+        " and TorchBind classes no fake class"
     )
     def testCppExtensions(self) -> None:
         pass

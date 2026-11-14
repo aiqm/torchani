@@ -273,8 +273,7 @@ Tensor run_double_backward(
 // The autograd functions call the ops through the dispatcher, so that tracing
 // (e.g. torch.compile) sees the ops instead of running the CUDA kernels
 static tensor_list call_run_op(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& p) {
-  static auto op =
-      c10::Dispatcher::singleton().findSchemaOrThrow("cuaev::run", "").typed<decltype(run_cuda)>();
+  static auto op = c10::Dispatcher::singleton().findSchemaOrThrow("cuaev::run", "").typed<decltype(run_cuda)>();
   return op.call(
       coordinates_t,
       species_t,
@@ -458,8 +457,7 @@ tensor_list CuaevAutograd::backward(AutogradContext* ctx, tensor_list grad_outpu
   tensor_list saved = ctx->get_saved_variables();
   Tensor species = pop_back_tensor(saved);
   Tensor coordinates = pop_back_tensor(saved);
-  Tensor grad_coord = CuaevDoubleAutograd::apply(
-      grad_outputs[0], coordinates, species, aev_params, saved);
+  Tensor grad_coord = CuaevDoubleAutograd::apply(grad_outputs[0], coordinates, species, aev_params, saved);
   return {grad_coord, Tensor(), Tensor()};
 }
 
@@ -492,8 +490,7 @@ tensor_list CuaevWithHalfNbrlistAutograd::backward(AutogradContext* ctx, tensor_
   Tensor species = pop_back_tensor(saved);
   Tensor deltaJ = pop_back_tensor(saved);
   Tensor grad_deltaJ =
-      CuaevDoubleAutograd::apply(grad_outputs[0], deltaJ.view({1, -1, 3}), species, aev_params, saved)
-          .view({-1, 3});
+      CuaevDoubleAutograd::apply(grad_outputs[0], deltaJ.view({1, -1, 3}), species, aev_params, saved).view({-1, 3});
   return {Tensor(), Tensor(), grad_deltaJ, Tensor(), Tensor()};
 }
 

@@ -25,7 +25,7 @@ def _forward_outputs(
     species: Tensor,
     like: Tensor,
     aev_len: int,
-    num_pairs: int,
+    num_pairs: int | torch.SymInt,
     num_pair_idxs: int,
 ) -> list[Tensor]:
     num_molecs, num_atoms = species.shape
@@ -50,7 +50,18 @@ def _forward_outputs(
 
 @torch.library.register_fake("cuaev::run")
 def _run(
-    coords, species, rcr, rca, eta_r, shf_r, eta_a, zeta, shf_a, shf_z, num_species, use_cos
+    coords,
+    species,
+    rcr,
+    rca,
+    eta_r,
+    shf_r,
+    eta_a,
+    zeta,
+    shf_a,
+    shf_z,
+    num_species,
+    use_cos,
 ):
     aev_len = _aev_len(eta_r, shf_r, eta_a, zeta, shf_a, shf_z, num_species)
     # The number of pairs within the cutoff is only known after running the kernels
@@ -141,4 +152,3 @@ def _double_backward(
 ):
     aev_len = _aev_len(eta_r, shf_r, eta_a, zeta, shf_a, shf_z, num_species)
     return grad_target.new_empty((species.shape[0], species.shape[1], aev_len))
-
