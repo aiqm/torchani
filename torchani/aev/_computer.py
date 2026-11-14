@@ -68,7 +68,6 @@ class AEVComputer(torch.nn.Module):
     triu_index: Tensor
     _strategy: str
     _cuaev_is_avail: bool
-    _cuaev_computer_is_init: bool
 
     def __init__(
         self,
@@ -113,13 +112,6 @@ class AEVComputer(torch.nn.Module):
         # Perform init and checks of cuAEV
         # Check if the cuaev and the cuaev fused are available for use
         self._cuaev_is_avail = self._check_cuaev_avail()
-
-        # Do cuAEV dummy init ('registration'), even if not used. Required by JIT
-        if CUAEV_IS_INSTALLED:
-            self._register_cuaev_computer()
-
-        # Delay cuAEV true init to fwd, to put tensors in correct device
-        self._cuaev_computer_is_init = False
 
         # Check the requested strategy is available
         if strategy == "auto":
@@ -248,7 +240,7 @@ class AEVComputer(torch.nn.Module):
         # are **not required** to be mapped to the central cell for pbc calculations.
         neighbors = self.neighborlist(self.radial.cutoff, elem_idxs, coords, cell, pbc)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
-            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "pyaev":
             return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
         raise RuntimeError(f"Invalid strategy {self._strategy}")
@@ -271,7 +263,7 @@ class AEVComputer(torch.nn.Module):
         if self._strategy == "pyaev":
             return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
-            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "cuaev-fused":
             raise RuntimeError("cuAEV-fused doesn't support `compute_from_neighbors`")
         raise RuntimeError(f"Invalid strategy {self._strategy}")
@@ -355,22 +347,13 @@ class AEVComputer(torch.nn.Module):
         return radial_aev.reshape(num_molecs, num_atoms, self.radial_len)
 
     @jit_unused_if_no_cuaev()
-    def _register_cuaev_computer(self) -> None:
-        # cuaev_computer is needed only when using a cuAEV compute strategy. However jit
-        # always needs to register the CuaevComputer type This 'registration' is only a
-        # kind of "dummy" initialization, it is always necessary to reinitialize in
-        # forward at least once, since some tensors may be on CPU at this point, but on
-        # GPU when forward is called.
-        empty = torch.empty(0)
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
-            0.0, 0.0, empty, empty, empty, empty, empty, empty, 1, True
-        )
-
-    @jit_unused_if_no_cuaev()
-    def _init_cuaev_computer(self) -> None:
+    def _cuaev_fused(self, species: Tensor, coordinates: Tensor) -> Tensor:
+        self._prepare_cuaev_execution(species, "fused")
         # If we reach this part of the code then the radial and
         # angular terms must be Standard*, so these tensors will exist
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
+        return torch.ops.cuaev.run(
+            coordinates,
+            species.to(torch.int32),
             self.radial.cutoff,
             self.angular.cutoff,
             self.radial.eta,
@@ -382,33 +365,31 @@ class AEVComputer(torch.nn.Module):
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
         )
-        self._cuaev_computer_is_init = True
-
-    @jit_unused_if_no_cuaev()
-    def _cuaev_fused(self, species: Tensor, coordinates: Tensor) -> Tensor:
-        self._prepare_cuaev_execution(species, "fused")
-        return torch.ops.cuaev.run(
-            coordinates, species.to(torch.int32), self.cuaev_computer
-        )
 
     @jit_unused_if_no_cuaev()
     def _cuaev_compute_from_neighbors(
         self,
         species: Tensor,
-        coordinates: Tensor,
         neighbors: Neighbors,
     ) -> Tensor:
         self._prepare_cuaev_execution(species, "half-neighborlist")
-        # The coordinates will not be used in forward calculation, but it's
-        # gradient (force) will still be calculated in cuaev kernel, so it's
-        # important to have coordinates passed as an argument.
+        # Gradients flow through neighbors.diff_vectors, which carry the dependence on
+        # both the coordinates and the cell (PBC shifts)
         return torch.ops.cuaev.run_with_half_nbrlist(
-            coordinates,
             species.to(torch.int32),
             neighbors.indices.to(torch.int32),
             neighbors.diff_vectors,
             neighbors.distances,
-            self.cuaev_computer,
+            self.radial.cutoff,
+            self.angular.cutoff,
+            self.radial.eta,
+            self.radial.shifts,
+            self.angular.eta,
+            self.angular.zeta,
+            self.angular.shifts,
+            self.angular.sections,
+            self.num_species,
+            (self._cuaev_cutoff_fn == "cosine"),
         )
 
     # NOTE: This function is for testing purposes or for usage with the LAMMPS interface
@@ -439,19 +420,22 @@ class AEVComputer(torch.nn.Module):
             ilist_unique.to(torch.int32),
             jlist.to(torch.int32),
             numneigh.to(torch.int32),
-            self.cuaev_computer,
+            self.radial.cutoff,
+            self.angular.cutoff,
+            self.radial.eta,
+            self.radial.shifts,
+            self.angular.eta,
+            self.angular.zeta,
+            self.angular.shifts,
+            self.angular.sections,
+            self.num_species,
+            (self._cuaev_cutoff_fn == "cosine"),
         )
 
     @jit_unused_if_no_cuaev()
     def _prepare_cuaev_execution(self, species: Tensor, branch: str) -> None:
         if self._print_aev_branch:
             print(f"Executing branch: cuAEV {branch}")
-        if species.device.type != "cuda" and species.shape[1] != 0:
-            raise ValueError(
-                "cuAEV requires inputs in a CUDA device if there is at least 1 atom"
-            )
-        if not self._cuaev_computer_is_init:
-            self._init_cuaev_computer()
 
     # Converet half nbrlist to full nbrlist.
     @jit_unused_if_no_cuaev()

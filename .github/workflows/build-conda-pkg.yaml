@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Build conda pkg in Docker image, release if needed
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ env.TAG }}
           build-args: |

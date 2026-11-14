@@ -12,6 +12,7 @@ from torchani._testing import ANITestCase, expand
 from torchani.utils import SYMBOLS_2X
 from torchani.nn import SpeciesConverter
 from torchani.aev import AEVComputer
+from torchani.neighbors import Neighbors
 from torchani.models import ANI2dr
 from torchani.io import read_xyz
 from torchani._testing import TestCase, make_tensor
@@ -116,7 +117,9 @@ class TestCUAEVNoGPU(TestCase):
             ShfZ,
             num_species: int,
         ):
-            cuaev_computer = torch.classes.cuaev.CuaevComputer(
+            return torch.ops.cuaev.run(
+                coordinates,
+                species,
                 Rcr,
                 Rca,
                 EtaR.flatten(),
@@ -128,7 +131,6 @@ class TestCUAEVNoGPU(TestCase):
                 num_species,
                 True,
             )
-            return torch.ops.cuaev.run(coordinates, species, cuaev_computer)
 
         self.assertIn("cuaev::run", str(torch.jit.script(f).graph))
 
@@ -149,22 +151,30 @@ class TestCUAEVNoGPU(TestCase):
             _ = pickle.load(f)
 
 
-@skipIfNoGPU
 @skipIfNoCUAEV
 @parameterized_class(
-    ("cutoff_fn", "dtype"),
+    ("default_device", "cutoff_fn", "dtype"),
     [
-        ["cosine", torch.float32],
-        ["cosine", torch.float64],
-        ["smooth", torch.float32],
-        ["smooth", torch.float64],
+        ["cpu", "cosine", torch.float32],
+        ["cpu", "cosine", torch.float64],
+        ["cpu", "smooth", torch.float32],
+        ["cpu", "smooth", torch.float64],
+        ["cuda:0", "cosine", torch.float32],
+        ["cuda:0", "cosine", torch.float64],
+        ["cuda:0", "smooth", torch.float32],
+        ["cuda:0", "smooth", torch.float64],
     ],
 )
 class TestCUAEV(TestCase):
+    default_device: str
     dtype: torch.dtype
     cutoff_fn: tp.Literal["smooth", "cosine"]
 
-    def setUp(self, device="cuda:0"):
+    def setUp(self, device: str | None = None):
+        if device is None:
+            device = self.default_device
+        if device.startswith("cuda") and not torch.cuda.is_available():
+            self.skipTest("There is no device to run this test")
         # double precision error is within 5e-13
         self.tolerance = 5e-5 if self.dtype == torch.float32 else 5e-13
         self.device = device
@@ -198,6 +208,10 @@ class TestCUAEV(TestCase):
     def _skip_if_double(self):
         if self.dtype == torch.float64:
             self.skipTest("Skip slow tests for double precision")
+
+    def _skip_if_cpu(self):
+        if self.device == "cpu":
+            self.skipTest("Skip slow tests on CPU")
 
     def _double_backward_1_test(self, species, coordinates):
         def double_backward(aev_computer, species, coordinates):
@@ -327,12 +341,14 @@ class TestCUAEV(TestCase):
 
     @skipIfNoMultiGPU
     def testMultiGPU(self):
+        if self.device == "cpu":
+            self.skipTest("Multi-GPU test")
         self.setUp(device="cuda:1")
         self.testSimple()
         self.testSimpleBackward()
         self.testSimpleDoubleBackward_1()
         self.testSimpleDoubleBackward_2()
-        self.setUp(device="cuda:0")
+        self.setUp()
 
     def testBatch(self):
         coordinates = torch.rand([100, 50, 3], device=self.device, dtype=self.dtype) * 5
@@ -515,6 +531,7 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cuaev_grad, aev_grad, atol=tolerance, rtol=tolerance)
 
     def testTripeptideMDDoubleBackward_2(self):
+        self._skip_if_cpu()
         # skip if not cosine
         self._skip_if_not_cosine()
 
@@ -532,6 +549,7 @@ class TestCUAEV(TestCase):
                 self._double_backward_2_test(species, coordinates)
 
     def testNIST(self):
+        self._skip_if_cpu()
         # skip if not cosine
         self._skip_if_not_cosine()
         self._skip_if_double()
@@ -547,6 +565,7 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testNISTBackward(self):
+        self._skip_if_cpu()
         self._skip_if_not_cosine()
         self._skip_if_double()
 
@@ -575,6 +594,7 @@ class TestCUAEV(TestCase):
                 )
 
     def testNISTDoubleBackward_2(self):
+        self._skip_if_cpu()
         self._skip_if_not_cosine()
         self._skip_if_double()
 
@@ -755,6 +775,112 @@ class TestCUAEV(TestCase):
             self.assertEqual(
                 cuaev_grad, aev_grad, atol=self.tolerance, rtol=self.tolerance
             )
+
+    def _small_pbc_system(self):
+        coordinates = torch.rand([1, 8, 3], device=self.device, dtype=self.dtype) * 4
+        species = torch.tensor([[0, 1, 2, 3, 0, 1, 0, 2]], device=self.device)
+        cell = torch.eye(3, device=self.device, dtype=self.dtype) * 5.0
+        pbc = torch.tensor([True, True, True], device=self.device)
+        return species, coordinates, cell, pbc
+
+    def _hessian(self, aev_fn, coordinates):
+        coordinates = coordinates.clone().requires_grad_(True)
+        energy = self.nn(aev_fn(coordinates) ** 2).sum()
+        forces = torch.autograd.grad(energy, coordinates, create_graph=True)[0]
+        rows = []
+        for force in forces.flatten():
+            row = torch.autograd.grad(force, coordinates, retain_graph=True)[0]
+            rows.append(row.flatten())
+        return torch.stack(rows)
+
+    def _virial(self, aev_computer, species, coordinates, cell, pbc):
+        strain = torch.zeros(3, 3, device=self.device, dtype=self.dtype)
+        strain.requires_grad_(True)
+        deformation = torch.eye(3, device=self.device, dtype=self.dtype) + strain
+        aev = aev_computer(species, coordinates @ deformation, cell @ deformation, pbc)
+        return torch.autograd.grad(self.nn(aev).sum(), strain)[0]
+
+    def _grad_diff_vectors(self, aev_computer, species, coordinates, cell, pbc):
+        neighbors = aev_computer.neighborlist(
+            self.cutoff_1x, species, coordinates, cell, pbc
+        )
+        diff_vectors = neighbors.diff_vectors.detach().requires_grad_(True)
+        neighbors = Neighbors(
+            neighbors.indices, diff_vectors.norm(2, -1), diff_vectors
+        )
+        aev = aev_computer.compute_from_neighbors(species, coordinates, neighbors)
+        return torch.autograd.grad(self.nn(aev).sum(), diff_vectors)[0]
+
+    def testHessian(self):
+        coordinates = torch.rand([2, 8, 3], device=self.device, dtype=self.dtype) * 4
+        species = torch.tensor(
+            [[0, 1, 2, 3, 0, 1, 0, 0], [1, 1, 0, 2, 3, 0, -1, -1]], device=self.device
+        )
+        hessian = self._hessian(
+            lambda c: self.aev_computer_1x(species, c), coordinates
+        )
+        for strategy in ["cuaev-fused", "cuaev-interface"]:
+            cuaev_computer = AEVComputer.like_1x(
+                cutoff_fn=self.cutoff_fn, strategy=strategy
+            ).to(self.device, self.dtype)
+            cu_hessian = self._hessian(
+                lambda c: cuaev_computer(species, c), coordinates
+            )
+            self.assertEqual(
+                cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance
+            )
+
+    def testHessianPBC(self):
+        species, coordinates, cell, pbc = self._small_pbc_system()
+        cuaev_computer = AEVComputer.like_1x(
+            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
+        ).to(self.device, self.dtype)
+        hessian = self._hessian(
+            lambda c: self.aev_computer_1x(species, c, cell, pbc), coordinates
+        )
+        cu_hessian = self._hessian(
+            lambda c: cuaev_computer(species, c, cell, pbc), coordinates
+        )
+        self.assertEqual(cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance)
+
+    def testHessianFullNbrList(self):
+        species, coordinates, _, _ = self._small_pbc_system()
+        cuaev_computer = AEVComputer.like_1x(
+            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
+        ).to(self.device, self.dtype)
+        atom_index12 = cuaev_computer.neighborlist(
+            self.cutoff_1x, species, coordinates
+        ).indices
+        ilist_unique, jlist, numneigh = cuaev_computer._half_to_full_nbrlist(
+            atom_index12
+        )
+        hessian = self._hessian(
+            lambda c: self.aev_computer_1x(species, c), coordinates
+        )
+        cu_hessian = self._hessian(
+            lambda c: cuaev_computer._compute_cuaev_with_full_nbrlist(
+                species, c, ilist_unique, jlist, numneigh
+            ),
+            coordinates,
+        )
+        self.assertEqual(cu_hessian, hessian, atol=self.tolerance, rtol=self.tolerance)
+
+    def testStressPBC(self):
+        species, coordinates, cell, pbc = self._small_pbc_system()
+        cuaev_computer = AEVComputer.like_1x(
+            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
+        ).to(self.device, self.dtype)
+        virial = self._virial(self.aev_computer_1x, species, coordinates, cell, pbc)
+        cu_virial = self._virial(cuaev_computer, species, coordinates, cell, pbc)
+        self.assertEqual(cu_virial, virial, atol=self.tolerance, rtol=self.tolerance)
+
+        grad = self._grad_diff_vectors(
+            self.aev_computer_1x, species, coordinates, cell, pbc
+        )
+        cu_grad = self._grad_diff_vectors(
+            cuaev_computer, species, coordinates, cell, pbc
+        )
+        self.assertEqual(cu_grad, grad, atol=self.tolerance, rtol=self.tolerance)
 
     def testWithFullNbrList_pbc(self):
         species, coordinates, cell, pbc = read_xyz(

@@ -153,6 +153,9 @@ if scheduler.last_epoch == 0:
 mse = torch.nn.MSELoss(reduction="none")
 force_training = False
 force_coefficient = 0.1
+# Passing the parameters to ``loss.backward`` avoids computing gradients wrt the
+# coordinates, which are not needed, and are expensive when training on forces
+params = list(model.parameters())
 for epoch in range(scheduler.last_epoch, max_epochs + 1):
     # Stop training if the lr is below a given threshold
     if optimizer.param_groups[0]["lr"] < min_learning_rate:
@@ -167,6 +170,7 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
         batch = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
         species = batch["species"]
         coordinates = batch["coordinates"].float()
+        coordinates.requires_grad_(force_training)
         target_energies = batch["energies"].float()
         num_atoms = (species >= 0).sum(dim=1, dtype=target_energies.dtype)
         output = model((species, coordinates))
@@ -185,7 +189,7 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
             loss = (mse(predicted_energies, target_energies) / num_atoms.sqrt()).mean()
 
         optimizer.zero_grad()
-        loss.backward()
+        loss.backward(inputs=params)
         optimizer.step()
 
     # Validate

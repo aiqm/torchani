@@ -120,15 +120,25 @@ struct NeighborList {
   Tensor numJPerI_t;
   Tensor distJ_t;
   Tensor deltaJ_t;
+  // Only for the half nbrlist: idx into the (2P) duplicated pairs, undefined otherwise
+  Tensor pairIdxJ_t;
 
   NeighborList() = default;
-  NeighborList(int nJ, int maxNumJPerI, Tensor atomJ_t, Tensor numJPerI_t, Tensor distJ_t, Tensor deltaJ_t)
+  NeighborList(
+      int nJ,
+      int maxNumJPerI,
+      Tensor atomJ_t,
+      Tensor numJPerI_t,
+      Tensor distJ_t,
+      Tensor deltaJ_t,
+      Tensor pairIdxJ_t)
       : nJ(nJ),
         maxNumJPerI(maxNumJPerI),
         atomJ_t(atomJ_t),
         numJPerI_t(numJPerI_t),
         distJ_t(distJ_t),
-        deltaJ_t(deltaJ_t) {}
+        deltaJ_t(deltaJ_t),
+        pairIdxJ_t(pairIdxJ_t) {}
 };
 
 struct AEVScalarParams {
@@ -165,7 +175,9 @@ struct Result {
   Tensor atomI_t;
   Tensor startIdxJ_t;
   int nI;
-  Tensor coordinates_t;
+  // Tensor the backward computes gradients for: coordinates (molecules, atoms, 3),
+  // or for the half nbrlist the pair vectors (1, pairs, 3)
+  Tensor grad_target_t;
   Tensor species_t;
   NeighborList radialNbr;
   NeighborList angularNbr;
@@ -175,12 +187,12 @@ struct Result {
       Tensor atomI_t,
       Tensor startIdxJ_t,
       int64_t nI,
-      Tensor coordinates_t,
+      Tensor grad_target_t,
       Tensor species_t,
       NeighborList radialNbr,
       NeighborList angularNbr);
   Result(tensor_list tensors);
-  Result(Tensor coordinates_t, Tensor species_t);
+  Result(Tensor grad_target_t, Tensor species_t);
   Result();
   operator tensor_list() {
     return {
@@ -188,7 +200,7 @@ struct Result {
         atomI_t,
         startIdxJ_t,
         torch::tensor(nI),
-        coordinates_t,
+        grad_target_t,
         species_t,
         torch::tensor(radialNbr.nJ),
         torch::tensor(radialNbr.maxNumJPerI),
@@ -196,12 +208,14 @@ struct Result {
         radialNbr.numJPerI_t,
         radialNbr.distJ_t,
         radialNbr.deltaJ_t,
+        radialNbr.pairIdxJ_t,
         torch::tensor(angularNbr.nJ),
         torch::tensor(angularNbr.maxNumJPerI),
         angularNbr.atomJ_t,
         angularNbr.numJPerI_t,
         angularNbr.distJ_t,
-        angularNbr.deltaJ_t};
+        angularNbr.deltaJ_t,
+        angularNbr.pairIdxJ_t};
   }
 };
 
@@ -215,7 +229,6 @@ void cuaev_forward(
 
 template <bool use_cos_cutoff>
 void cuaev_forward_with_half_nbrlist(
-    const Tensor& coordinates_t,
     const Tensor& species_t,
     const Tensor& atomIJ_t,
     const Tensor& deltaJ_t,
@@ -241,53 +254,42 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
 
 void initAEVConsts(AEVScalarParams& aev_params, cudaStream_t stream);
 
-// CuaevComputer
-// Only keep one copy of aev parameters
-struct CuaevComputer : torch::CustomClassHolder {
-  AEVScalarParams aev_params;
+// TODO add option for simulation only forward, which will initilize result space, and no need to allocate any more.
+Result aev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
 
-  CuaevComputer(
-      double Rcr,
-      double Rca,
-      const Tensor& EtaR_t,
-      const Tensor& ShfR_t,
-      const Tensor& EtaA_t,
-      const Tensor& Zeta_t,
-      const Tensor& ShfA_t,
-      const Tensor& ShfZ_t,
-      int64_t num_species,
-      bool use_cos_cutoff);
+Result aev_forward_with_half_nbrlist(
+    const Tensor& species_t,
+    const Tensor& atomIJ_t,
+    const Tensor& deltaJ_t,
+    const Tensor& distJ_t,
+    const AEVScalarParams& aev_params);
 
-  // TODO add option for simulation only forward, which will initilize result space, and no need to allocate any more.
-  Result forward(const Tensor& coordinates_t, const Tensor& species_t);
+Result aev_forward_with_full_nbrlist(
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const Tensor& atomI_t,
+    const Tensor& atomJ_t,
+    const Tensor& numJPerI_t,
+    const AEVScalarParams& aev_params);
 
-  Result forward_with_half_nbrlist(
-      const Tensor& coordinates_t,
-      const Tensor& species_t,
-      const Tensor& atomIJ_t,
-      const Tensor& deltaJ_t,
-      const Tensor& distJ_t);
+Tensor aev_backward(const Tensor& grad_e_aev, const AEVScalarParams& aev_params, const Result& result);
 
-  Result forward_with_full_nbrlist(
-      const Tensor& coordinates_t,
-      const Tensor& species_t,
-      const Tensor& atomIJ_t,
-      const Tensor& deltaJ_t,
-      const Tensor& distJ_t);
-
-  Tensor backward(const Tensor& grad_e_aev, const Result& result);
-
-  Tensor double_backward(const Tensor& grad_force, const Result& result);
-};
+Tensor aev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
 // Autograd functions
+// Op that produced a Result. Used to recompute the AEV with ATen ops for higher order derivatives
+enum class CuaevOp : int64_t { Fused, HalfNbrlist, FullNbrlist };
+
 class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd> {
  public:
   static Tensor forward(
       AutogradContext* ctx,
       Tensor grad_e_aev,
-      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer,
-      tensor_list result_tensors);
+      Tensor grad_target,
+      const AEVScalarParams& aev_params,
+      tensor_list result_tensors,
+      tensor_list aten_inputs,
+      CuaevOp op);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
@@ -297,7 +299,7 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
       AutogradContext* ctx,
       const Tensor& coordinates_t,
       const Tensor& species_t,
-      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer);
+      const AEVScalarParams& aev_params);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
@@ -305,12 +307,11 @@ class CuaevWithHalfNbrlistAutograd : public torch::autograd::Function<CuaevWithH
  public:
   static Tensor forward(
       AutogradContext* ctx,
-      const Tensor& coordinates_t,
       const Tensor& species_t,
       const Tensor& atomIJ_t,
       const Tensor& deltaJ_t,
       const Tensor& distJ_t,
-      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer);
+      const AEVScalarParams& aev_params);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
@@ -323,6 +324,6 @@ class CuaevWithFullNbrlistAutograd : public torch::autograd::Function<CuaevWithF
       const Tensor& atomI_t,
       const Tensor& atomJ_t,
       const Tensor& numJPerI_t,
-      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer);
+      const AEVScalarParams& aev_params);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
