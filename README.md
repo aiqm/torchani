@@ -47,8 +47,9 @@ and the relevant publications:
 
 We recommend installing `torchani` inside a `conda|mamba` environment, or a `venv`.
 
-⚠️  **Important**: *Please install torchani with pip if you want the latest version, even
-if using a conda env since the torchani conda package is currently not maintained.*
+⚠️  **Important**: *We recommend you install torchani with `pip``uv`you want the latest version, even
+if using a conda env. The torchani conda package is maintained by external developers
+and may be out of date.*
 
 We also recommended you first install a specific torch version, with a specific CUDA
 toolkit backend, for example:
