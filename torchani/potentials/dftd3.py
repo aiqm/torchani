@@ -1,7 +1,7 @@
 r"""Potentials that calculate dispersion (i.e. van der Waals) interactions"""
 
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 import h5py
@@ -63,10 +63,10 @@ class BeckeJohnsonDamp(torch.nn.Module):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         a1: float,
         a2: float,
-        sqrt_empirical_charge: tp.Sequence[float] = (),
+        sqrt_empirical_charge: Sequence[float] = (),
     ):
         super().__init__()
         self.atomic_numbers = torch.tensor(
@@ -94,7 +94,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
     @classmethod
     def from_functional(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         functional: str,
     ) -> tpx.Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
@@ -145,14 +145,14 @@ class TwoBodyDispersionD3(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         # Potential
         s6: float,
         s8: float,
         damp_a1: float,
         damp_a2: float,
-        sqrt_empirical_charge: tp.Sequence[float] = (),
-        covalent_radii: tp.Sequence[float] = (),
+        sqrt_empirical_charge: Sequence[float] = (),
+        covalent_radii: Sequence[float] = (),
         *,  # Cutoff
         cutoff_fn: CutoffArg = "smooth",
         cutoff: float = math.inf,
@@ -207,7 +207,7 @@ class TwoBodyDispersionD3(BasePairPotential):
     @classmethod
     def from_functional(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         functional: str,
         *,
         cutoff_fn: CutoffArg = "smooth",
@@ -228,7 +228,9 @@ class TwoBodyDispersionD3(BasePairPotential):
         self,
         element_idxs: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
     ) -> Tensor:
+        assert scalars is None
         # Internally this module works in AU
         distances = self.ANGSTROM_TO_BOHR * neighbors.distances
 

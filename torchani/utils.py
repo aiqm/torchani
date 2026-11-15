@@ -1,7 +1,7 @@
 r"""Misc utilities used throughout the code"""
 
 from collections import OrderedDict
-import typing as tp
+from collections.abc import Iterable, Mapping, Sequence
 import tarfile
 import zipfile
 import math
@@ -214,7 +214,7 @@ def fast_masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
 
 
 def pad_atomic_properties(
-    properties: tp.Sequence[tp.Mapping[str, Tensor]],
+    properties: Sequence[Mapping[str, Tensor]],
     padding_values: dict[str, float] | None = None,
 ) -> dict[str, Tensor]:
     r"""
@@ -264,7 +264,7 @@ def pad_atomic_properties(
 
 def strip_redundant_padding(
     properties: dict[str, Tensor],
-    atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
+    atomic_properties: Iterable[str] = ATOMIC_KEYS,
 ) -> dict[str, Tensor]:
     r"""Strip padding from a sequence of padded properties"""
     # NOTE: Assume that the padding value is -1
@@ -377,7 +377,7 @@ class IntsToChemicalSymbols(_NumbersConvert):
         species_converter(species)  # Output: ['O', 'H', 'H']
     """
 
-    def __init__(self, symbols: tp.Sequence[str]):
+    def __init__(self, symbols: Sequence[str]):
         if isinstance(symbols, str):
             raise ValueError("symbols must be a sequence of str, but it can't be a str")
         super().__init__({i: s for i, s in enumerate(symbols)})
@@ -446,7 +446,7 @@ class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
         symbols: |symbols|
     """
 
-    def __init__(self, symbols: tp.Sequence[str], device: Device = None):
+    def __init__(self, symbols: Sequence[str], device: Device = None):
         if isinstance(symbols, str):
             raise ValueError("symbols must be a sequence of str, but it can't be a str")
         int_dict = {s: i for i, s in enumerate(symbols)}
@@ -460,7 +460,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
 
     def __init__(
         self,
-        masses: tp.Iterable[float] = (),
+        masses: Iterable[float] = (),
         device: Device = None,
         dtype: DType = None,
     ) -> None:
@@ -510,7 +510,7 @@ def atomic_numbers_to_masses(
 get_atomic_masses = atomic_numbers_to_masses
 
 
-def sort_by_atomic_num(it: tp.Iterable[str]) -> tuple[str, ...]:
+def sort_by_atomic_num(it: Iterable[str]) -> tuple[str, ...]:
     r"""Sort an iterable of chemical symbols by atomic number
 
     Args:
@@ -523,7 +523,7 @@ def sort_by_atomic_num(it: tp.Iterable[str]) -> tuple[str, ...]:
     return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
 
 
-def merge_state_dicts(paths: tp.Iterable[Path]) -> OrderedDict[str, Tensor]:
+def merge_state_dicts(paths: Iterable[Path]) -> OrderedDict[str, Tensor]:
     r"""Merge multiple single-model state dicts into an ensemble state dict"""
     if any(not path.is_file() for path in paths):
         raise ValueError("All passed paths must be existing files with state dicts")
@@ -625,9 +625,9 @@ class EnergyShifter(torch.nn.Module):
 # Useful function for simple classes meant as user extension points
 def _validate_user_kwargs(
     clsname: str,
-    names_dict: dict[str, tp.Sequence[str]],
+    names_dict: dict[str, Sequence[str]],
     kwargs: dict[str, tuple | list | float],
-    trainable: tp.Sequence[str],
+    trainable: Sequence[str],
 ) -> None:
     _num_tensors = sum(len(seq) for seq in names_dict.values())
     kwargs_set: set[str] = set()

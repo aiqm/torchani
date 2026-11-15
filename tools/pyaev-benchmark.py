@@ -2,6 +2,7 @@ from enum import Enum
 from typer import Option, Typer
 import typing_extensions as tpx
 import typing as tp
+from collections.abc import Iterable
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -109,7 +110,7 @@ def run(
     for k, aevc in models.items():
         console.print(f"Model kind={k}")
         timer = Timer(modules_and_fns=[], nvtx=False, sync=sync)
-        atoms_num: tp.Iterable[int]
+        atoms_num: Iterable[int]
         atoms_num = range(30, 1300, 10)
 
         for n in map(int, atoms_num):

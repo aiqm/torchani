@@ -1,4 +1,5 @@
 import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -27,7 +28,7 @@ class AtomicOneHot(_Embedding):
 
     one_hot: Tensor
 
-    def __init__(self, symbols: tp.Sequence[str]) -> None:
+    def __init__(self, symbols: Sequence[str]) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
         one_hot = torch.zeros(num + 1, num)
@@ -53,7 +54,7 @@ class AtomicEmbedding(_Embedding):
         # torch.tensor([[1.2, .1], [-.5, .8], [.3, -.4], [0, 0]])
     """
 
-    def __init__(self, symbols: tp.Sequence[str], dim: int = 10) -> None:
+    def __init__(self, symbols: Sequence[str], dim: int = 10) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
         self.embed = torch.nn.Embedding(num + 1, dim, padding_idx=num)
@@ -120,7 +121,7 @@ class AtomicContainer(torch.nn.Module):
 class AtomicNetwork(torch.nn.Module):
     def __init__(
         self,
-        layer_dims: tp.Sequence[int],
+        layer_dims: Sequence[int],
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
     ) -> None:

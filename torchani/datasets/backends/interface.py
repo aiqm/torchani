@@ -6,6 +6,7 @@ import shutil
 # import tempfile
 # import types
 import typing as tp
+from collections.abc import Iterator, Mapping, MutableMapping
 from contextlib import contextmanager
 from itertools import chain
 from abc import ABC, abstractmethod
@@ -40,12 +41,12 @@ class Cache:
         self.properties = set()
 
 
-class NamedMapping(tp.Mapping):
+class NamedMapping(Mapping):
     name: str
 
 
 _MutMapSubtype = tp.TypeVar(
-    "_MutMapSubtype", bound=tp.MutableMapping[str, NDArray[tp.Any]]
+    "_MutMapSubtype", bound=MutableMapping[str, NDArray[tp.Any]]
 )
 
 # _ConformerGroup and Store are abstract classes from which all backends
@@ -56,7 +57,7 @@ _MutMapSubtype = tp.TypeVar(
 
 # This is like a dict, but supports "append", and rename keys, it can also
 # create dummy properties on the fly.
-class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
+class _ConformerGroup(MutableMapping[str, NDArray[tp.Any]], ABC):
     def __init__(
         self,
         *args,
@@ -254,7 +255,7 @@ class Metadata:
 #   pair of methods. If one is implemented the other must be implemented too
 
 
-class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
+class Store(MutableMapping[str, "_ConformerGroup"], ABC):
     root_kind: RootKind
     suffix: str = ""
     backend: Backend
@@ -417,7 +418,7 @@ class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
         return self._meta, self._meta_mode
 
     @contextmanager
-    def open(self, mode: str, only_meta_needed: bool = False) -> tp.Iterator[tpx.Self]:
+    def open(self, mode: str, only_meta_needed: bool = False) -> Iterator[tpx.Self]:
         try:
             if only_meta_needed:
                 try:
@@ -558,5 +559,5 @@ class _HierarchicalStore(Store):
     def __len__(self) -> int:
         return len(self.data)
 
-    def __iter__(self) -> tp.Iterator[str]:
+    def __iter__(self) -> Iterator[str]:
         return iter(self.data)

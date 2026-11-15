@@ -1,6 +1,6 @@
 import math
 import itertools
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 
@@ -19,7 +19,7 @@ from torchani.potentials.core import PairPotential
 def plot(
     pot: PairPotential,
     title: str = "",
-    symbol_pairs: tp.Sequence[tuple[str, str]] = (),
+    symbol_pairs: Sequence[tuple[str, str]] = (),
     xmin: float = 0.1,
     xmax: float | None = None,
     ymin: float | None = None,

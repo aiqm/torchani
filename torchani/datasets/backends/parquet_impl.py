@@ -1,4 +1,5 @@
 import typing as tp
+from collections.abc import Iterable, Iterator
 import json
 from pathlib import Path
 from collections import OrderedDict
@@ -197,7 +198,7 @@ class _PandasStore(Store):
         self.execute_all_queued_append_ops()
         return len(self.data["group"].unique())
 
-    def __iter__(self) -> tp.Iterator[str]:
+    def __iter__(self) -> Iterator[str]:
         self.execute_all_queued_append_ops()
         keys = self.data["group"].unique().tolist()
         keys.sort()
@@ -228,7 +229,7 @@ class _PandasStore(Store):
         self.data.rename(columns=old_new_dict, inplace=True)
         self._data_is_dirty = True
 
-    def delete_direct(self, properties: tp.Iterable[str]) -> None:
+    def delete_direct(self, properties: Iterable[str]) -> None:
         self.execute_all_queued_append_ops()
         self.data.drop(labels=list(properties), inplace=True, axis="columns")
         # If the only thing left is "group", delete everything

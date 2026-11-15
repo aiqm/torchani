@@ -1,6 +1,7 @@
 import warnings
 import os
 import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -599,11 +600,11 @@ class AEVComputer(torch.nn.Module):
         radial_cutoff: float,
         angular_cutoff: float,
         radial_eta: float,
-        radial_shifts: tp.Sequence[float],
+        radial_shifts: Sequence[float],
         angular_eta: float,
         angular_zeta: float,
-        angular_shifts: tp.Sequence[float],
-        sections: tp.Sequence[float],
+        angular_shifts: Sequence[float],
+        sections: Sequence[float],
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",

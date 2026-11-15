@@ -25,6 +25,7 @@ transforms, which you may be familiar with already. An example of their usage:
 """
 
 import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -157,7 +158,7 @@ class SubtractSAE(Transform):
     Takes same arguments as `torchani.sae.SelfEnergy`
     """
 
-    def __init__(self, symbols: tp.Sequence[str], self_energies: tp.Sequence[float]):
+    def __init__(self, symbols: Sequence[str], self_energies: Sequence[float]):
         super().__init__()
         self._shifter = SelfEnergy(symbols, self_energies)
         self.atomic_numbers = self._shifter.atomic_numbers
@@ -178,7 +179,7 @@ class AtomicNumbersToIndices(Transform):
         symbols: |symbols|
     """
 
-    def __init__(self, symbols: tp.Sequence[str]):
+    def __init__(self, symbols: Sequence[str]):
         super().__init__()
         self.atomic_numbers = torch.tensor(
             [ATOMIC_NUMBER[s] for s in symbols], dtype=torch.long
@@ -198,7 +199,7 @@ class Compose(Transform):
         transforms: Transforms to compose, in order.
     """
 
-    def __init__(self, transforms: tp.Sequence[Transform]):
+    def __init__(self, transforms: Sequence[Transform]):
         super().__init__()
 
         # Validate that all transforms use the same atomic numbers

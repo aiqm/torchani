@@ -1,7 +1,7 @@
 import warnings
 import os
 import itertools
-import typing as tp
+from collections.abc import Sequence
 from itertools import accumulate
 
 import torch
@@ -167,7 +167,7 @@ class BmmAtomicNetwork(torch.nn.Module):
     functions (simple multi-layer perceptrons or MLPs).
     """
 
-    def __init__(self, networks: tp.Sequence[AtomicNetwork]):
+    def __init__(self, networks: Sequence[AtomicNetwork]):
         super().__init__()
         self.has_biases = networks[0].has_biases
         self.activation = networks[0].activation
@@ -221,7 +221,7 @@ class BmmLinear(torch.nn.Module):
     output: (e x n x p)
     """
 
-    def __init__(self, linears: tp.Sequence[torch.nn.Linear]):
+    def __init__(self, linears: Sequence[torch.nn.Linear]):
         super().__init__()
         # Concatenate weights
         weights = [layer.weight.unsqueeze(0).clone().detach() for layer in linears]

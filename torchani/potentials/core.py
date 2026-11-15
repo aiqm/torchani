@@ -1,5 +1,5 @@
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -25,7 +25,7 @@ class Potential(_ChemModule):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
         cutoff: float = math.inf,
     ):
@@ -40,6 +40,7 @@ class Potential(_ChemModule):
         coords: Tensor,
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
+        scalars: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         atomic_nums_input: bool = True,
@@ -63,7 +64,12 @@ class Potential(_ChemModule):
         else:
             neighbors = all_pairs(self.cutoff, elem_idxs, coords, cell, pbc)
         return self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, atomic, ensemble_values
+            elem_idxs,
+            coords,
+            neighbors,
+            scalars=scalars,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
         ).energies
 
     def compute_from_neighbors(
@@ -71,6 +77,7 @@ class Potential(_ChemModule):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
@@ -93,6 +100,7 @@ class DummyPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
@@ -123,7 +131,7 @@ class BasePairPotential(Potential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -142,6 +150,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
     ) -> Tensor:
         r"""Return energy of all pairs of neighbors
 
@@ -156,6 +165,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         ghost_flags: Tensor | None = None,
     ) -> Tensor:
         # Input validation
@@ -164,7 +174,7 @@ class BasePairPotential(Potential):
         assert neighbors.indices.ndim == 2, "atom_index12 should be 2 dimensional"
         assert neighbors.distances.shape[0] == neighbors.indices.shape[1]
 
-        pair_energies = self.pair_energies(elem_idxs, neighbors)
+        pair_energies = self.pair_energies(elem_idxs, neighbors, scalars)
         pair_energies *= self.cutoff_fn(neighbors.distances, self.cutoff)
 
         if ghost_flags is not None:
@@ -183,6 +193,7 @@ class BasePairPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
@@ -191,7 +202,9 @@ class BasePairPotential(Potential):
         # NOTE: Currently having ensembles of pair potentials is not supported, so
         # ensemble_values is disregarded
         # NOTE: Currently charge is not passed to the pair_potentials
-        pair_energies = self._pair_energies_wrapper(elem_idxs, neighbors, ghost_flags)
+        pair_energies = self._pair_energies_wrapper(
+            elem_idxs, neighbors, scalars, ghost_flags
+        )
         molecs_num, atoms_num = elem_idxs.shape
         if atomic:
             energies = neighbors.distances.new_zeros(molecs_num * atoms_num)
@@ -241,7 +254,7 @@ class PairPotential(BasePairPotential):
             tensors = ['bias']  # Vectors (all with the same len) or scalars
             pair_elem_tensors = ["k", "eq"]  # shape (num-sym * (num-sym + 1) / 2)
 
-            def pair_energies(self, elem_idxs, neighbors):
+            def pair_energies(self, elem_idxs, neighbors, scalars=None):
                 elem_pairs = elem_idxs.view(-1)[neighbors.indices]
                 eq = self.to_pair_values(self.eq, elem_pairs)
                 k = self.to_pair_values(self.k, elem_pairs)
@@ -264,9 +277,9 @@ class PairPotential(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
-        trainable: str | tp.Sequence[str] = (),
+        trainable: str | Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
         **kwargs,

@@ -1,4 +1,5 @@
 import typing as tp
+from collections.abc import Callable, Iterable, Iterator, Mapping
 import inspect
 import math
 import re
@@ -57,7 +58,7 @@ _LEGACY_BROKEN_KEYS = {"coordinatesHE", "energiesHE", "smiles"}
 
 
 # Helper functions
-def _get_any_element_key(properties: tp.Iterable[str]):
+def _get_any_element_key(properties: Iterable[str]):
     properties = {properties} if isinstance(properties, str) else set(properties)
     if "species" in properties:
         return "species"
@@ -101,9 +102,9 @@ _get_num_conformers = partial(
 )
 
 
-def _to_strpath_list(obj: tp.Iterable[StrPath] | StrPath) -> list[StrPath]:
+def _to_strpath_list(obj: Iterable[StrPath] | StrPath) -> list[StrPath]:
     try:
-        # This will raise an exception if obj is tp.Iterable[StrPath]
+        # This will raise an exception if obj is Iterable[StrPath]
         list_ = [fspath(obj)]  # type: ignore
     except TypeError:
         list_ = [o for o in obj]  # type: ignore
@@ -116,7 +117,7 @@ _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
 
 
 # Base class for ANIDataset and _ANISubdataset
-class _ANIDatasetBase(tp.Mapping[str, Conformers]):
+class _ANIDatasetBase(Mapping[str, Conformers]):
     def __init__(self, *args, **kwargs) -> None:
         # "properties" is read only, needed for validation of inputs, it may
         # change if a property is renamed or deleted. num_conformers and
@@ -160,12 +161,12 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
     def __len__(self) -> int:
         return self.num_conformer_groups
 
-    def __iter__(self) -> tp.Iterator[str]:
+    def __iter__(self) -> Iterator[str]:
         return iter(self._group_sizes.keys())
 
     def numpy_items(
         self, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tuple[str, NumpyConformers]]:
+    ) -> Iterator[tuple[str, NumpyConformers]]:
         count = 0
         for group_name in self.keys():
             count += 1
@@ -175,7 +176,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
             if count >= limit:
                 return
 
-    def numpy_values(self, **kwargs) -> tp.Iterator[NumpyConformers]:
+    def numpy_values(self, **kwargs) -> Iterator[NumpyConformers]:
         for k, v in self.numpy_items(**kwargs):
             yield v
 
@@ -189,7 +190,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def chunked_items(
         self, max_size: int = 2500, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tuple[str, int, MixedConformers]]:
+    ) -> Iterator[tuple[str, int, MixedConformers]]:
         r"""Sequentially iterate over chunked pieces of the dataset with a maximum size
 
         The iteration is "chunked" into pieces, so instead of yielding groups
@@ -235,13 +236,13 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def chunked_numpy_items(
         self, **kwargs
-    ) -> tp.Iterator[tuple[str, int, MixedConformers]]:
+    ) -> Iterator[tuple[str, int, MixedConformers]]:
         kwargs.update({"getter": "get_numpy_conformers"})
         yield from self.chunked_items(**kwargs)
 
     def iter_key_idx_conformers(
         self, limit: float = math.inf, **kwargs
-    ) -> tp.Iterator[tuple[str, int, Conformers]]:
+    ) -> Iterator[tuple[str, int, Conformers]]:
         kwargs = kwargs.copy()
         getter = kwargs.pop("getter", "get_conformers")
         count = 0
@@ -256,15 +257,15 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 
     def iter_key_idx_numpy_conformers(
         self, **kwargs
-    ) -> tp.Iterator[tuple[str, int, Conformers]]:
+    ) -> Iterator[tuple[str, int, Conformers]]:
         kwargs.update({"getter": "get_numpy_conformers"})
         yield from self.iter_key_idx_conformers(**kwargs)
 
-    def iter_conformers(self, **kwargs) -> tp.Iterator[Conformers]:
+    def iter_conformers(self, **kwargs) -> Iterator[Conformers]:
         for _, _, c in self.iter_key_idx_conformers(**kwargs):
             yield c
 
-    def iter_numpy_conformers(self, **kwargs) -> tp.Iterator[Conformers]:
+    def iter_numpy_conformers(self, **kwargs) -> Iterator[Conformers]:
         for _, _, c in self.iter_key_idx_numpy_conformers(**kwargs):
             yield c
 
@@ -273,8 +274,8 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
 # Decorator that wraps functions that modify the dataset in place. Makes
 # sure that cache updating happens after dataset modification
 def _needs_cache_update(
-    method: tp.Callable[..., "_ANISubdataset"]
-) -> tp.Callable[..., "_ANISubdataset"]:
+    method: Callable[..., "_ANISubdataset"]
+) -> Callable[..., "_ANISubdataset"]:
     @wraps(method)
     def method_with_cache_update(
         ds: "_ANISubdataset", *args, **kwargs
@@ -359,7 +360,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 )
 
     @contextmanager
-    def keep_open(self, mode: str = "r") -> tp.Iterator["_ANISubdataset"]:
+    def keep_open(self, mode: str = "r") -> Iterator["_ANISubdataset"]:
         r"""Context manager to keep dataset open while iterating over it
 
         This speeds up access in the context of many operations in a block,
@@ -468,7 +469,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         group_name: str,
         idx: IdxLike = None,
-        properties: tp.Iterable[str] | None = None,
+        properties: Iterable[str] | None = None,
     ) -> Conformers:
         r"""Get conformers in a given group in the dataset
 
@@ -487,7 +488,7 @@ class _ANISubdataset(_ANIDatasetBase):
         self,
         group_name: str,
         idx: IdxLike = None,
-        properties: tp.Iterable[str] | None = None,
+        properties: Iterable[str] | None = None,
         chem_symbols: bool = False,
         exclude_dummy: bool = False,
     ) -> NumpyConformers:
@@ -855,7 +856,7 @@ class _ANISubdataset(_ANIDatasetBase):
     @_broadcast
     @_needs_cache_update
     def delete_properties(
-        self, properties: tp.Iterable[str], verbose: bool = True
+        self, properties: Iterable[str], verbose: bool = True
     ) -> "_ANISubdataset":
         r"""Delete some properties from the dataset"""
         properties = {properties} if isinstance(properties, str) else set(properties)
@@ -922,7 +923,7 @@ class _ANISubdataset(_ANIDatasetBase):
         return grouping
 
     def _check_unique_element_key(
-        self, properties: tp.Iterable[str] | None = None
+        self, properties: Iterable[str] | None = None
     ) -> None:
         if properties is None:
             properties = self.properties
@@ -971,7 +972,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 f"All batch keys {self.properties} must have the same batch dimension"
             )
 
-    def _check_properties_are_present(self, properties: tp.Iterable[str]) -> None:
+    def _check_properties_are_present(self, properties: Iterable[str]) -> None:
         properties = {properties} if isinstance(properties, str) else set(properties)
         if not properties <= self.properties:
             raise ValueError(
@@ -979,7 +980,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 f" in the dataset, which has properties {self.properties}"
             )
 
-    def _check_properties_are_not_present(self, properties: tp.Iterable[str]) -> None:
+    def _check_properties_are_not_present(self, properties: Iterable[str]) -> None:
         properties = {properties} if isinstance(properties, str) else set(properties)
         if properties <= self.properties:
             raise ValueError(
@@ -1068,8 +1069,8 @@ class ANIDataset(_ANIDatasetBase):
 
     def __init__(
         self,
-        locations: tp.Iterable[StrPath] | StrPath,
-        names: tp.Iterable[str] | str | None = None,
+        locations: Iterable[StrPath] | StrPath,
+        names: Iterable[str] | str | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -1108,7 +1109,7 @@ class ANIDataset(_ANIDatasetBase):
         return self._first_subds.grouping
 
     @contextmanager
-    def keep_open(self, mode: str = "r") -> tp.Iterator["ANIDataset"]:
+    def keep_open(self, mode: str = "r") -> Iterator["ANIDataset"]:
         with ExitStack() as stack:
             for k in self._datasets.keys():
                 self._datasets[k] = stack.enter_context(
@@ -1141,7 +1142,7 @@ class ANIDataset(_ANIDatasetBase):
     def auto_append_conformers(
         self,
         conformers: MixedConformers,
-        atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
+        atomic_properties: Iterable[str] = ATOMIC_KEYS,
         padding: int = int(PADDING["numbers"]),
     ) -> "ANIDataset":
         assert (
@@ -1177,7 +1178,7 @@ class ANIDataset(_ANIDatasetBase):
     # Functions with a "group_name" argument are delegated to one specific
     # subdataset, other ones are performed in all subdatasets on a loop
     # (broadcasted)
-    def __getattr__(self, method: str) -> tp.Callable:
+    def __getattr__(self, method: str) -> Callable:
         unbound_method = getattr(_ANISubdataset, method)
         mark = unbound_method._mark
         if mark == "delegate":

@@ -1,6 +1,7 @@
 import typing_extensions as tpx
 import warnings
 import typing as tp
+from collections.abc import Iterable, Sequence
 
 import torch
 from torch import Tensor
@@ -26,7 +27,7 @@ class SingleNN(AtomicContainer):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         network: AtomicNetwork,
         embed_kind: str = "continuous",
         embed_dims: int | None = None,
@@ -105,7 +106,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def build(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         dims: tuple[int, ...],
         out_dim: int = 1,
@@ -129,7 +130,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def no_embed(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
@@ -143,7 +144,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def one_hot(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
@@ -157,7 +158,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def default(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
@@ -169,7 +170,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def one_hot_large(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
@@ -183,7 +184,7 @@ class SingleNN(AtomicContainer):
     @classmethod
     def large(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         bias: bool = False,
@@ -268,7 +269,7 @@ class ANISharedNetworks(AtomicContainer):
     @classmethod
     def build(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         shared_dims: tuple[int, ...],
         dims: dict[str, tuple[int, ...]],
@@ -291,7 +292,7 @@ class ANISharedNetworks(AtomicContainer):
     @classmethod
     def default(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
@@ -466,7 +467,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def build(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         dims: dict[str, tuple[int, ...]],
         out_dim: int = 1,
@@ -485,7 +486,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def like_dr(
         cls,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        symbols: Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
@@ -514,7 +515,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def like_ala(
         cls,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        symbols: Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
@@ -543,7 +544,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def like_2x(
         cls,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        symbols: Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
         in_dim: int = 1008,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
@@ -572,7 +573,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def default(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         in_dim: int,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
@@ -583,7 +584,7 @@ class ANINetworks(AtomicContainer):
     @classmethod
     def like_1x(
         cls,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+        symbols: Sequence[str] = ("H", "C", "N", "O"),
         in_dim: int = 384,
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
@@ -656,7 +657,7 @@ class Ensemble(AtomicContainer):
         }
         return new_state_dict
 
-    def __init__(self, modules: tp.Iterable[AtomicContainer], repeats: bool = False):
+    def __init__(self, modules: Iterable[AtomicContainer], repeats: bool = False):
         super().__init__()
         if not repeats and len(set(map(id, modules))) != len(tuple(modules)):
             raise ValueError("Modules are repeated. If intended use `repeats=True`")
@@ -745,7 +746,7 @@ class SpeciesConverter(torch.nn.Module):
 
     conv_tensor: Tensor
 
-    def __init__(self, symbols: tp.Sequence[str]):
+    def __init__(self, symbols: Sequence[str]):
         super().__init__()
         if isinstance(symbols, str):
             raise ValueError(

@@ -2,6 +2,7 @@ from pathlib import Path
 from enum import Enum
 import numpy as np
 import typing as tp
+from collections.abc import Callable, Sequence
 import time
 from collections import defaultdict
 
@@ -145,7 +146,7 @@ class Timer:
 
 def time_func(
     key: str,
-    func: tp.Callable[..., tp.Any],
+    func: Callable[..., tp.Any],
     timers: dict[str, float],
     sync: bool = False,
     nvtx: bool = False,
@@ -171,7 +172,7 @@ def time_func(
 
 
 def time_functions(
-    names_models: tp.Sequence[
+    names_models: Sequence[
         tuple[str | tuple[str, ...], torch.nn.Module]
     ],
     timers: dict[str, float],

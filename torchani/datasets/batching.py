@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 import typing_extensions as tpx
 import typing as tp
+from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 import math
 import json
 import datetime
@@ -27,7 +28,7 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
     transform: Transform
 
     # Explicit implementation of __iter__ to avoid relying on python's legacy behavior
-    def __iter__(self) -> tp.Iterator[Conformers]:
+    def __iter__(self) -> Iterator[Conformers]:
         j = 0
         while True:
             try:
@@ -37,7 +38,7 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
                 break
 
     @staticmethod
-    def _batch_size(batch: tp.Mapping[str, Tensor]) -> int:
+    def _batch_size(batch: Mapping[str, Tensor]) -> int:
         return batch[next(iter(batch.keys()))].shape[0]
 
     def cache(self, verbose: bool = True, pin_memory: bool = False) -> "BatchedDataset":
@@ -88,7 +89,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
 
     def __init__(
         self,
-        batches: tp.Sequence[Conformers],
+        batches: Sequence[Conformers],
         transform: Transform = identity,
         limit: int | float = 1.0,
         split: str = "division",
@@ -148,7 +149,7 @@ class ANIBatchedDataset(BatchedDataset):
         split: str = "division",
         transform: Transform = identity,
         limit: int | float = 1.0,
-        properties: tp.Sequence[str] = (),
+        properties: Sequence[str] = (),
         drop_last: bool = False,
     ):
         self.div = split
@@ -266,7 +267,7 @@ class Batcher:
 
     def divide_and_batch(
         self,
-        src: tp.Iterable[StrPath] | StrPath | ANIDataset,
+        src: Iterable[StrPath] | StrPath | ANIDataset,
         dest_dir: str = "",
         # Dataset modifications and options
         splits: dict[str, float] | None = None,
@@ -274,7 +275,7 @@ class Batcher:
         batch_size: int = 2560,
         padding: dict[str, float] | None = None,
         transform: Transform = identity,
-        properties: tp.Iterable[str] = (),
+        properties: Iterable[str] = (),
         # rng seeds
         divs_seed: int | None = None,
         batch_seed: int | None = None,
@@ -473,7 +474,7 @@ class Batcher:
         batch_size: int,
         padding: dict[str, float],
         transform: Transform,
-        properties: tp.Sequence[str],
+        properties: Sequence[str],
     ) -> dict[str, BatchedDataset]:
         group_names = list(dataset.keys())
         batched_datasets: dict[str, BatchedDataset] = dict()
@@ -588,7 +589,7 @@ class Batcher:
         padding: dict[str, float],
         splits: dict[str, float] | None,
         folds: int | None,
-        properties: tp.Sequence[str],
+        properties: Sequence[str],
     ) -> None:
         split_names = sorted(splits) if splits is not None else None
         split_fracs = (
@@ -619,11 +620,11 @@ class Batcher:
 
 # Kept for bw compat
 def create_batched_dataset(
-    src: tp.Collection[StrPath] | StrPath | ANIDataset,
+    src: Collection[StrPath] | StrPath | ANIDataset,
     dest_path: StrPath | None = None,
     # Dataset modifications and options
     batch_size: int = 2560,
-    properties: tp.Iterable[str] = (),
+    properties: Iterable[str] = (),
     padding: dict[str, float] | None = None,
     splits: dict[str, float] | None = None,
     folds: int | None = None,
@@ -676,9 +677,9 @@ def create_batched_dataset(
 
 
 def batch_all_in_ram(
-    src: tp.Collection[StrPath] | StrPath | ANIDataset,
+    src: Collection[StrPath] | StrPath | ANIDataset,
     batch_size: int = 2560,
-    properties: tp.Iterable[str] = (),
+    properties: Iterable[str] = (),
     padding: dict[str, float] | None = None,
     transform: Transform = identity,
     # rng seeds

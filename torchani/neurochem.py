@@ -12,6 +12,7 @@ import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import typing as tp
+from collections.abc import Sequence
 import struct
 import bz2
 import shutil
@@ -302,7 +303,7 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     return network
 
 
-def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
+def load_member(symbols: Sequence[str], model_dir: StrPath) -> ANINetworks:
     """Returns a `torchani.nn.ANINetworks` loaded from NeuroChem's network directory.
 
     Args:
@@ -318,7 +319,7 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
 
 
 def load_ensemble(
-    symbols: tp.Sequence[str], prefix: StrPath, count: int
+    symbols: Sequence[str], prefix: StrPath, count: int
 ) -> Ensemble:
     r"""Loads `torchani.nn.Ensemble` from NeuroChem's dirs with a given prefix
 
@@ -393,7 +394,7 @@ def modules_from_info(
     info: NeurochemInfo,
     model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         strategy=strategy,
@@ -424,7 +425,7 @@ def modules_from_model_name(
     model_name: str,
     model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     r"""Creates the necessary modules to generate a pre-trained ANI model
 
     Parses data from legacy neurochem files, which are fetched according to the model
@@ -441,7 +442,7 @@ def modules_from_info_file(
     info_file: Path,
     model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
     from legacy neurochem files.

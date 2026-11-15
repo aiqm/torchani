@@ -20,11 +20,13 @@ class NNPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         return EnergiesScalars(energies)
@@ -50,11 +52,13 @@ class MergedChargesNNPotential(NNPotential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         # AtomicContainer is assumed to output a tensor with a final dimension "2"
         # which holds energies and charges
@@ -89,11 +93,13 @@ class SeparateChargesNNPotential(NNPotential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)

@@ -28,6 +28,7 @@ from torchani.neighbors import (
     Triples,
 )
 from torchani.aev import ANIRadial, ANIAngular, AEVComputer
+from torchani.potentials import Coulomb
 from torchani.csrc import CUAEV_IS_INSTALLED
 
 SYMBOLS = ("H", "C", "N", "O")
@@ -183,6 +184,39 @@ class TestCompile(ANITestCasePT2):
         molecs = make_molecs(2, 6, seed=1234, device=self.device)
         molecs.atomic_nums[1, -2:] = -1
         self._assert_compiled_model_matches(model.to(self.device), molecs)
+
+    def testCoulomb(self) -> None:
+        molec = make_molec(10, seed=1234, device=self.device)
+        qs = torch.rand(molec.atomic_nums.shape, device=self.device) - 0.5
+        for damp_fn in ("", "erf", "tanh"):
+            with self.subTest(damp_fn=damp_fn):
+                torch.compiler.reset()
+                pot = Coulomb(SYMBOLS, damp_fn=damp_fn).to(self.device)
+                self._assert_compiled_matches(
+                    pot, molec.atomic_nums, molec.coords, None, None, qs
+                )
+
+    def testModelChargesCoulomb(self) -> None:
+        molecs = make_molecs(2, 6, seed=1234, device=self.device)
+        molecs.atomic_nums[1, -2:] = -1
+        for coulomb in ("full", "erf", "tanh"):
+            with self.subTest(coulomb=coulomb):
+                torch.compiler.reset()
+                model = simple_aniq(
+                    SYMBOLS,
+                    "wb97x-631gd",
+                    repulsion=False,
+                    strategy="pyaev",
+                    coulomb=coulomb,
+                )
+                self._assert_compiled_model_matches(model.to(self.device), molecs)
+
+    def testModelChargesCoulombPBC(self) -> None:
+        model = simple_aniq(
+            SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev", coulomb="erf"
+        )
+        molec = make_molec(6, cell_size=6.0, pbc=True, seed=1234, device=self.device)
+        self._assert_compiled_model_matches(model.to(self.device), molec)
 
     def testModelRepulsionPBC(self) -> None:
         model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=True, strategy="pyaev")
