@@ -1,5 +1,5 @@
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -25,7 +25,7 @@ class Potential(_ChemModule):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
         cutoff: float = math.inf,
     ):
@@ -38,9 +38,9 @@ class Potential(_ChemModule):
         self,
         species: Tensor,
         coords: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        scalars: tp.Optional[Tensor] = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
+        scalars: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         atomic_nums_input: bool = True,
@@ -72,11 +72,11 @@ class Potential(_ChemModule):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         r"""Compute the energies associated with the potential
 
@@ -95,11 +95,11 @@ class DummyPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         if atomic:
             return EnergiesScalars(coords.new_zeros(elem_idxs.shape))
@@ -126,7 +126,7 @@ class BasePairPotential(Potential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -145,7 +145,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
     ) -> Tensor:
         r"""Return energy of all pairs of neighbors
 
@@ -160,8 +160,8 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
-        ghost_flags: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
+        ghost_flags: Tensor | None = None,
     ) -> Tensor:
         # Input validation
         assert elem_idxs.ndim == 2, "species should be 2 dimensional"
@@ -188,11 +188,11 @@ class BasePairPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
         charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
         # NOTE: Currently having ensembles of pair potentials is not supported, so
         # ensemble_values is disregarded
@@ -203,15 +203,16 @@ class BasePairPotential(Potential):
         molecs_num, atoms_num = elem_idxs.shape
         if atomic:
             energies = neighbors.distances.new_zeros(molecs_num * atoms_num)
-            energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
-            energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
+            energies.scatter_add_(0, neighbors.indices[0], pair_energies / 2)
+            energies.scatter_add_(0, neighbors.indices[1], pair_energies / 2)
             energies = energies.view(molecs_num, atoms_num)
         else:
             energies = neighbors.distances.new_zeros(molecs_num)
             molecs_idxs = torch.div(
                 neighbors.indices[0], elem_idxs.shape[1], rounding_mode="floor"
             )
-            energies.index_add_(0, molecs_idxs, pair_energies)
+            # scatter_add_ since inductor-cpu fails with index_add_ to 1-elem tensors
+            energies.scatter_add_(0, molecs_idxs, pair_energies)
         return EnergiesScalars(energies)
 
     @staticmethod
@@ -265,15 +266,15 @@ class PairPotential(BasePairPotential):
         pot = Square(symbols=("H", "C", "O"), k=k, bias=0.1, eq=eq, trainable="k")
     """
 
-    tensors: tp.List[str] = []
-    elem_tensors: tp.List[str] = []
-    pair_elem_tensors: tp.List[str] = []
+    tensors: list[str] = []
+    elem_tensors: list[str] = []
+    pair_elem_tensors: list[str] = []
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         *,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
         **kwargs,

@@ -4,7 +4,7 @@ import tempfile
 from torchani._testing import TestCase
 from torchani import datasets
 from torchani.cli import data_pull
-from torchani.datasets import _DatasetId, _LotId
+from torchani._builtin_dataset_ids import _DatasetId, _LotId
 from torchani.paths import set_data_dir
 
 

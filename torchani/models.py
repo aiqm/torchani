@@ -1,8 +1,8 @@
 r"""Provides access to all published ANI models.
 
-Provided models are subclasses of `torchani.arch.ANI`. Some models have been
-published in previous articles, and some in TorchANI 2. If you use any of these models
-in your work please cite the corresponding article(s).
+Provided models are subclasses of `torchani.arch.ANI`. Some models have been published
+in previous articles, and some in TorchANI 2.0. If you use any of these models in your
+work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
 some region of chemical space, please open an issue in GitHub. The TorchANI developers
@@ -74,12 +74,14 @@ from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
 from torchani.paths import custom_models_dir
 
+__all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2xr"]
+
 
 # Protocol used by factory functions that instantiate ani models, here for reference
 class _ModelFactory(tp.Protocol):
     def __call__(
         self,
-        model_index: tp.Optional[int] = None,
+        model_index: int | None = None,
         neighborlist: NeighborlistArg = "all_pairs",
         strategy: str = "pyaev",
         periodic_table_index: bool = True,
@@ -90,7 +92,7 @@ class _ModelFactory(tp.Protocol):
 
 
 def ANI1x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -127,7 +129,7 @@ def ANI1x(
 
 
 def ANI1ccx(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -164,7 +166,7 @@ def ANI1ccx(
 
 
 def ANI2x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -200,7 +202,7 @@ def ANI2x(
 
 
 def ANImbis(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -256,7 +258,7 @@ def ANImbis(
 
 
 def ANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -269,10 +271,6 @@ def ANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -291,7 +289,7 @@ def ANI2xr(
 
 
 def ANI2dr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -304,10 +302,6 @@ def ANI2dr(
     Trained to the B973c level of theory with added repulsion and dispersion potentials,
     and smoother PES.
     """
-    warnings.warn(
-        "ANI-2xr is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="b973c-def2mtzvp",
         symbols=SYMBOLS_2X_ZNUM_ORDER,
@@ -326,13 +320,13 @@ def ANI2dr(
 
 
 def ANIr2s(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
     device: Device = None,
     dtype: DType = None,
-    solvent: tp.Optional[str] = None,
+    solvent: str | None = None,
 ) -> ANI:
     r""":meta private:"""
     # r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
@@ -344,6 +338,7 @@ def ANIr2s(
     # and ``ANIr2s_chcl3`` can also be instantiated directly. By default the vacuum
     # model is returned.
     # """
+    warnings.warn("ANIr2s is experimental. Use at your own risk")
     suffix = f"{'_' + solvent if solvent is not None else ''}"
     # These models were trained with _AltSmoothCutoff, but difference is negligible
     model = simple_ani(
@@ -363,7 +358,7 @@ def ANIr2s(
         radial_cutoff=5.1,
     )
     model.load_state_dict(
-        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
+        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=False)
     )
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
@@ -372,7 +367,7 @@ def ANIr2s(
 
 
 def ANIr2s_ch3cn(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -387,12 +382,12 @@ def ANIr2s_ch3cn(
         periodic_table_index,
         device,
         dtype,
-        solvent="ch3cn"
+        solvent="ch3cn",
     )
 
 
 def ANIr2s_chcl3(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -407,12 +402,12 @@ def ANIr2s_chcl3(
         periodic_table_index,
         device,
         dtype,
-        solvent="chcl3"
+        solvent="chcl3",
     )
 
 
 def ANIr2s_water(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -427,12 +422,12 @@ def ANIr2s_water(
         periodic_table_index,
         device,
         dtype,
-        solvent="water"
+        solvent="water",
     )
 
 
 def SnnANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -445,13 +440,9 @@ def SnnANI2xr(
     Trained to the wB97X level of theory with an added repulsion potential, and smoother
     PES.
     """
-    warnings.warn(
-        "ANI-2xr-snn is experimental and hasn't yet been peer yet reviewed. "
-        "It is subject to change in the near future"
-    )
     model = simple_ani(
         lot="wb97x-631gd",
-        symbols=['H', 'C', 'N', 'O', 'F', 'S', 'Cl'],
+        symbols=["H", "C", "N", "O", "F", "S", "Cl"],
         ensemble_size=8,
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
@@ -468,6 +459,60 @@ def SnnANI2xr(
     return model
 
 
+def ANI1xnr(
+    model_index: int | None = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r"""The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_
+
+    The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_. This model
+    model is an ensemble of 8 networks that was trained on the ANI-1xnr dataset dataset.
+    The target level of theory is BLYP/TZV2P. It is a reactive potential that predicts
+    energies on HCNO elements exclusively. It shouldn't be used with other atom types.
+
+    .. _ani-1xnr on GitHub:
+        https://github.com/atomistic-ml/ani-1xnr/
+
+    .. _ani-1xnr Paper:
+        https://www.nature.com/articles/s41557-023-01427-3
+    """
+    model = simple_ani(
+        lot="blyp-tzv2p",
+        symbols=["H", "C", "N", "O"],
+        radial_start=0.5,
+        angular_start=0.5,
+        radial_cutoff=5.2,
+        angular_cutoff=3.5,
+        radial_precision=65.7,
+        angular_precision=10.1,
+        angular_zeta=14.1,
+        radial_shifts=32,
+        angular_shifts=8,
+        sections=4,
+        cutoff_fn="cosine",
+        container="ANINetworks",
+        container_ctor="like_2x",
+        dispersion=False,
+        repulsion=False,
+        ensemble_size=8,
+        activation="celu",
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        strategy=strategy,
+        self_energies="zero",  # overwritten by the state dict
+        bias=True,
+    )
+    model.load_state_dict(_fetch_state_dict("ani1xnr.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
 # Custom models
 def __getattr__(name: str):
     if name == "__path__":
@@ -477,9 +522,9 @@ def __getattr__(name: str):
         if p.name.startswith(name):
             spec = importlib.util.spec_from_file_location("model", p / "model.py")
             if spec is None:
-                raise ImportError(f"{p} / model.py could not be found")
+                raise AttributeError(f"{p} / model.py could not be found")
             module = importlib.util.module_from_spec(spec)
             assert spec.loader is not None  # mypy
             spec.loader.exec_module(module)
             return getattr(module, name)
-    raise ImportError(f"Could not find custom model {name}")
+    raise AttributeError(f"Could not find custom model {name}")

@@ -9,7 +9,6 @@ files in a process where there is no Python dependency.
 """
 # To begin with, let's first import the modules we will use:
 from pathlib import Path
-import typing as tp
 
 import torch
 from torch import Tensor
@@ -26,7 +25,7 @@ from torchani.grad import hessians, forces
 model = torchani.models.ANI2x()
 
 ###############################################################################
-# It is very easy to compile and save the model using `torch.jit`.
+# It is very easy to compile and save the model using ``torch.jit``.
 compiled_model = torch.jit.script(model)
 torch.jit.save(compiled_model, "compiled_model.pt")
 
@@ -86,12 +85,12 @@ class CustomModule(torch.nn.Module):
         coordinates: Tensor,
         return_forces: bool = False,
         return_hessians: bool = False,
-    ) -> tp.Tuple[Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
+    ) -> tuple[Tensor, Tensor | None, Tensor | None]:
         if return_forces or return_hessians:
             coordinates.requires_grad_(True)
         energies = self.model((species, coordinates)).energies
-        _forces: tp.Optional[Tensor] = None
-        _hessians: tp.Optional[Tensor] = None
+        _forces: Tensor | None = None
+        _hessians: Tensor | None = None
         if return_forces or return_hessians:
             _forces = forces(
                 energies, coordinates, retain_graph=True, create_graph=return_hessians

@@ -24,7 +24,7 @@ zarr<3
 # Docs: Sphinx-related, for building the docs
 sphinx
 sphinx-gallery
-sphinx-design
+sphinx-design>=0.8
 pydata-sphinx-theme
 
 # Docs: For logging on training example
@@ -38,3 +38,5 @@ jinja2
 # Dev: Utils for linting and type checking
 flake8
 mypy
+
+ninja

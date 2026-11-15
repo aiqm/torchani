@@ -15,7 +15,9 @@ from torch import Tensor
 # all parameters of a Cutoff **must be passed to init of the superclass**
 # If cuaev supports the cutoff _cuaev_name must be defined to be a unique string
 class Cutoff(torch.nn.Module):
-    r"""Base class for cutoff functions"""
+    r"""Base class for cutoff functions.
+
+    If you implement a custom cutoff, you should subclass this module"""
 
     _cuaev_name: str
 
@@ -115,15 +117,12 @@ class _AltCutoffSmooth(Cutoff):
         return torch.exp(e) / 0.3678794411714423
 
 
-CutoffArg = tp.Union[
-    tp.Literal["global", "dummy", "cosine", "smooth"],
-    Cutoff,
-]
+CutoffArg = tp.Literal["global", "dummy", "cosine", "smooth"] | Cutoff
 
 
 def _parse_cutoff_fn(
     cutoff_fn: CutoffArg,
-    global_cutoff: tp.Optional[Cutoff] = None,
+    global_cutoff: Cutoff | None = None,
 ) -> Cutoff:
     if cutoff_fn == "global":
         assert global_cutoff is not None

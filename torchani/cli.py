@@ -4,9 +4,9 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+from typing import Annotated
 import os
 from enum import Enum
-import torch
 import shutil
 import typing as tp
 import json
@@ -17,20 +17,7 @@ from pathlib import Path
 import typing_extensions as tpx
 import re
 
-import torchani
-from torchani.paths import datasets_dir, data_dir
-import torchani.datasets
-from torchani.datasets._utils import (
-    DatasetIntegrityError,
-    _DATASETS_SPEC,
-    _calc_file_md5,
-    _fetch_and_create_builtin_dataset,
-    _available_dataset_lots,
-    _available_archives,
-    _default_dataset_lot,
-)
-from torchani.datasets.builtin import _DatasetId, _LotId
-from torchani.annotations import Device, DType
+from ._builtin_dataset_ids import _DatasetId, _LotId
 
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
@@ -42,6 +29,14 @@ main = Typer(
 
     A PyTorch library for training, development and research of
     ANI-style neural networks, maintained by the *Roitberg Group*.
+
+    If you find this work useful please cite the following articles:
+    - *TorchANI 2.0: An extensible, high performance library for the design, training, and use of NN-IPs*
+
+        https://pubs.acs.org/doi/10.1021/acs.jcim.5c01853
+    - *TorchANI: A Free and Open Source PyTorch-Based Deep Learning Implementation of the ANI Neural Network Potentials*
+
+        https://pubs.acs.org/doi/10.1021/acs.jcim.0c00451
 
     To execute single point calculations run `ani sp <path-to-xyz-file> -m <model>`
     For example `ani sp methane.xyz -m ani2x`.
@@ -55,7 +50,7 @@ main = Typer(
     Datasets and Models are saved in ``$TORCHANI_DATA_DIR/Datasets`` and
     ``$TORCHANI_DATA_DIR/Models`` respectively. By default
     ``TORCHANI_DATA_DIR=~/.local/share/Torchani``.
-    """,
+    """,  # noqa
 )
 
 data_app = Typer()
@@ -72,42 +67,30 @@ class DeviceKind(Enum):
     CPU = "cpu"
 
 
-def parse_device_and_dtype(
-    device: tp.Optional[DeviceKind] = None,
-    dtype: tp.Optional[DTypeKind] = None,
-) -> tp.Tuple[Device, DType]:
-    if dtype is None:
-        dtype = DTypeKind.F32
-
-    if dtype is DTypeKind.F32:
-        _dtype = torch.float32
-    elif dtype is DTypeKind.F64:
-        _dtype = torch.float64
-
-    if device is DeviceKind.CUDA:
-        _device = "cuda"
-    elif device is DeviceKind.CPU:
-        _device = "cpu"
-    else:
-        _device = "cuda" if torch.cuda.is_available() else "cpu"
-    return _device, _dtype
-
-
 @main.command("build-extensions")
 def _build_extensions(
     sms: tpx.Annotated[
-        tp.Optional[tp.List[str]],
+        list[str] | None,
         Option(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
         ),
     ] = None,
+    all_sms: Annotated[
+        bool,
+        Option("--all-sms/ ", help="Build for all PyTorch supported sms"),
+    ] = False,
 ) -> None:
     r"""Build CUDA and C++ extensions"""
     import torch
+    import torchani.paths
     from torch.utils.cpp_extension import load
+    from torch.utils.cpp_extension import TORCH_LIB_PATH
+
+    if all_sms:
+        sms = ["7.0", "7.5", "8.0", "8.9", "9.0", "10.0", "12.0"]
 
     if sms is not None:
-        os.environ["TORCH_CUDA_ARCH_LIST"] = ",".join(sms)
+        os.environ["TORCH_CUDA_ARCH_LIST"] = ";".join(sms)
 
     nvcc_args = ["--expt-extended-lambda"]
     nvcc_args.extend(
@@ -130,18 +113,31 @@ def _build_extensions(
                 f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/include"
             )
         os.environ["CUDA_HOME"] = f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/"
+    # Linking rules are explained in setup.py. Here user ldflags precede the
+    # torch libs, so --as-needed drops libtorch_python
+    torch_cuda_ldflags = [
+        "-Wl,--no-as-needed",
+        f"-L{TORCH_LIB_PATH}",
+        "-ltorch_cuda",
+        "-Wl,--as-needed",
+    ]
     print("Building cuAEV extension...")
-    build_dir = data_dir().parent.parent / "lib" / "Torchani"
+    build_dir = torchani.paths.data_dir().parent.parent / "lib" / "Torchani"
     build_dir.mkdir(exist_ok=True, parents=True)
     _ = load(
         name="cuaev",
-        sources=[f"{this_dir}/csrc/cuaev.cpp", f"{this_dir}/csrc/aev.cu"],
+        sources=[
+            f"{this_dir}/csrc/cuaev.cpp",
+            f"{this_dir}/csrc/aev.cu",
+            f"{this_dir}/csrc/aev_cpu.cpp",
+        ],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
         extra_cuda_cflags=nvcc_args,
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -154,6 +150,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17", "-fopenmp"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -166,6 +163,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=["-Wl,--as-needed"],
     )
     print("Done!")
     print()
@@ -179,11 +177,11 @@ def _build_extensions(
 @main.command(hidden=True)
 def opt(
     paths: tpx.Annotated[
-        tp.List[Path],
+        list[Path],
         Argument(),
     ],
     output_path: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
     model_key: tpx.Annotated[
@@ -191,11 +189,11 @@ def opt(
         Option("-m", "--model"),
     ] = "ANI2x",
     device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
     dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
     forces: tpx.Annotated[
@@ -209,10 +207,15 @@ def opt(
 ) -> None:
     r"""Execute a cartesian coords geom opt, using L-BFGS, with a TorchANI model"""
     raise NotImplementedError()
+    import torchani
+    from torchani.utils import _parse_device_and_dtype
+
     model_key = model_key.lower().replace("ani", "ANI")
-    _device, _dtype = parse_device_and_dtype(device, dtype)
+    _device, _dtype = _parse_device_and_dtype(
+        getattr(device, "value", None), getattr(dtype, "value", None)
+    )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -246,11 +249,13 @@ def opt(
 @main.command()
 def sp(
     paths: tpx.Annotated[
-        tp.List[Path],
-        Argument(),
+        list[Path],
+        Argument(
+            help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
+        ),
     ],
     output_path: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
     model_key: tpx.Annotated[
@@ -258,11 +263,11 @@ def sp(
         Option("-m", "--model"),
     ] = "ANI2x",
     device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
     dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
     atomic_charges: tpx.Annotated[
@@ -279,11 +284,18 @@ def sp(
     ] = False,
 ) -> None:
     r"""Execute a single point calculation using a TorchANI model"""
+    import torchani
+    import torch
+    from ase import Atoms
+    from ase.io import read as ase_read
+    from torchani.utils import _parse_device_and_dtype
 
     model_key = model_key.lower().replace("ani", "ANI")
-    _device, _dtype = parse_device_and_dtype(device, dtype)
+    _device, _dtype = _parse_device_and_dtype(
+        getattr(device, "value", None), getattr(dtype, "value", None)
+    )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, tp.Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -292,7 +304,28 @@ def sp(
     if atomic_charges:
         output["atomic_charges"] = []
     for p in paths:
-        znums, coords, cell, pbc = torchani.io.read_xyz(p, device=_device, dtype=_dtype)
+        if p.suffix == ".xyz":
+            znums, coords, cell, pbc = torchani.io.read_xyz(
+                p, device=_device, dtype=_dtype
+            )
+        else:
+            # Single molecule supported only
+            atoms = tp.cast(Atoms, ase_read(p))
+            if isinstance(atoms, list):
+                raise ValueError("Batch eval only supported for single molecules")
+            coords = (
+                torch.from_numpy(atoms.positions)
+                .to(dtype=_dtype, device=_device)
+                .unsqueeze(0)
+            )
+            cell = torch.from_numpy(atoms.get_cell()[:]).to(
+                dtype=_dtype, device=_device
+            )
+            znums = torch.from_numpy(atoms.numbers).to(device=_device).unsqueeze(0)
+            pbc = torch.tensor(atoms.pbc, dtype=torch.bool, device=_device)
+            if not pbc.any():
+                pbc = None
+                cell = None
         result = torchani.single_point(
             model,
             znums,
@@ -320,13 +353,13 @@ def sp(
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
     names: tpx.Annotated[
-        tp.Optional[tp.List[_DatasetId]],
+        list[_DatasetId] | None,
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
     lots: tpx.Annotated[
-        tp.Optional[tp.List[_LotId]],
+        list[_LotId] | None,
         Option(
             "-l",
             "--lot",
@@ -338,7 +371,7 @@ def data_pull(
         ),
     ] = None,
     ds_dir: tpx.Annotated[
-        tp.Optional[Path],
+        Path | None,
         Option(
             "-d",
             "--datasets-dir",
@@ -359,6 +392,13 @@ def data_pull(
     Download a built-in dataset to the default location in disk, or to a
     custom location
     """
+    import torchani.paths
+    from torchani.datasets._utils import (
+        _available_dataset_lots,
+        _default_dataset_lot,
+        _fetch_and_create_builtin_dataset,
+    )
+
     names = names or list(_DatasetId)
     lots = lots or [_LotId.DEFAULT]
 
@@ -387,7 +427,7 @@ def data_pull(
             processed_lots.append(lot)
             processed_names.append(name)
 
-    root = ds_dir or datasets_dir()
+    root = ds_dir or torchani.paths.datasets_dir()
     for name, lot in zip(processed_names, processed_lots):
         dest_dir = (root / f"{name.value}-{lot.value}").resolve()
         if dest_dir.exists() and verbose:
@@ -409,9 +449,12 @@ def data_pull(
 
 @data_app.command("clean", help="Remove datasets with data integrity issues")
 def data_clean() -> None:
+    import torchani.paths
+    from torchani.datasets._utils import DatasetIntegrityError, _available_archives
+
     archives = _available_archives()
     deleted = 0
-    for d in sorted(datasets_dir().iterdir()):
+    for d in sorted(torchani.paths.datasets_dir().iterdir()):
         if d.name not in archives:
             continue
         name, lot = archives[d.name]
@@ -427,15 +470,18 @@ def data_clean() -> None:
 def data_rm(
     name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[_LotId],
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
 ) -> None:
+    import torchani.paths
+    from torchani.datasets._utils import _DATASETS_SPEC
+
     if lot is None:
         dirname = _DATASETS_SPEC[name.value]["default-lot"]["archive"].split(".")[0]
     else:
         dirname = _DATASETS_SPEC[name.value]["lot"][lot.value]["archive"].split(".")[0]
-    ds_dir = datasets_dir() / dirname
+    ds_dir = torchani.paths.datasets_dir() / dirname
     if ds_dir.exists():
         print(f"Deleting dataset {dirname} ...")
         shutil.rmtree(ds_dir)
@@ -451,8 +497,12 @@ def data_ls(
         Option("-s/-S", "--check/--no-check"),
     ] = False,
 ) -> None:
+    import torchani
+    import torchani.paths
+    from torchani.datasets._utils import _available_archives, DatasetIntegrityError
+
     archives = _available_archives()
-    for d in sorted(datasets_dir().iterdir()):
+    for d in sorted(torchani.paths.datasets_dir().iterdir()):
         if d.name not in archives:
             continue
         name, lot = archives[d.name]
@@ -470,7 +520,7 @@ def data_ls(
 def data_info(
     name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[_LotId],
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
     check: tpx.Annotated[
@@ -478,6 +528,8 @@ def data_info(
         Option("-s/-S", "--check/--no-check"),
     ] = True,
 ) -> None:
+    import torchani
+
     getter = getattr(torchani.datasets, name.value)
     if lot is None:
         ds = getter(download=False, skip_check=not check)
@@ -497,11 +549,13 @@ def data_info(
 
 
 @data_app.command(
-    "pack", help="Create .tar.gz, .yaml, and .json files from a dir with .h5 files"
+    "pack",
+    help="Create .tar.gz, .yaml, and .json files from a dir with .h5 files",
+    hidden=True,
 )
 def data_pack(
     src_dir: tpx.Annotated[Path, Argument()],
-    dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
+    dest: tpx.Annotated[Path | None, Option("-o")] = None,
     name: tpx.Annotated[str, Option("-n", "--name")] = "",
     lot: tpx.Annotated[str, Option("-l", "--lot")] = "",
     suffix: tpx.Annotated[
@@ -509,6 +563,8 @@ def data_pack(
         Option("-s", "--suffix"),
     ] = ".h5",
 ) -> None:
+    from torchani.datasets._utils import _calc_file_md5
+
     dest_dir = dest if dest is not None else Path.cwd()
 
     def _validate_label(label: str, label_name: str, lower: bool = False) -> str:
@@ -536,7 +592,7 @@ def data_pack(
     csv_path = dest_dir / f"{name}.md5s.csv"
     json_path = dest_dir / f"{name}.json"
 
-    data_dict: tp.Dict[str, tp.Any] = {
+    data_dict: dict[str, tp.Any] = {
         name: {
             "lot": {
                 lot: {

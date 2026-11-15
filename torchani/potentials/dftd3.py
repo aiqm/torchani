@@ -34,7 +34,7 @@ from torchani.paths import _resources_dir
 # atom respectively.
 # This means for each pair of elements and reference indices there is an
 # associated coordination number for the first and second items.
-def _load_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
+def _load_c6_constants() -> tuple[Tensor, Tensor, Tensor]:
     with h5py.File(str(_resources_dir() / "c6.h5"), "r") as f:
         c6_constants = torch.from_numpy(f["all/constants"][:])
         c6_coordnums_a = torch.from_numpy(f["all/coordnums_a"][:])

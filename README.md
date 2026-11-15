@@ -26,7 +26,7 @@ have breaking changes. If you require the old state dicts of ANI models you can 
 them by calling `.legacy_state_dict()` instead of `.state_dict()`
 
 If you find a bug in TorchANI 2.0, or have some feature request, also feel free to open
-a GitHub issue. TorchANI 2.0 is currently tested against PyTorch 2.8 and CUDA 12.8
+a GitHub issue. TorchANI 2.0 is currently tested against PyTorch 2.13 and CUDA 13.0
 
 If you find this work useful please cite the following articles:
 - *TorchANI 2.0: An extensible, high performance library for the design, training, and use of NN-IPs* <br>
@@ -54,11 +54,11 @@ We also recommended you first install a specific torch version, with a specific 
 toolkit backend, for example:
 
 ```bash
-pip install torch==2.8 --index-url https://download.pytorch.org/whl/cu129
+pip install torch==2.13 --index-url https://download.pytorch.org/whl/cu130
 ```
 
-for the version with CUDA 12.9. This is not strictly required, but is easier if you want
-to control these versions. Note that TorchANI requires PyTorch >= 2.0.
+for the version with CUDA 13.0. This is not strictly required, but is easier if you want
+to control these versions. Note that TorchANI 2 requires PyTorch >= 2.0.
 
 Afterwards:
 
@@ -71,7 +71,7 @@ and network inference. In order to build the extensions, first install the CUDA 
 appropriate for your PyTorch version. You can follow the instructions in [the official
 documentation](https://developer.nvidia.com/cuda-toolkit) for your system.
 Alternatively, if you are using a conda environment, you can install the toolkit with
-`conda install nvidia::cuda-toolkit=12.9`
+`conda install nvidia::cuda-toolkit=13.0`
 
 After this, run:
 
