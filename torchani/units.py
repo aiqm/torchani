@@ -22,7 +22,7 @@ this module, and convenience functions to convert between different units are pr
 """
 
 import math
-
+from ase.units import Hartree as HARTREE_TO_ASE_EV
 
 # Comments on ASE:
 
@@ -86,26 +86,22 @@ def bohr2angstrom(x):
 def sqrt_mhessian2invcm(x):
     r"""Converts sqrt(mass-scaled hessian units) into cm^-1
 
-    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
-    which are sqrt(units of the mass-scaled hessian matrix)
-    into units of inverse centimeters.
+    Converts from units of sqrt(Hartree / (amu * Angstrom^2)) which are sqrt(units of
+    the mass-scaled hessian matrix) into units of inverse centimeters.
 
-    Take into account that to convert the actual eigenvalues of the hessian
-    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)"""
+    Take into account that to convert the actual eigenvalues of the hessian into
+    wavenumbers it is necessary to multiply by an extra factor of 1 / (2 * pi)"""
     return x * SQRT_MHESSIAN_TO_INVCM
 
 
 def sqrt_mhessian2milliev(x):
     r"""Converts sqrt(mass-scaled hessian units) into meV
 
-    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
-    which are sqrt(units of the mass-scaled hessian matrix)
-    into units of milli-electronvolts.
+    Converts from units of sqrt(Hartree / (amu * Angstrom^2)) which are sqrt(units of
+    the mass-scaled hessian matrix) into units of milli-electronvolts.
 
-    Take into account that to convert the actual eigenvalues of the hessian
-    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)"""
+    Take into account that to convert the actual eigenvalues of the hessian into
+    wavenumbers it is necessary to multiply by an extra factor of 1 / (2 * pi)"""
     return x * SQRT_MHESSIAN_TO_MILLIEV
 
 
@@ -120,6 +116,11 @@ def mhessian2fconst(x):
 def hartree2ev(x):
     r"""Hartree to eV conversion factor from 2014 CODATA"""
     return x * HARTREE_TO_EV
+
+
+def hartree2aseev(x):
+    r"""Hartree to eV conversion factor, directly from ASE"""
+    return x * HARTREE_TO_ASE_EV
 
 
 def ev2kjoulepermol(x):
@@ -155,12 +156,16 @@ bohr2angstrom.__doc__ = (
     str(bohr2angstrom.__doc__) + f"\n\n1 Bohr = {bohr2angstrom(1)} Angstrom"
 )
 hartree2ev.__doc__ = str(hartree2ev.__doc__) + f"\n\n1 Hartree = {hartree2ev(1)} eV"
+hartree2aseev.__doc__ = (
+    str(hartree2aseev.__doc__) + f"\n\n1 Hartree = {hartree2aseev(1)} eV"
+)
 hartree2kcalpermol.__doc__ = (
     str(hartree2kcalpermol.__doc__)
     + f"\n\n1 Hartree = {hartree2kcalpermol(1)} kcal/mol"
 )
 hartree2kjoulepermol.__doc__ = (
-    str(hartree2kjoulepermol) + f"\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol"
+    str(hartree2kjoulepermol.__doc__)
+    + f"\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol"
 )
 ev2kjoulepermol.__doc__ = (
     str(ev2kjoulepermol.__doc__) + f"\n\n1 eV = {ev2kjoulepermol(1)} kJ/mol"

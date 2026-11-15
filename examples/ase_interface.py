@@ -17,14 +17,14 @@ from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.optimize import LBFGS
 
-import torchani
+from torchani.models import ANI2x
 # %%
 # First we set up our system (in this case a diamond crystal, with PBC enabled)
 atoms = Diamond(symbol="C", pbc=True)
 len(atoms)  # The number of atoms in the system
 # %%
 # After, we create a calculator from an ANI model and attach it to our atoms
-atoms.calc = torchani.models.ANI2x().ase()
+atoms.calc = ANI2x().ase()
 # %%
 # Then we minimize our system using the
 # `L-BFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_ optimizer,

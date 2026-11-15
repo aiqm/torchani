@@ -15,10 +15,12 @@ on:
         required: false
         default: false
         type: boolean
+  release:
+    types: [published]
 
 env:
   PYTHON_VERSION: '3.11'
-  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event.inputs.version }}
+  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}
 
 jobs:
   build_package:
@@ -26,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout-repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: setup-python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -44,7 +46,7 @@ jobs:
         run: python -m build --sdist --wheel
 
       - name: upload-artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*
@@ -55,14 +57,14 @@ jobs:
   publish_to_testpypi:
     needs: build_package
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.upload-testpypi == 'true' }}
+    if: ${{ github.event_name != 'release' && github.event.inputs.upload-testpypi }}
     environment:
       name: testpypi
       url: https://test.pypi.org/p/torchani-dev-test
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
@@ -76,14 +78,14 @@ jobs:
   publish_to_pypi:
     needs: build_package
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.upload-pypi == 'true' }}
+    if: ${{ github.event_name == 'release' || github.event.inputs.upload-pypi }}
     environment:
       name: pypi
       url: https://pypi.org/p/torchani
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist

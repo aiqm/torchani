@@ -1,4 +1,4 @@
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -12,7 +12,7 @@ class _ChemModule(torch.nn.Module):
     atomic_numbers: Tensor
     _conv_tensor: Tensor
 
-    def __init__(self, symbols: tp.Sequence[str] = ()) -> None:
+    def __init__(self, symbols: Sequence[str] = ()) -> None:
         super().__init__()
         atomic_numbers = torch.tensor(
             [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
@@ -32,10 +32,10 @@ class _ChemModule(torch.nn.Module):
     def _validate_elem_seq(
         self,
         name: str,
-        seq: tp.Sequence[float],
-        default: tp.Sequence[float] = (),
+        seq: Sequence[float],
+        default: Sequence[float] = (),
         pair: bool = False,
-    ) -> tp.Sequence[float]:
+    ) -> Sequence[float]:
         if not pair:
             if not seq and default:
                 seq = [default[j] for j in self.atomic_numbers]
@@ -55,5 +55,5 @@ class _ChemModule(torch.nn.Module):
 
     @property
     @torch.jit.unused
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)

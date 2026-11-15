@@ -1,6 +1,6 @@
-import typing_extensions as tpx
+from typing import Self
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -71,11 +71,11 @@ class _LJ(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
-        eps: tp.Sequence[float] = (),
-        sigma: tp.Sequence[float] = (),
+        symbols: Sequence[str],
+        eps: Sequence[float] = (),
+        sigma: Sequence[float] = (),
         *,  # Cutoff
-        trainable: tp.Sequence[str] = (),
+        trainable: Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
     ):
@@ -93,11 +93,11 @@ class _LJ(BasePairPotential):
     @classmethod
     def ff19SB(
         cls,
-        symbols: tp.Sequence[str],
-        trainable: tp.Sequence[str] = (),
+        symbols: Sequence[str],
+        trainable: Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Use different defaults. Convenience constructor for debugging
 
         Use defaults based on the ff19SB Amber force field.
@@ -118,7 +118,10 @@ class _LJ(BasePairPotential):
 
 
 class DispersionLJ(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: Tensor | None = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
@@ -127,7 +130,10 @@ class DispersionLJ(_LJ):
 
 
 class RepulsionLJ(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: Tensor | None = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
@@ -136,7 +142,10 @@ class RepulsionLJ(_LJ):
 
 
 class LennardJones(_LJ):
-    def pair_energies(self, elem_idxs, neighbors: Neighbors):
+    def pair_energies(
+        self, elem_idxs, neighbors: Neighbors, scalars: Tensor | None = None
+    ):
+        assert scalars is None
         elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)

@@ -1,7 +1,8 @@
 from enum import Enum
 from typer import Option, Typer
-import typing_extensions as tpx
 import typing as tp
+from typing import Annotated
+from collections.abc import Iterable
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,7 +10,6 @@ import matplotlib.pyplot as plt
 
 from rich.console import Console
 from tqdm import tqdm
-
 
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,12 +27,12 @@ class Opt(Enum):
 
 @app.command()
 def run(
-    cuda: tpx.Annotated[
+    cuda: Annotated[
         bool,
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
-    optims: tpx.Annotated[
-        tp.Optional[tp.List[Opt]],
+    optims: Annotated[
+        list[Opt] | None,
         Option(
             "-o",
             "--optim",
@@ -40,7 +40,7 @@ def run(
             show_default=False,
         ),
     ] = None,
-    sync: tpx.Annotated[
+    sync: Annotated[
         bool,
         Option(
             "-s/-S",
@@ -48,15 +48,15 @@ def run(
             help="Whether to sync cuda threads in between function calls",
         ),
     ] = True,
-    use_tqdm: tpx.Annotated[
+    use_tqdm: Annotated[
         bool,
         Option("-t/-T", "--tqdm/--no-tqdm", help="Whether to use a progress bar"),
     ] = True,
-    num_warm_up: tpx.Annotated[
+    num_warm_up: Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
     ] = 200,
-    num_profile: tpx.Annotated[
+    num_profile: Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
     ] = 30,
@@ -84,7 +84,7 @@ def run(
 
     # Set up required models for benchmark
     symbols = SYMBOLS_2X
-    models: tp.Dict[str, tp.Any] = {}
+    models: dict[str, tp.Any] = {}
     if Opt.PY in optims:
         models["triples"] = neighbors_to_triples
     if Opt.COMPILE in optims:
@@ -99,7 +99,7 @@ def run(
     for k, fn in models.items():
         console.print(f"Model kind={k}")
         timer = Timer(modules_and_fns=[], nvtx=False, sync=sync)
-        atoms_num: tp.Iterable[int]
+        atoms_num: Iterable[int]
         atoms_num = range(30, 700, 10)
 
         for n in map(int, atoms_num):

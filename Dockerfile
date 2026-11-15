@@ -1,7 +1,5 @@
-# This image has ubuntu 22.04.5 (Jammy Jellyfish), cuda 12.9, cudnn 9, python 3.11.13, pytorch 2.8.0
-# NOTE: This pytorch version is currently slightly higher than the pytorch version used
-# in the env
-FROM pytorch/pytorch:2.8.0-cuda12.9-cudnn9-devel
+# This image has ubuntu 24.04 (Noble Numbat), cuda 13.0.3, cudnn 9, python 3.12, pytorch 2.13.0
+FROM pytorch/pytorch:2.13.0-cuda13.0-cudnn9-devel
 WORKDIR /repo
 # Set cuda env vars
 ENV CUDA_HOME=/usr/local/cuda/

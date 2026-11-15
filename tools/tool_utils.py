@@ -2,6 +2,7 @@ from pathlib import Path
 from enum import Enum
 import numpy as np
 import typing as tp
+from collections.abc import Callable, Sequence
 import time
 from collections import defaultdict
 
@@ -27,7 +28,7 @@ class Reduction(Enum):
 class Timer:
     def __init__(
         self,
-        modules_and_fns: tp.List[tp.Tuple[torch.nn.Module, str]],
+        modules_and_fns: list[tuple[torch.nn.Module, str]],
         nvtx: bool = False,
         sync: bool = True,
     ) -> None:
@@ -35,7 +36,7 @@ class Timer:
         self.saved_fns = [getattr(m, f) for m, f in modules_and_fns]
         self.nvtx = nvtx
         self.sync = sync
-        self.timers: tp.Dict[str, tp.List[float]] = defaultdict(list)
+        self.timers: dict[str, list[float]] = defaultdict(list)
         self.is_profiling = False
 
     def start_profiling(self) -> None:
@@ -145,8 +146,8 @@ class Timer:
 
 def time_func(
     key: str,
-    func: tp.Callable[..., tp.Any],
-    timers: tp.Dict[str, float],
+    func: Callable[..., tp.Any],
+    timers: dict[str, float],
     sync: bool = False,
     nvtx: bool = False,
 ):
@@ -171,10 +172,10 @@ def time_func(
 
 
 def time_functions(
-    names_models: tp.Sequence[
-        tp.Tuple[tp.Union[str, tp.Tuple[str, ...]], torch.nn.Module]
+    names_models: Sequence[
+        tuple[str | tuple[str, ...], torch.nn.Module]
     ],
-    timers: tp.Dict[str, float],
+    timers: dict[str, float],
     sync: bool = False,
     nvtx: bool = False,
 ):

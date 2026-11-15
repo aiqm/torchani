@@ -40,9 +40,9 @@ class Sequential(torch.nn.ModuleList):
 
     def forward(
         self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        input_: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ):
         r"""Return the result of chaining together the calculation of the modules"""
         for module in self:
@@ -55,7 +55,7 @@ class _ZeroANINetworks(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -70,7 +70,7 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -81,7 +81,9 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
         scalars = aev.new_zeros(flat_elem_idxs.shape)
         for i, m in enumerate(self.atomics.values()):
             selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
-            if selected_idxs.shape[0] > 0:
+            # Not branching under compile: zero-filled grads of empty index_select
+            # are optimized away, but compiled networks are slightly slower
+            if torch.compiler.is_compiling() or selected_idxs.shape[0] > 0:
                 input_ = aev.index_select(0, selected_idxs)
                 scalars.index_add_(0, selected_idxs, m(input_)[:, 1].view(-1))
         scalars = scalars.view_as(elem_idxs)

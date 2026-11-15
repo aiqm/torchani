@@ -1,4 +1,5 @@
 import typing as tp
+from collections.abc import Iterable, Iterator
 import json
 from pathlib import Path
 from collections import OrderedDict
@@ -42,11 +43,11 @@ class _PandasStore(Store):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         super().__init__(root, dummy_properties, grouping)
-        self._append_ops: tp.List[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
+        self._append_ops: "list[pandas.DataFrame | cudf.DataFrame]" = []
         self._engine = pandas
         self._data_is_dirty = False
 
@@ -98,7 +99,7 @@ class _PandasStore(Store):
 
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+    ) -> tuple[OrderedDict[str, int], set[str]]:
         cache = Cache()
         try:
             group_sizes_df = self.data["group"].value_counts().sort_index()
@@ -125,7 +126,7 @@ class _PandasStore(Store):
         return d
 
     # When unpickling, restore modules from their names
-    def __setstate__(self, d: tp.Dict[str, tp.Any]) -> None:
+    def __setstate__(self, d: dict[str, tp.Any]) -> None:
         if d["_engine"] == "pandas":
             import pandas  # noqa
 
@@ -197,7 +198,7 @@ class _PandasStore(Store):
         self.execute_all_queued_append_ops()
         return len(self.data["group"].unique())
 
-    def __iter__(self) -> tp.Iterator[str]:
+    def __iter__(self) -> Iterator[str]:
         self.execute_all_queued_append_ops()
         keys = self.data["group"].unique().tolist()
         keys.sort()
@@ -223,12 +224,12 @@ class _PandasStore(Store):
         self.data[dest_key] = self._engine.Series(new_property)
         self._data_is_dirty = True
 
-    def rename_direct(self, old_new_dict: tp.Dict[str, str]) -> None:
+    def rename_direct(self, old_new_dict: dict[str, str]) -> None:
         self.execute_all_queued_append_ops()
         self.data.rename(columns=old_new_dict, inplace=True)
         self._data_is_dirty = True
 
-    def delete_direct(self, properties: tp.Iterable[str]) -> None:
+    def delete_direct(self, properties: Iterable[str]) -> None:
         self.execute_all_queued_append_ops()
         self.data.drop(labels=list(properties), inplace=True, axis="columns")
         # If the only thing left is "group", delete everything
@@ -244,8 +245,8 @@ class _CudfStore(_PandasStore):
     def __init__(
         self,
         root: StrPath,
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        grouping: tp.Optional[Grouping] = None,
+        dummy_properties: dict[str, tp.Any] | None = None,
+        grouping: Grouping | None = None,
     ):
         super().__init__(root, dummy_properties, grouping)
         self._engine = cudf
