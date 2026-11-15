@@ -1,5 +1,6 @@
 from copy import deepcopy
 import typing as tp
+from collections.abc import Iterable
 import textwrap
 import os
 import subprocess
@@ -8,7 +9,7 @@ import sys
 from setuptools import setup
 
 
-def maybe_download_cub(torch_include_dirs: tp.Iterable[str]) -> str:
+def maybe_download_cub(torch_include_dirs: Iterable[str]) -> str:
     import torch
 
     cuda_ver = float(torch.version.cuda) if torch.version.cuda is not None else 0

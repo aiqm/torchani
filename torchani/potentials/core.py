@@ -64,7 +64,12 @@ class Potential(_ChemModule):
         else:
             neighbors = all_pairs(self.cutoff, elem_idxs, coords, cell, pbc)
         return self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, scalars, atomic, ensemble_values
+            elem_idxs,
+            coords,
+            neighbors,
+            scalars=scalars,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
         ).energies
 
     def compute_from_neighbors(

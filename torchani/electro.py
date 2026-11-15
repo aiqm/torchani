@@ -4,6 +4,7 @@ Useful for systems that have charges and coulomb-like electrostatic interactions
 """
 
 import typing as tp
+from collections.abc import Iterable, Sequence
 
 import torch
 from torch import Tensor
@@ -45,8 +46,8 @@ class ChargeNormalizer(BaseChargeNormalizer):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
-        weights: tp.Sequence[float] = (),
+        symbols: Sequence[str],
+        weights: Sequence[float] = (),
         scale_weights_by_charges_squared: bool = False,
     ):
         super().__init__()
@@ -64,9 +65,9 @@ class ChargeNormalizer(BaseChargeNormalizer):
     @classmethod
     def from_electronegativity_and_hardness(
         cls,
-        symbols: tp.Sequence[str],
-        electronegativity: tp.Sequence[float] = (),
-        hardness: tp.Sequence[float] = (),
+        symbols: Sequence[str],
+        electronegativity: Sequence[float] = (),
+        hardness: Sequence[float] = (),
         scale_weights_by_charges_squared: bool = False,
     ) -> tpx.Self:
         atomic_numbers = [ATOMIC_NUMBER[e] for e in symbols]
@@ -105,7 +106,7 @@ class DipoleComputer(torch.nn.Module):
 
     def __init__(
         self,
-        masses: tp.Iterable[float] = (),
+        masses: Iterable[float] = (),
         reference: Reference = "center_of_mass",
         device: Device = None,
         dtype: DType = None,

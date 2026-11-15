@@ -4,6 +4,7 @@ Functions and classes here are subject to change at any point.
 """
 
 import typing as tp
+from collections.abc import Sequence
 import unittest
 from torch import Tensor
 from itertools import product
@@ -94,7 +95,7 @@ class Molecs(tp.NamedTuple):
 def make_elem_idxs(
     molecs_num: int,
     atoms_num: int,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
     seed: int | None = None,
     device: Device = None,
 ) -> Tensor:
@@ -117,7 +118,7 @@ def make_molecs(
     atoms_num: int,
     cell_size: float = 10.0,
     pbc: bool = False,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
     seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
@@ -159,7 +160,7 @@ def make_molec(
     atoms: int,
     cell_size: float = 10.0,
     pbc: bool = False,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
     seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
@@ -170,7 +171,7 @@ def make_molec(
 def make_neighbors(
     atoms: int,
     cutoff: float = 5.2,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
     seed: int | None = None,
     device: Device = None,
     dtype: DType = None,

@@ -117,7 +117,9 @@ class _AltCutoffSmooth(Cutoff):
         return torch.exp(e) / 0.3678794411714423
 
 
-CutoffArg = tp.Literal["global", "dummy", "cosine", "smooth"] | Cutoff
+CutoffArg = (
+    tp.Literal["global", "dummy", "cosine", "smooth", "biweight", "triweight"] | Cutoff
+)
 
 
 def _parse_cutoff_fn(
@@ -131,10 +133,6 @@ def _parse_cutoff_fn(
         cutoff_fn = CutoffDummy()
     elif cutoff_fn == "cosine":
         cutoff_fn = CutoffCosine()
-    elif cutoff_fn == "triweight":
-        cutoff_fn = CutoffTriweight()
-    elif cutoff_fn == "biweight":
-        cutoff_fn = CutoffBiweight()
     elif cutoff_fn == "smooth":
         cutoff_fn = CutoffSmooth()
     elif cutoff_fn == "biweight":

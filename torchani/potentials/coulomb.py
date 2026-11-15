@@ -1,5 +1,5 @@
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -15,47 +15,49 @@ class Damp(torch.nn.Module):
 
 
 class ErfDamp(Damp):
-    def __init__(self, alpha: float = 1.0, r0: float = 0.0) -> None:
+    def __init__(self, alpha: float = 1.0) -> None:
         super().__init__()
         self._alpha = alpha
-        self._r0 = r0
 
     def forward(self, x: Tensor) -> Tensor:
-        return torch.erf(self._alpha * (x - self._r0))
+        return torch.erf(self._alpha * x)
 
 
 class TanhDamp(Damp):
-    def __init__(self, alpha: float = 1.0, r0: float = 0.0) -> None:
+    def __init__(self, alpha: float = 1.0) -> None:
         super().__init__()
         self._alpha = alpha
-        self._r0 = r0
 
     def forward(self, x: Tensor) -> Tensor:
-        return torch.tanh(self._alpha * (x - self._r0))
+        return torch.tanh(self._alpha * x)
 
 
-def parse_damp(name: tp.Union[str, torch.nn.Module]) -> Damp:
+def parse_damp(name: str | Damp) -> Damp:
+    r"""Parse a damping function, which takes distances in Bohr
+
+    The ``alpha`` of the builtin ``erf`` and ``tanh`` damping functions is in
+    units of 1/Bohr.
+    """
     if not name:
         return Damp()
     elif name == "erf":
         return ErfDamp(0.5)
     elif name == "tanh":
         return TanhDamp(0.5)
-    else:
-        assert isinstance(name, Damp)
+    elif not isinstance(name, Damp):
+        raise ValueError(f"Unsupported damp fn: {name}")
     return name
 
 
-# TODO: test me
 class Coulomb(BasePairPotential):
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         dielectric: float = 1.0,
         *,  # Cutoff
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
-        damp_fn: tp.Union[str, Damp] = "",
+        damp_fn: str | Damp = "",
     ):
         super().__init__(symbols, cutoff=cutoff, cutoff_fn=cutoff_fn)
         self._dielectric = dielectric
@@ -65,7 +67,7 @@ class Coulomb(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
     ) -> Tensor:
         assert scalars is not None
         assert scalars.shape == elem_idxs.shape
@@ -84,9 +86,9 @@ class FixedCoulomb(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         dielectric: float = 1.0,
-        charges: tp.Sequence[float] = (),
+        charges: Sequence[float] = (),
         *,  # Cutoff
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -100,7 +102,7 @@ class FixedCoulomb(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
     ) -> Tensor:
         assert scalars is None
         # Clamp distances to prevent singularities when dividing by zero
@@ -125,10 +127,10 @@ class FixedMNOK(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         dielectric: float = 1.0,
-        charges: tp.Sequence[float] = (),
-        eta: tp.Sequence[float] = (),
+        charges: Sequence[float] = (),
+        eta: Sequence[float] = (),
         *,  # Cutoff
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -149,7 +151,7 @@ class FixedMNOK(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: tp.Optional[Tensor] = None,
+        scalars: Tensor | None = None,
     ) -> Tensor:
         assert scalars is None
         # No need to clamp as long as inv_eta ** 2 is nonzero

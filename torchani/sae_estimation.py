@@ -4,7 +4,7 @@ It is recommended to use GSAEs (Ground State Atomic Energies) for new models ins
 that models predict atomization energies.
 """
 
-import typing as tp
+from collections.abc import Sequence
 import math
 
 import torch
@@ -19,7 +19,7 @@ __all__ = ["exact_saes", "approx_saes"]
 
 def exact_saes(
     dataset: BatchedDataset,
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     fraction: float = 1.0,
     fit_intercept: bool = False,
     device: Device = None,
@@ -77,7 +77,7 @@ def exact_saes(
 
 def approx_saes(
     dataset: BatchedDataset,
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     fraction: float = 1.0,
     fit_intercept: bool = False,
     device: Device = None,

@@ -1,4 +1,5 @@
 import typing as tp
+from collections.abc import Sequence
 import math
 
 import torch
@@ -147,7 +148,7 @@ class ANIRadial(_BaseRadial):
     def __init__(
         self,
         eta: float,
-        shifts: tp.Sequence[float],
+        shifts: Sequence[float],
         cutoff: float,
         cutoff_fn: CutoffArg = "cosine",
     ):
@@ -286,8 +287,8 @@ class ANIAngular(_BaseAngular):
         self,
         eta: float,
         zeta: float,
-        shifts: tp.Sequence[float],
-        sections: tp.Sequence[float],
+        shifts: Sequence[float],
+        sections: Sequence[float],
         cutoff: float,
         cutoff_fn: CutoffArg = "cosine",
     ):
@@ -427,7 +428,7 @@ class Angular(_BaseAngular):
         self,
         /,
         cutoff: float,
-        trainable: str | tp.Sequence[str] = (),
+        trainable: str | Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:
@@ -469,7 +470,7 @@ class Radial(_BaseRadial):
         self,
         /,
         cutoff: float,
-        trainable: str | tp.Sequence[str] = (),
+        trainable: str | Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:

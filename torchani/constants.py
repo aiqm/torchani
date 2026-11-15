@@ -39,7 +39,7 @@ https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 """
 
 import json
-import typing as tp
+from collections.abc import Mapping, Sequence
 import math
 
 from torchani.paths import _resources_dir
@@ -250,7 +250,7 @@ PERIODIC_TABLE = ("",) + tuple(
 
 
 def mapping_to_znumber_indexed_seq(
-    symbols_map: tp.Mapping[str, float]
+    symbols_map: Mapping[str, float]
 ) -> tuple[float, ...]:
     r"""
     Sort the values of {symbol: value} mapping by atomic number and output a
@@ -276,7 +276,7 @@ def mapping_to_znumber_indexed_seq(
 
 
 def znumber_indexed_seq_to_mapping(
-    seq: tp.Sequence[float],
+    seq: Sequence[float],
 ) -> dict[str, float]:
     r"""
     Inverse of mapping_to_znumber_indexed_list. The first element of the input

@@ -34,6 +34,7 @@ import math
 from dataclasses import dataclass, field
 from collections import OrderedDict
 import typing as tp
+from collections.abc import Iterable, Mapping, Sequence
 
 import torch
 from torch import Tensor
@@ -101,7 +102,7 @@ class _ANI(torch.nn.Module):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
@@ -695,7 +696,7 @@ class ANIq(_ANI):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
@@ -749,23 +750,25 @@ class ANIq(_ANI):
             energies = energies.unsqueeze(1)
         if ensemble_values:
             energies = energies.unsqueeze(0)
-            qs = energies.unsqueeze(0)
 
-        first_neighbors = neighbors
+        fst_neighbors = neighbors
         for k, pot in self.potentials.items():
             if pot._enabled:
                 neighbors = discard_outside_cutoff(
-                    first_neighbors, pot.cutoff)  # type: ignore[arg-type]
+                    fst_neighbors, pot.cutoff  # type: ignore[arg-type]
+                )
+                scalars: Tensor | None = None
                 if k == "coulomb":
-                    _e, _qs = pot.compute_from_neighbors(  # type: ignore[operator]
-                        elem_idxs, coords, neighbors,
-                        qs, charge, atomic, ensemble_values
-                    )
-                else:
-                    _e, _qs = pot.compute_from_neighbors(  # type: ignore[operator]
-                        elem_idxs, coords, neighbors,
-                        None, charge, atomic, ensemble_values
-                    )
+                    scalars = qs
+                _e, _qs = pot.compute_from_neighbors(  # type: ignore[operator]
+                    elem_idxs,
+                    coords,
+                    neighbors,
+                    scalars,
+                    charge,
+                    atomic,
+                    ensemble_values,
+                )
                 energies = energies + _e
                 if k == "nnp":
                     assert _qs is not None
@@ -846,7 +849,7 @@ class _AtomicContainerWrapper:
     ctor: str = "separate_networks"
     kwargs: dict[str, tp.Any] = field(default_factory=dict)
 
-    def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
+    def make(self, symbols: Sequence[str], in_dim: int) -> AtomicContainer:
         out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
         return tp.cast(AtomicContainer, out)
 
@@ -864,7 +867,7 @@ class Assembler:
 
     def __init__(
         self,
-        symbols: tp.Sequence[str] = (),
+        symbols: Sequence[str] = (),
         cls: ModelCls = ANI,
         neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
@@ -893,7 +896,7 @@ class Assembler:
     def symbols(self) -> tuple[str, ...]:
         return self._symbols
 
-    def set_symbols(self, symbols: tp.Sequence[str]) -> None:
+    def set_symbols(self, symbols: Sequence[str]) -> None:
         self._symbols = tuple(symbols)
 
     @property
@@ -902,7 +905,7 @@ class Assembler:
             raise RuntimeError("Self energies have not been set")
         return self._self_energies
 
-    def set_self_energies(self, value: tp.Mapping[str, float]) -> None:
+    def set_self_energies(self, value: Mapping[str, float]) -> None:
         self._check_symbols(value.keys())
         self._self_energies = {k: v for k, v in value.items()}
 
@@ -930,7 +933,7 @@ class Assembler:
         gsaes = GSAES[lot.lower()]
         self.set_self_energies({s: gsaes[s] for s in self.symbols})
 
-    def _check_symbols(self, symbols: tp.Iterable[str] | None = None) -> None:
+    def _check_symbols(self, symbols: Iterable[str] | None = None) -> None:
         if not self.symbols:
             raise ValueError(
                 "Please set symbols before setting the gsaes as self energies"
@@ -1114,7 +1117,7 @@ class Assembler:
 
 
 def simple_ani(
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
@@ -1200,7 +1203,7 @@ def simple_ani(
 
 
 def simple_aniq(
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
@@ -1230,7 +1233,7 @@ def simple_aniq(
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
     normalize: bool = True,
-    coulomb: str | None = None,
+    coulomb: tp.Literal["full", "erf", "tanh"] | None = None,
     coulomb_cutoff: float | None = None,
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
@@ -1325,19 +1328,16 @@ def simple_aniq(
             kwargs=extra_kwargs,
         )
     if coulomb == "full":
+        if coulomb_cutoff is not None and coulomb_cutoff != math.inf:
+            raise ValueError("coulomb='full' only supports an infinite coulomb_cutoff")
         asm.add_potential(Coulomb, name="coulomb")
-    elif coulomb == "erf":
+    elif coulomb in ("erf", "tanh"):
         coulomb_cutoff = 12.0 if coulomb_cutoff is None else coulomb_cutoff
         asm.add_potential(
-            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": "erf"}
+            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": coulomb}
         )
-    elif coulomb == "tanh":
-        coulomb_cutoff = 12.0 if coulomb_cutoff is None else coulomb_cutoff
-        asm.add_potential(
-            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": "tanh"}
-        )
-    else:
-        assert coulomb is None
+    elif coulomb is not None:
+        raise ValueError(f"Unsupported coulomb: {coulomb}")
     return tp.cast(ANIq, asm.assemble(ensemble_size))
 
 

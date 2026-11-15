@@ -2,6 +2,7 @@ r"""Type aliases; common type annotations used throughout the code"""
 
 import torch
 import typing as tp
+from collections.abc import Iterable, MutableMapping
 from pathlib import Path
 
 import numpy as np
@@ -9,12 +10,12 @@ from torch import Tensor
 from numpy.typing import NDArray
 
 # Any of these should be interpretable as a 1D index sequence
-IdxLike = Tensor | NDArray[np.int_] | None | tp.Iterable[int] | int
+IdxLike = Tensor | NDArray[np.int_] | None | Iterable[int] | int
 
-Conformers = tp.MutableMapping[str, Tensor]
-NumberOrStrArray = tp.Union[NDArray[np.int_] | NDArray[np.float64] | NDArray[np.str_]]
-NumpyConformers = tp.MutableMapping[str, NumberOrStrArray]
-MixedConformers = tp.MutableMapping[str, Tensor | NumberOrStrArray]
+Conformers = MutableMapping[str, Tensor]
+NumberOrStrArray = NDArray[np.int_] | NDArray[np.float64] | NDArray[np.str_]
+NumpyConformers = MutableMapping[str, NumberOrStrArray]
+MixedConformers = MutableMapping[str, Tensor | NumberOrStrArray]
 
 # These are slightly different from torch annotations, to support None
 # Device can be passed to `device=`

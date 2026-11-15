@@ -1,7 +1,7 @@
 import itertools
 from typer import Option, Typer
 import typing_extensions as tpx
-import typing as tp
+from collections.abc import Iterable
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -80,7 +80,7 @@ def run(
     for k, nl in models.items():
         console.print(f"Neighborlist kind={k}")
         timer = Timer(modules_and_fns=[], nvtx=False, sync=sync)
-        atoms_num: tp.Iterable[int]
+        atoms_num: Iterable[int]
         if pbc:
             # Smaller than 25 atoms risks self-interaction
             atoms_num = range(25, 301)
