@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
-import typing_extensions as tpx
 import typing as tp
+from typing import Self
 from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 import math
 import json
@@ -262,7 +262,7 @@ class Batcher:
         self._shuffle = False
 
     @classmethod
-    def in_ram(cls, verbose: bool = False) -> tpx.Self:
+    def in_ram(cls, verbose: bool = False) -> Self:
         return cls("ram", verbose=verbose)
 
     def divide_and_batch(

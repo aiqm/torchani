@@ -12,6 +12,7 @@ import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import typing as tp
+from typing import Self
 from collections.abc import Sequence
 import struct
 import bz2
@@ -19,7 +20,6 @@ import shutil
 from collections import OrderedDict
 
 import torch
-import typing_extensions as tpx
 
 from torchani.paths import neurochem_dir
 from torchani.arch import ANI
@@ -345,7 +345,7 @@ class NeurochemInfo:
     ensemble_size: int
 
     @classmethod
-    def from_info_file(cls, info_file_path: Path) -> tpx.Self:
+    def from_info_file(cls, info_file_path: Path) -> Self:
         with open(info_file_path, mode="rt", encoding="utf-8") as f:
             lines: list[str] = [x.strip() for x in f.readlines()][:4]
             _const_file, _sae_file, _ensemble_prefix, _ensemble_size = lines
@@ -357,7 +357,7 @@ class NeurochemInfo:
         return cls(sae_file_path, const_file_path, ensemble_prefix, ensemble_size)
 
     @classmethod
-    def from_model_name(cls, model_name: str) -> tpx.Self:
+    def from_model_name(cls, model_name: str) -> Self:
         if model_name not in SUPPORTED_MODELS:
             raise ValueError(
                 f"Neurochem model {model_name} not supported,"

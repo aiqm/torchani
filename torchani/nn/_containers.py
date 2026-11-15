@@ -1,6 +1,6 @@
-import typing_extensions as tpx
 import warnings
 import typing as tp
+from typing import Self
 from collections.abc import Iterable, Sequence
 
 import torch
@@ -114,7 +114,7 @@ class SingleNN(AtomicContainer):
         bias: bool = False,
         embed_kind: str = "continuous",
         embed_dims: int | None = None,
-    ) -> tpx.Self:
+    ) -> Self:
         if out_dim != 1:
             raise ValueError("out_dim != 1 is not implemented for SingleNN")
         final_dim = len(symbols)
@@ -135,7 +135,7 @@ class SingleNN(AtomicContainer):
         out_dim: int = 1,
         bias: bool = False,
         activation: str | torch.nn.Module = "gelu",
-    ) -> tpx.Self:
+    ) -> Self:
         dims = (256, 160, 128, 512)
         return cls.build(
             symbols, in_dim, dims, out_dim, activation, bias, embed_kind="none"
@@ -149,7 +149,7 @@ class SingleNN(AtomicContainer):
         out_dim: int = 1,
         bias: bool = False,
         activation: str | torch.nn.Module = "gelu",
-    ) -> tpx.Self:
+    ) -> Self:
         dims = (256, 160, 128, 512)
         return cls.build(
             symbols, in_dim, dims, out_dim, activation, bias, embed_kind="one-hot"
@@ -163,7 +163,7 @@ class SingleNN(AtomicContainer):
         out_dim: int = 1,
         bias: bool = False,
         activation: str | torch.nn.Module = "gelu",
-    ) -> tpx.Self:
+    ) -> Self:
         dims = (256, 160, 128, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
 
@@ -175,7 +175,7 @@ class SingleNN(AtomicContainer):
         out_dim: int = 1,
         bias: bool = False,
         activation: str | torch.nn.Module = "gelu",
-    ) -> tpx.Self:
+    ) -> Self:
         dims = (320, 256, 256, 512)
         return cls.build(
             symbols, in_dim, dims, out_dim, activation, bias, embed_kind="one-hot"
@@ -189,7 +189,7 @@ class SingleNN(AtomicContainer):
         out_dim: int = 1,
         bias: bool = False,
         activation: str | torch.nn.Module = "gelu",
-    ) -> tpx.Self:
+    ) -> Self:
         dims = (320, 256, 256, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
 
@@ -277,7 +277,7 @@ class ANISharedNetworks(AtomicContainer):
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
         default_dims: tuple[int, ...] = (),
-    ) -> tpx.Self:
+    ) -> Self:
         modules: dict[str, AtomicNetwork] = {}
 
         shared = AtomicNetwork(layer_dims=(in_dim,) + shared_dims)
@@ -297,7 +297,7 @@ class ANISharedNetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
-    ) -> tpx.Self:
+    ) -> Self:
         default_dims = (128, 96)
         shared_dims = (256,)
         dims: dict[str, tuple[int, ...]] = {
@@ -474,7 +474,7 @@ class ANINetworks(AtomicContainer):
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
         default_dims: tuple[int, ...] = (),
-    ) -> tpx.Self:
+    ) -> Self:
         modules: dict[str, AtomicNetwork] = {}
         for s in symbols:
             layer_dims = (in_dim,) + dims.get(s, default_dims) + (out_dim,)
@@ -491,7 +491,7 @@ class ANINetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
-    ) -> tpx.Self:
+    ) -> Self:
         default_dims = (160, 128, 96)
         dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
@@ -520,7 +520,7 @@ class ANINetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
         bias: bool = True,
-    ) -> tpx.Self:
+    ) -> Self:
         default_dims = (160, 128, 96)
         dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
@@ -549,7 +549,7 @@ class ANINetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
         bias: bool = True,
-    ) -> tpx.Self:
+    ) -> Self:
         default_dims = (160, 128, 96)
         dims: dict[str, tuple[int, ...]] = {
             "H": (256, 192, 160),
@@ -578,7 +578,7 @@ class ANINetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "gelu",
         bias: bool = False,
-    ) -> tpx.Self:
+    ) -> Self:
         return cls.like_2x(symbols, in_dim, out_dim, activation, bias)
 
     @classmethod
@@ -589,7 +589,7 @@ class ANINetworks(AtomicContainer):
         out_dim: int = 1,
         activation: str | torch.nn.Module = "celu",
         bias: bool = True,
-    ) -> tpx.Self:
+    ) -> Self:
         default_dims = (128, 112, 96)
         dims: dict[str, tuple[int, ...]] = {
             "H": (160, 128, 96),

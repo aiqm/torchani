@@ -1,4 +1,4 @@
-import typing_extensions as tpx
+from typing import Self
 import math
 from collections.abc import Sequence
 
@@ -97,7 +97,7 @@ class _LJ(BasePairPotential):
         trainable: Sequence[str] = (),
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Use different defaults. Convenience constructor for debugging
 
         Use defaults based on the ff19SB Amber force field.

@@ -4,11 +4,11 @@ Useful for systems that have charges and coulomb-like electrostatic interactions
 """
 
 import typing as tp
+from typing import Self
 from collections.abc import Iterable, Sequence
 
 import torch
 from torch import Tensor
-import typing_extensions as tpx
 
 from torchani.annotations import Device, DType
 from torchani.utils import AtomicNumbersToMasses
@@ -69,7 +69,7 @@ class ChargeNormalizer(BaseChargeNormalizer):
         electronegativity: Sequence[float] = (),
         hardness: Sequence[float] = (),
         scale_weights_by_charges_squared: bool = False,
-    ) -> tpx.Self:
+    ) -> Self:
         atomic_numbers = [ATOMIC_NUMBER[e] for e in symbols]
         # Get constant values from literature if not provided
         if not electronegativity:

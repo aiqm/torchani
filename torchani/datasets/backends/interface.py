@@ -6,6 +6,7 @@ import shutil
 # import tempfile
 # import types
 import typing as tp
+from typing import Self
 from collections.abc import Iterator, Mapping, MutableMapping
 from contextlib import contextmanager
 from itertools import chain
@@ -14,7 +15,6 @@ from pathlib import Path
 from collections import OrderedDict
 
 import numpy as np
-import typing_extensions as tpx
 
 from torchani.annotations import NumpyConformers, StrPath, Grouping, Backend
 
@@ -338,7 +338,7 @@ class Store(MutableMapping[str, "_ConformerGroup"], ABC):
         cls,
         dummy_properties: dict[str, tp.Any] | None = None,
         grouping: Grouping | None = None,
-    ) -> tpx.Self:
+    ) -> Self:
         if grouping is None:
             grouping = "by_num_atoms"
         if grouping not in ("by_num_atoms", "by_formula"):
@@ -361,7 +361,7 @@ class Store(MutableMapping[str, "_ConformerGroup"], ABC):
         root: StrPath,
         dummy_properties: dict[str, tp.Any] | None = None,
         grouping: Grouping | None = None,
-    ) -> tpx.Self:
+    ) -> Self:
         if grouping is None:
             grouping = "by_num_atoms"
         if grouping not in ("by_num_atoms", "by_formula"):
@@ -418,7 +418,7 @@ class Store(MutableMapping[str, "_ConformerGroup"], ABC):
         return self._meta, self._meta_mode
 
     @contextmanager
-    def open(self, mode: str, only_meta_needed: bool = False) -> Iterator[tpx.Self]:
+    def open(self, mode: str, only_meta_needed: bool = False) -> Iterator[Self]:
         try:
             if only_meta_needed:
                 try:
