@@ -1,7 +1,7 @@
 from enum import Enum
 from typer import Option, Typer
-import typing_extensions as tpx
 import typing as tp
+from typing import Annotated
 from collections.abc import Iterable
 from pathlib import Path
 import pandas as pd
@@ -27,11 +27,11 @@ class Opt(Enum):
 
 @app.command()
 def run(
-    cuda: tpx.Annotated[
+    cuda: Annotated[
         bool,
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
-    optims: tpx.Annotated[
+    optims: Annotated[
         list[Opt] | None,
         Option(
             "-o",
@@ -40,7 +40,7 @@ def run(
             show_default=False,
         ),
     ] = None,
-    sync: tpx.Annotated[
+    sync: Annotated[
         bool,
         Option(
             "-s/-S",
@@ -48,15 +48,15 @@ def run(
             help="Whether to sync cuda threads in between function calls",
         ),
     ] = True,
-    use_tqdm: tpx.Annotated[
+    use_tqdm: Annotated[
         bool,
         Option("-t/-T", "--tqdm/--no-tqdm", help="Whether to use a progress bar"),
     ] = True,
-    num_warm_up: tpx.Annotated[
+    num_warm_up: Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
     ] = 200,
-    num_profile: tpx.Annotated[
+    num_profile: Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
     ] = 30,

@@ -1,5 +1,6 @@
 r"""Potentials that calculate dispersion (i.e. van der Waals) interactions"""
 
+from typing import Self
 import math
 from collections.abc import Sequence
 
@@ -7,7 +8,6 @@ import torch
 import h5py
 from torch import Tensor
 from torch.jit import Final
-import typing_extensions as tpx
 
 from torchani.constants import (
     ATOMIC_NUMBER,
@@ -96,7 +96,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
         cls,
         symbols: Sequence[str],
         functional: str,
-    ) -> tpx.Self:
+    ) -> Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(symbols, a1=d["a1"], a2=d["a2"])
 
@@ -212,7 +212,7 @@ class TwoBodyDispersionD3(BasePairPotential):
         *,
         cutoff_fn: CutoffArg = "smooth",
         cutoff: float = math.inf,
-    ) -> tpx.Self:
+    ) -> Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(
             s6=d["s6"],

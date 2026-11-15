@@ -1,12 +1,12 @@
 import warnings
 import os
 import typing as tp
+from typing import Self
 from collections.abc import Sequence
 
 import torch
 from torch import Tensor
 from torch.jit import Final
-import typing_extensions as tpx
 
 from torchani.tuples import SpeciesAEV
 from torchani.neighbors import (
@@ -508,7 +508,7 @@ class AEVComputer(torch.nn.Module):
         angular_zeta: float = 32.0,
         angular_num_shifts: int = 4,
         angular_num_sections: int = 8,
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
         Uses the same defaults as those in the `torchani.models.ANI1x` model.
@@ -560,7 +560,7 @@ class AEVComputer(torch.nn.Module):
         angular_zeta: float = 14.1,
         angular_num_shifts: int = 8,
         angular_num_sections: int = 4,
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
         Uses the same defaults as those in the `torchani.models.ANI2x` model.
@@ -609,7 +609,7 @@ class AEVComputer(torch.nn.Module):
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "all_pairs",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms, from constants
 
         For more detail consult the equations in the original `ANI article`_.

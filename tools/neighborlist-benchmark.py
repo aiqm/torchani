@@ -1,6 +1,6 @@
+from typing import Annotated
 import itertools
 from typer import Option, Typer
-import typing_extensions as tpx
 from collections.abc import Iterable
 from pathlib import Path
 import pandas as pd
@@ -19,11 +19,11 @@ app = Typer()
 
 @app.command()
 def run(
-    cuda: tpx.Annotated[
+    cuda: Annotated[
         bool,
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
-    sync: tpx.Annotated[
+    sync: Annotated[
         bool,
         Option(
             "-s/-S",
@@ -31,23 +31,23 @@ def run(
             help="Whether to sync cuda threads in between function calls",
         ),
     ] = True,
-    use_tqdm: tpx.Annotated[
+    use_tqdm: Annotated[
         bool,
         Option("-t/-T", "--tqdm/--no-tqdm", help="Whether to use a progress bar"),
     ] = True,
-    num_warm_up: tpx.Annotated[
+    num_warm_up: Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
     ] = 100,
-    num_profile: tpx.Annotated[
+    num_profile: Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
     ] = 200,
-    pbc: tpx.Annotated[
+    pbc: Annotated[
         bool,
         Option("-p/-P", "--pbc/--no-pbc", help="Benchmark for the PBC case"),
     ] = True,
-    free_cuda_cache: tpx.Annotated[
+    free_cuda_cache: Annotated[
         bool,
         Option("--free-cuda-cache/--no-free-cuda-cache"),
     ] = False,

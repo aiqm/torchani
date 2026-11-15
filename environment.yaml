@@ -8,7 +8,6 @@ dependencies:
   - python=3.11
   - pip>=24.0
   - numpy=2.1
-  - typing_extensions>=4.0.0
   - h5py  # HDF5 backend for datasets
   - tqdm  # progress bar util
   - typer  # CLI support

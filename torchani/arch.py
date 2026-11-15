@@ -34,11 +34,11 @@ import math
 from dataclasses import dataclass, field
 from collections import OrderedDict
 import typing as tp
+from typing import Self
 from collections.abc import Iterable, Mapping, Sequence
 
 import torch
 from torch import Tensor
-import typing_extensions as tpx
 from huggingface_hub import hf_hub_download
 
 from torchani.tuples import (
@@ -292,7 +292,7 @@ class _ANI(torch.nn.Module):
             elem_idxs, coords, neighbors, charge, atomic, ensemble_values
         )
 
-    def to_infer_model(self, use_mnp: bool = False) -> tpx.Self:
+    def to_infer_model(self, use_mnp: bool = False) -> Self:
         r"""Convert the neural networks module of the model into a module
         optimized for inference.
 
@@ -337,7 +337,7 @@ class _ANI(torch.nn.Module):
         return self.nnp.neural_networks.get_active_members_num()
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn?
-    def __getitem__(self, idx: int) -> tpx.Self:
+    def __getitem__(self, idx: int) -> Self:
         _nn = self.neural_networks
         if not hasattr(_nn, "members"):
             raise ValueError("Can only fetch submodel from an ensemble")

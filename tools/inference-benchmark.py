@@ -1,7 +1,7 @@
 from enum import Enum
 from typer import Option, Argument, Typer
-import typing_extensions as tpx
 import typing as tp
+from typing import Annotated
 import sys
 from pathlib import Path
 
@@ -23,11 +23,11 @@ class Opt(Enum):
 
 @app.command()
 def cmd(
-    file: tpx.Annotated[
+    file: Annotated[
         Path | None,
         Argument(help=".xyz file to use for the benchmark", show_default=False),
     ] = None,
-    optims: tpx.Annotated[
+    optims: Annotated[
         list[Opt] | None,
         Option(
             "-o",
@@ -36,11 +36,11 @@ def cmd(
             show_default=False,
         ),
     ] = None,
-    device_str: tpx.Annotated[
+    device_str: Annotated[
         str,
         Option("--device", help="Device to use for benchmark (cpu or cuda)"),
     ] = "cpu",
-    nvtx: tpx.Annotated[
+    nvtx: Annotated[
         bool,
         Option(
             "-n/-N",
@@ -48,15 +48,15 @@ def cmd(
             help="Whether to emit nvtx for NVIDIA Nsight systems",
         ),
     ] = False,
-    strategy: tpx.Annotated[
+    strategy: Annotated[
         str,
         Option("--strategy"),
     ] = "pyaev",
-    neighborlist: tpx.Annotated[
+    neighborlist: Annotated[
         str,
         Option("--neighborlist"),
     ] = "all_pairs",
-    sync: tpx.Annotated[
+    sync: Annotated[
         bool,
         Option(
             "-s/-S",
@@ -64,23 +64,23 @@ def cmd(
             help="Whether to sync cuda threads in between function calls",
         ),
     ] = True,
-    use_tqdm: tpx.Annotated[
+    use_tqdm: Annotated[
         bool,
         Option("-t/-T", "--tqdm/--no-tqdm", help="Whether to use a progress bar"),
     ] = True,
-    detail: tpx.Annotated[
+    detail: Annotated[
         bool,
         Option("-d/-D", "--detail/--no-detail", help="Detailed breakdown of benchmark"),
     ] = False,
-    num_warm_up: tpx.Annotated[
+    num_warm_up: Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
     ] = 50,
-    num_profile: tpx.Annotated[
+    num_profile: Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
     ] = 20,
-    profile_batches: tpx.Annotated[
+    profile_batches: Annotated[
         bool,
         Option(
             "-b/-B",
