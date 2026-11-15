@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cuda_runtime_api.h>
-#include <torch/extension.h>
+#include <torch/all.h>
 
 using torch::Tensor;
 using torch::autograd::AutogradContext;

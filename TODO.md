@@ -56,13 +56,6 @@ cuAEV op registration, compared with current PyTorch recommendations:
 Issues with `cell_list` and `mnp`
 These can be registered the same way as with the `cuAEV`
 
-Users must set:
-- `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
-- `torch._dynamo.config.capture_scalar_outputs = True`
-This is because of `nonzero`, `unique`, and `item()`
-
-Other cuAEV issues (after removing `CuaevComputer`)
-
 Build:
 - `cuaev` is only built as a CUDA extension. `aev_cpu.cpp` has no CUDA dependency, so a CPU-only
   build only needs the sources split by backend in `setup.py`, `cli.py` and `CMakeLists.txt`.

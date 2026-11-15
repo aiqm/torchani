@@ -1,5 +1,5 @@
 #include <c10/util/MathConstants.h>
-#include <torch/extension.h>
+#include <torch/all.h>
 
 #include "aev_cpu.h"
 

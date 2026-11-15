@@ -1,5 +1,5 @@
+#include <torch/all.h>
 #include <torch/csrc/autograd/autograd_not_implemented_fallback.h>
-#include <torch/extension.h>
 
 #include "aev.h"
 

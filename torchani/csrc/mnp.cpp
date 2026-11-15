@@ -1,7 +1,7 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
 #include <omp.h>
-#include <torch/extension.h>
+#include <torch/all.h>
 
 using torch::Tensor;
 using torch::autograd::AutogradContext;

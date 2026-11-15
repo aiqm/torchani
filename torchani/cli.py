@@ -84,6 +84,7 @@ def _build_extensions(
     import torch
     import torchani.paths
     from torch.utils.cpp_extension import load
+    from torch.utils.cpp_extension import TORCH_LIB_PATH
 
     if all_sms:
         sms = ["7.0", "7.5", "8.0", "8.9", "9.0", "10.0", "12.0"]
@@ -112,6 +113,14 @@ def _build_extensions(
                 f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/include"
             )
         os.environ["CUDA_HOME"] = f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/"
+    # Linking rules are explained in setup.py. Here user ldflags precede the
+    # torch libs, so --as-needed drops libtorch_python
+    torch_cuda_ldflags = [
+        "-Wl,--no-as-needed",
+        f"-L{TORCH_LIB_PATH}",
+        "-ltorch_cuda",
+        "-Wl,--as-needed",
+    ]
     print("Building cuAEV extension...")
     build_dir = torchani.paths.data_dir().parent.parent / "lib" / "Torchani"
     build_dir.mkdir(exist_ok=True, parents=True)
@@ -128,6 +137,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -140,6 +150,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17", "-fopenmp"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -152,6 +163,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=["-Wl,--as-needed"],
     )
     print("Done!")
     print()
