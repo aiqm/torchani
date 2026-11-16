@@ -49,13 +49,12 @@ def _make_idx_list(
     idx_list: list[Tensor],
 ) -> list[Tensor]:
     species_ = species.flatten()
-    with torch.no_grad():
-        idx_list = [torch.empty(0) for i in range(num_species)]
-        for i in range(num_species):
-            mask = species_ == i
-            midx = mask.nonzero().flatten()
-            if midx.shape[0] > 0:
-                idx_list[i] = midx
+    idx_list = [torch.empty(0) for i in range(num_species)]
+    for i in range(num_species):
+        mask = species_ == i
+        midx = mask.nonzero().flatten()
+        if midx.shape[0] > 0:
+            idx_list[i] = midx
     return idx_list
 
 
