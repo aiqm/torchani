@@ -5,8 +5,11 @@ import warnings
 import torch
 from torchani.paths import data_dir
 
-
-internal_path = Path(__file__).resolve().parent.parent
+_env_internal_dir = os.getenv("TORCHANI_EXTENSIONS_INTERNAL_DIR")
+if _env_internal_dir:
+    internal_path = Path(_env_internal_dir).expanduser().resolve()
+else:
+    internal_path = Path(__file__).resolve().parent.parent
 external_path = data_dir().parent.parent / "lib" / "Torchani"
 internal_suffix = ".pyd" if os.name == "nt" else ".so"
 external_suffix = ".dll" if os.name == "nt" else ".so"
