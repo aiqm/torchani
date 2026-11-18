@@ -308,6 +308,31 @@ class TestCompile(ANITestCasePT2):
         pass
 
 
+class _CoulombMLMM(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = simple_aniq(
+            SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev"
+        )
+
+    def compute_mlmm(
+        self,
+        species_coordinates: tuple[Tensor, Tensor],
+        mm_coords: Tensor,
+        mm_charges: Tensor,
+        charge: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
+        coords = species_coordinates[1]
+        output = self.model(species_coordinates, charge=charge)
+        # cdist branches on the number of points, so it can't have dynamic shapes
+        delta = mm_coords.unsqueeze(2) - coords.unsqueeze(1)
+        distances = torch.linalg.norm(delta, dim=-1)
+        pair_coulomb = (
+            mm_charges.unsqueeze(2) * output.atomic_charges.unsqueeze(1) / distances
+        )
+        return output.energies + pair_coulomb.sum((1, 2)), output.atomic_charges
+
+
 class TestCompileModel(ANITestCasePT2):
     # Compiling is slow (~30 s per package), so only a few configs are compiled
 
@@ -413,6 +438,42 @@ class TestCompileModel(ANITestCasePT2):
         assert result.scalars is not None
         self.assertEqual(atomic_charges, result.scalars.detach())
 
+    def testCustomMLMM(self) -> None:
+        model = _CoulombMLMM()
+        compile_model(
+            model,
+            self._package_path,
+            device="cpu",
+            precision="f64",
+            configs="custom_mlmm",
+            symbols=SYMBOLS,
+            cutoff=model.model.cutoff,
+        )
+        self.assertEqual(
+            self._model_names(self._package_path), {"custom_mlmm/cpu/f64"}
+        )
+        model = model.double()
+        runner = load_package(str(self._package_path), "custom_mlmm/cpu/f64")
+        net_charge = torch.tensor([0])
+        # Different sizes check that the number of ML and MM atoms is dynamic
+        for atoms, mm_atoms in ((20, 7), (31, 25)):
+            species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
+            gen = torch.Generator().manual_seed(atoms)
+            mm_coords = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
+            mm_coords = (mm_coords + 1.0) * cell.diagonal()
+            mm_charges = torch.rand(1, mm_atoms, generator=gen, dtype=torch.double)
+            _coords = coords.clone().requires_grad_(True)
+            _mm_coords = mm_coords.clone().requires_grad_(True)
+            energies, atomic_charges = model.compute_mlmm(
+                (species, _coords), _mm_coords, mm_charges
+            )
+            grads = torch.autograd.grad(energies.sum(), (_coords, _mm_coords))
+            output = runner(species, coords, mm_coords, mm_charges, net_charge)
+            self.assertEqual(output[0], energies.detach())
+            self.assertEqual(output[1], -grads[0])
+            self.assertEqual(output[2], -grads[1])
+            self.assertEqual(output[3], atomic_charges.detach())
+
     def testCudaCuaev(self) -> None:
         if not CUAEV_IS_INSTALLED or not torch.cuda.is_available():
             self.skipTest("cuAEV compilation requires CUDA and the cuAEV extension")
@@ -449,7 +510,7 @@ class TestCompileModel(ANITestCasePT2):
 
     def testInvalidArgs(self) -> None:
         model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev")
-        with self.assertRaisesRegex(ValueError, "custom_mlmm"):
+        with self.assertRaisesRegex(ValueError, "compute_mlmm"):
             compile_model(model, self._package_path, configs="custom_mlmm")
         with self.assertRaisesRegex(ValueError, "compute_from_external_neighbors"):
             compile_model(
