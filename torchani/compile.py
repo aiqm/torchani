@@ -16,17 +16,18 @@ entrypoints and their signatures are:
 - ``"single_point_pbc"``:
   ``(species, coords, cell, pbc, net_charge) -> (energies, forces, atomic_charges)``
 - ``"external_neighbors"``:
-  ``(species, coords, neighbor_idxs, shifts) -> (energies, forces, atomic_charges)``
+  ``(species, coords, neighbor_idxs, shifts, net_charge)
+  -> (energies, forces, atomic_charges)``
 
 with input shapes ``species: (1, A)``, ``coords: (1, A, 3)``, ``cell: (3, 3)``,
-``pbc: (3,)``, ``net_charge: ()``, ``neighbor_idxs: (2, P)`` and ``shifts: (P, 3)``,
+``pbc: (3,)``, ``net_charge: (1,)``, ``neighbor_idxs: (2, P)`` and ``shifts: (P, 3)``,
 and output shapes ``(1,)``, ``(1, A, 3)`` and ``(1, A)``. If the model doesn't predict
 atomic charges, they are an empty tensor of shape ``(1, 0)``. The number of atoms ``A``
-and of pairs ``P`` are dynamic. ``net_charge`` is currently ignored, since all models
-only support neutral molecules. All inputs must be contiguous, and for
-``"external_neighbors"`` the ``coords`` must be mapped to the central cell. The
-CUDA models use cuAEV if the model supports it, and CPU models use pyaev, regardless
-of the strategy of the input model. If a model uses cuAEV or the C++
+and of pairs ``P`` are dynamic. ``net_charge`` must be zero, since all models only
+support neutral molecules, but the compiled models don't check it. All inputs must
+be contiguous, and for ``"external_neighbors"`` the ``coords`` must be mapped to the
+central cell. The CUDA models use cuAEV if the model supports it, and CPU models use
+pyaev, regardless of the strategy of the input model. If a model uses cuAEV or the C++
 cell list (``FastCellList``), the corresponding extension must be loaded by the
 process before running the package.
 """
@@ -69,7 +70,7 @@ class _SinglePoint(torch.nn.Module):
     def forward(
         self, species: Tensor, coords: Tensor, net_charge: Tensor
     ) -> tuple[Tensor, Tensor]:
-        result = self._model((species, coords))
+        result = self._model((species, coords), charge=net_charge)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
         return result.energies, coords.new_empty((1, 0))
@@ -88,7 +89,7 @@ class _SinglePointPBC(torch.nn.Module):
         pbc: Tensor,
         net_charge: Tensor,
     ) -> tuple[Tensor, Tensor]:
-        result = self._model((species, coords), cell=cell, pbc=pbc)
+        result = self._model((species, coords), cell=cell, pbc=pbc, charge=net_charge)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
         return result.energies, coords.new_empty((1, 0))
@@ -100,10 +101,15 @@ class _ExternalNeighbors(torch.nn.Module):
         self._model = model
 
     def forward(
-        self, species: Tensor, coords: Tensor, neighbor_idxs: Tensor, shifts: Tensor
+        self,
+        species: Tensor,
+        coords: Tensor,
+        neighbor_idxs: Tensor,
+        shifts: Tensor,
+        net_charge: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_from_external_neighbors(
-            species, coords, neighbor_idxs, shifts
+            species, coords, neighbor_idxs, shifts, charge=net_charge
         )
         if result.scalars is None:
             return result.energies, coords.new_empty((1, 0))
@@ -148,7 +154,7 @@ def _example_inputs(model: _ANI, atoms: int = 30) -> tuple[Tensor, ...]:
 def _export_energies_forces(model: _ANI, entrypoint: str) -> ExportedProgram:
     species, coords, cell, neighbor_idxs, shifts = _example_inputs(model)
     pbc = torch.ones(3, dtype=torch.bool, device=coords.device)
-    net_charge = torch.tensor(0, device=coords.device)
+    net_charge = torch.tensor([0], device=coords.device)
     static = Dim.STATIC
     atoms = Dim("atoms", min=2)
     pairs = Dim("pairs", min=2)
@@ -157,15 +163,23 @@ def _export_energies_forces(model: _ANI, entrypoint: str) -> ExportedProgram:
     if entrypoint == "single_point":
         module = _SinglePoint(model)
         args: tuple[Tensor, ...] = (species, coords, net_charge)
-        dynamic_shapes = species_coords_shapes + [()]
+        dynamic_shapes = species_coords_shapes + [(static,)]
     elif entrypoint == "single_point_pbc":
         module = _SinglePointPBC(model)
         args = (species, coords, cell, pbc, net_charge)
-        dynamic_shapes = species_coords_shapes + [(static, static), (static,), ()]
+        dynamic_shapes = species_coords_shapes + [
+            (static, static),
+            (static,),
+            (static,),
+        ]
     else:
         module = _ExternalNeighbors(model)
-        args = (species, coords, neighbor_idxs, shifts)
-        dynamic_shapes = species_coords_shapes + [(static, pairs), (pairs, static)]
+        args = (species, coords, neighbor_idxs, shifts, net_charge)
+        dynamic_shapes = species_coords_shapes + [
+            (static, pairs),
+            (pairs, static),
+            (static,),
+        ]
     # Neighborlist and triple sizes are data-dependent (nonzero, unique, .item())
     with torch._dynamo.config.patch(
         capture_dynamic_output_shape_ops=True, capture_scalar_outputs=True

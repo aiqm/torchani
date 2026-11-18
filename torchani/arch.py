@@ -240,7 +240,7 @@ class _ANI(torch.nn.Module):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -261,7 +261,7 @@ class _ANI(torch.nn.Module):
         coords: Tensor,
         neighbor_idxs: Tensor,  # External neighbors
         shifts: Tensor,  # External neighbors
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         molecule_idxs: Tensor | None = None,
@@ -384,10 +384,20 @@ class _ANI(torch.nn.Module):
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     @staticmethod
-    def _check_inputs(elem_idxs: Tensor, coords: Tensor, charge: int = 0) -> None:
+    def _check_inputs(
+        elem_idxs: Tensor, coords: Tensor, charge: Tensor | None = None
+    ) -> None:
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert charge == 0, "Model only supports neutral molecules"
+        if charge is None:
+            return
+        if charge.dim() != 1 or charge.shape[0] != elem_idxs.shape[0]:
+            raise ValueError("charge must have shape (molecules,)")
+        # Compiled models don't check the charge values
+        if torch.compiler.is_compiling():
+            return
+        if bool((charge != 0).any()):
+            raise ValueError("Model only supports neutral molecules")
 
 
 class ANI(_ANI):
@@ -398,7 +408,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         molecule_idxs: Tensor | None = None,
@@ -460,7 +470,7 @@ class ANI(_ANI):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -495,7 +505,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
         r"""Calculate predicted atomic energies of all atoms in a molecule
@@ -513,7 +523,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
     ) -> SpeciesForces:
         r"""Calculates predicted forces from ensemble members
 
@@ -550,7 +560,7 @@ class ANI(_ANI):
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
         unbiased: bool = True,
-        charge: int = 0,
+        charge: Tensor | None = None,
     ) -> SpeciesEnergiesQBC:
         r"""Calculates predicted predicted energies and qbc factors
 
@@ -598,7 +608,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> AtomicStdev:
@@ -737,7 +747,7 @@ class ANIq(_ANI):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -783,7 +793,7 @@ class ANIq(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         molecule_idxs: Tensor | None = None,

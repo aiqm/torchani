@@ -368,7 +368,7 @@ class TestCompileModel(ANITestCasePT2):
         )
         model = model.double()
         pbc = torch.ones(3, dtype=torch.bool)
-        net_charge = torch.tensor(0)
+        net_charge = torch.tensor([0])
         # Different sizes check that the number of atoms is dynamic
         for atoms in (20, 31):
             species, coords, cell, _, _ = _example_inputs(model, atoms=atoms)
@@ -406,7 +406,7 @@ class TestCompileModel(ANITestCasePT2):
         forces = -torch.autograd.grad(result.energies.sum(), _coords)[0]
         atomic_charges = self._assert_package_matches(
             "external_neighbors/cpu/f32",
-            (species, coords, neighbor_idxs, shifts),
+            (species, coords, neighbor_idxs, shifts, torch.tensor([0])),
             result.energies.detach(),
             forces,
         )
@@ -441,7 +441,7 @@ class TestCompileModel(ANITestCasePT2):
         model = model.to("cuda")
         species, coords, _, _, _ = _example_inputs(model)
         expect = self._eager_energies_forces(model, species, coords)
-        net_charge = torch.tensor(0, device="cuda")
+        net_charge = torch.tensor([0], device="cuda")
         runner = load_package(str(self._package_path), "single_point/cuda/f32")
         energies, forces, _ = runner(species, coords, net_charge)
         self.assertEqual(energies, expect[0], rtol=1e-4, atol=1e-4)

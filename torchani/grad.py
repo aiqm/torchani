@@ -296,7 +296,7 @@ def single_point(
     coordinates: Tensor,
     cell: Tensor | None = None,
     pbc: Tensor | None = None,
-    charge: int = 0,
+    charge: Tensor | None = None,
     forces: bool = False,
     hessians: bool = False,
     atomic_energies: bool = False,
@@ -314,8 +314,8 @@ def single_point(
         coordinates: |coords|
         cell: |cell|
         pbc: |pbc|
-        charge: The total charge of the molecules. Only
-            the scalar 0 is currently supported.
+        charge: The total charge of the molecules. Shape ``(molecules,)``. Only
+            ``None`` or all zeros are currently supported.
         forces: Calculate the associated forces. Shape ``(molecules, atoms, 3)``
         hessians: Calculate the hessians. Shape is
             ``(molecules, atoms * 3, atoms * 3)``
