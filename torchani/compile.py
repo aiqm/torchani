@@ -327,11 +327,7 @@ def compile_model(
     package_path: str | Path,
     device: Device | tuple[Device, ...] = ("cpu", "cuda"),
     precision: Precision | tuple[Precision, ...] = ("f32", "f64"),
-    configs: Config | tuple[Config, ...] = (
-        "single_point",
-        "single_point_pbc",
-        "external_neighbors",
-    ),
+    configs: Config | tuple[Config, ...] | None = None,
     symbols: tp.Sequence[str] | None = None,
     cutoff: float | None = None,
 ) -> Path:
@@ -349,7 +345,11 @@ def compile_model(
         device: Device, or tuple of devices, to compile for.
         precision: Precision, or tuple of precisions, to compile for.
         configs: Entrypoint, or tuple of entrypoints, to compile. ``"custom_mlmm"``
-            requires a model with a ``compute_mlmm`` method.
+            requires a model with a ``compute_mlmm`` method. If ``None``,
+            ``"single_point"`` and ``"single_point_pbc"`` are always compiled,
+            ``"external_neighbors"`` is compiled if the model has a
+            ``compute_from_external_neighbors`` method, and ``"custom_mlmm"`` if it has
+            a ``compute_mlmm`` method.
         symbols: Chemical symbols supported by the model, used to build the example
             inputs. If ``None``, ``model.symbols`` is used.
         cutoff: Cutoff of the model, used to build the example inputs. If ``None``,
@@ -359,12 +359,23 @@ def compile_model(
     """
     devices = (device,) if isinstance(device, str) else device
     precisions = (precision,) if isinstance(precision, str) else precision
-    _configs = (configs,) if isinstance(configs, str) else configs
-    if "custom_mlmm" in _configs and not hasattr(model, "compute_mlmm"):
+    has_external_neighbors = hasattr(model, "compute_from_external_neighbors")
+    has_custom_mlmm = hasattr(model, "compute_mlmm")
+    _configs: tuple[Config, ...]
+    if configs is None:
+        _configs = ("single_point", "single_point_pbc")
+        if has_external_neighbors:
+            _configs += ("external_neighbors",)
+        if has_custom_mlmm:
+            _configs += ("custom_mlmm",)
+    elif isinstance(configs, str):
+        _configs = (configs,)
+    else:
+        _configs = configs
+    if "custom_mlmm" in _configs and not has_custom_mlmm:
         raise ValueError(
             "The 'custom_mlmm' entrypoint requires a model with a 'compute_mlmm' method"
         )
-    has_external_neighbors = hasattr(model, "compute_from_external_neighbors")
     if "external_neighbors" in _configs and not has_external_neighbors:
         raise ValueError(
             "The 'external_neighbors' entrypoint requires a model with a"
