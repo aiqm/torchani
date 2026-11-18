@@ -1,4 +1,4 @@
-r"""Fake kernels for the cell list ops, needed to trace them (e.g. with torch.compile)"""
+r"""Fake kernels for the cell list ops, needed for torch.compile and export"""
 
 import torch
 from torch import Tensor
