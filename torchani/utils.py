@@ -295,14 +295,13 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
     # torch.remainder(-1.e-8, 1.0) == 1.0
     #
     # The other possibilities are most likely redundant and not required
-    frac[frac >= 1.0] -= 1.0
-    frac[frac < 0.0] += 1.0
+    frac = torch.where(frac >= 1.0, frac - 1.0, frac)
+    frac = torch.where(frac < 0.0, frac + 1.0, frac)
     # Step 2: convert from cell coordinates back to standard cartesian
     # coordinate, and substitute back those for which pbc is off
     out_coordinates = torch.matmul(frac, cell)
     # Only substitute those
-    out_coordinates[:, :, ~pbc] = coordinates[:, :, ~pbc].clone()
-    return out_coordinates
+    return torch.where(pbc, out_coordinates, coordinates)
 
 
 class _NumbersConvert(torch.nn.Module):

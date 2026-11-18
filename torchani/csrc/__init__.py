@@ -70,5 +70,8 @@ if os.getenv("TORCHANI_NO_WARN_EXTENSIONS") != "1":
 if CUAEV_IS_INSTALLED:
     import torchani.csrc._cuaev_fake  # noqa: F401
 
+if CLIST_IS_INSTALLED:
+    import torchani.csrc._cell_list_fake  # noqa: F401
+
 
 __all__ = ["CUAEV_IS_INSTALLED", "MNP_IS_INSTALLED", "CLIST_IS_INSTALLED"]
