@@ -22,7 +22,7 @@ Reference = tp.Literal["center_of_mass", "center_of_geometry", "origin"]
 
 class BaseChargeNormalizer(torch.nn.Module):
     def forward(
-        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: Tensor | None = None
     ) -> Tensor:
         return raw_charges
 
@@ -34,7 +34,7 @@ class ChargeNormalizer(BaseChargeNormalizer):
     .. code-block::python
 
         normalizer = ChargeNormalizer()
-        charge = 0
+        charge = torch.tensor([0])
         elem_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
         raw_charges = torch.tensor([[0.3, 0.5, -0.5]])
         norm_charges = normalizer(elem_idxs, raw_charges, charge)
@@ -87,10 +87,12 @@ class ChargeNormalizer(BaseChargeNormalizer):
         return weights / torch.sum(weights, dim=-1, keepdim=True)
 
     def forward(
-        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: Tensor | None = None
     ) -> Tensor:
         r"""Normalize charges so that they add up to a total charge"""
-        excess = charge - raw_charges.sum(dim=-1, keepdim=True)
+        excess = -raw_charges.sum(dim=-1, keepdim=True)
+        if charge is not None:
+            excess = excess + charge.unsqueeze(-1)
         return raw_charges + excess * self.factor(elem_idxs, raw_charges)
 
 

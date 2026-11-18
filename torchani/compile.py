@@ -4,56 +4,131 @@ r"""Ahead-of-time compilation of models into AOTInductor packages
 
     This module is experimental. Its API and behavior may change without warning.
 
-The compiled package computes energies and forces from an external neighborlist, and
-can be loaded without Python, from C++, using
-``torch::inductor::AOTIModelPackageLoader``, or from Python, using
-``torch._inductor.aoti_load_package``. Its signature is:
+The compiled package holds one model per entrypoint, device and precision, named
+``"<entrypoint>/<device>/<precision>"`` (e.g. ``"single_point_pbc/cuda/f32"``). The
+models can be loaded without Python, from C++, using
+``torch::inductor::AOTIModelPackageLoader(package_path, model_name)``, or from Python,
+using ``torch._inductor.package.load_package(package_path, model_name)``. The
+entrypoints and their signatures are:
 
-``(species, coords, neighbor_idxs, shifts) -> (energies, forces)``
+- ``"single_point"``:
+  ``(species, coords, net_charge) -> (energies, forces, atomic_charges)``
+- ``"single_point_pbc"``:
+  ``(species, coords, cell, pbc, net_charge) -> (energies, forces, atomic_charges)``
+- ``"external_neighbors"``:
+  ``(species, coords, neighbor_idxs, shifts, net_charge)
+  -> (energies, forces, atomic_charges)``
 
-with shapes ``(1, A)``, ``(1, A, 3)``, ``(2, P)`` and ``(P, 3)``. The number of atoms
-``A`` and of pairs ``P`` are dynamic. All inputs must be contiguous, and ``coords``
-must be mapped to the central cell. If the model uses cuAEV, the cuAEV extension must
-be loaded by the process before running the package.
+with input shapes ``species: (1, A)``, ``coords: (1, A, 3)``, ``cell: (3, 3)``,
+``pbc: (3,)``, ``net_charge: (1,)``, ``neighbor_idxs: (2, P)`` and ``shifts: (P, 3)``,
+and output shapes ``(1,)``, ``(1, A, 3)`` and ``(1, A)``. If the model doesn't predict
+atomic charges, they are an empty tensor of shape ``(1, 0)``. The number of atoms ``A``
+and of pairs ``P`` are dynamic. ``net_charge`` must be zero, since all models only
+support neutral molecules, but the compiled models don't check it. All inputs must
+be contiguous, and for ``"external_neighbors"`` the ``coords`` must be mapped to the
+central cell. The CUDA models use cuAEV if the model supports it, and CPU models use
+pyaev, regardless of the strategy of the input model. If a model uses cuAEV or the C++
+cell list (``FastCellList``), the corresponding extension must be loaded by the
+process before running the package.
 """
 
+import copy
+import struct
+import typing as tp
 from pathlib import Path
 
 import torch
 from torch import Tensor
-from torch.export import Dim
+from torch.export import Dim, ExportedProgram
 from torch.fx.experimental.proxy_tensor import make_fx
+from torch._inductor.package import package_aoti
 
 from torchani.arch import _ANI
 from torchani.constants import ATOMIC_NUMBER
+from torchani.neighbors import (
+    AllPairs,
+    AdaptiveList,
+    CellList,
+    FastAdaptiveList,
+    FastCellList,
+)
+from torchani.tuples import SpeciesEnergiesAtomicCharges
+
+Device = tp.Literal["cpu", "cuda"]
+Precision = tp.Literal["f32", "f64"]
+Config = tp.Literal[
+    "single_point", "single_point_pbc", "external_neighbors", "custom_mlmm"
+]
+_DTYPES = {"f32": torch.float32, "f64": torch.float64}
 
 
-class _Energies(torch.nn.Module):
+class _SinglePoint(torch.nn.Module):
     def __init__(self, model: _ANI) -> None:
         super().__init__()
         self._model = model
 
     def forward(
-        self, species: Tensor, coords: Tensor, neighbor_idxs: Tensor, shifts: Tensor
-    ) -> Tensor:
-        return self._model.compute_from_external_neighbors(
-            species, coords, neighbor_idxs, shifts
-        ).energies
+        self, species: Tensor, coords: Tensor, net_charge: Tensor
+    ) -> tuple[Tensor, Tensor]:
+        result = self._model((species, coords), charge=net_charge)
+        if isinstance(result, SpeciesEnergiesAtomicCharges):
+            return result.energies, result.atomic_charges
+        return result.energies, coords.new_empty((1, 0))
 
 
-class _EnergiesForces(torch.nn.Module):
+class _SinglePointPBC(torch.nn.Module):
+    def __init__(self, model: _ANI) -> None:
+        super().__init__()
+        self._model = model
+
+    def forward(
+        self,
+        species: Tensor,
+        coords: Tensor,
+        cell: Tensor,
+        pbc: Tensor,
+        net_charge: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        result = self._model((species, coords), cell=cell, pbc=pbc, charge=net_charge)
+        if isinstance(result, SpeciesEnergiesAtomicCharges):
+            return result.energies, result.atomic_charges
+        return result.energies, coords.new_empty((1, 0))
+
+
+class _ExternalNeighbors(torch.nn.Module):
+    def __init__(self, model: _ANI) -> None:
+        super().__init__()
+        self._model = model
+
+    def forward(
+        self,
+        species: Tensor,
+        coords: Tensor,
+        neighbor_idxs: Tensor,
+        shifts: Tensor,
+        net_charge: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        result = self._model.compute_from_external_neighbors(
+            species, coords, neighbor_idxs, shifts, charge=net_charge
+        )
+        if result.scalars is None:
+            return result.energies, coords.new_empty((1, 0))
+        return result.energies, result.scalars
+
+
+class _EnergiesForcesAtomicCharges(torch.nn.Module):
     def __init__(self, energies_module: torch.nn.Module) -> None:
         super().__init__()
         self._energies_module = energies_module
 
     def forward(
-        self, species: Tensor, coords: Tensor, neighbor_idxs: Tensor, shifts: Tensor
-    ) -> tuple[Tensor, Tensor]:
+        self, species: Tensor, coords: Tensor, *args: Tensor
+    ) -> tuple[Tensor, Tensor, Tensor]:
         with torch.enable_grad():
             coords = coords.detach().requires_grad_(True)
-            energies = self._energies_module(species, coords, neighbor_idxs, shifts)
+            energies, atomic_charges = self._energies_module(species, coords, *args)
             forces = -torch.autograd.grad(energies.sum(), coords)[0]
-        return energies.detach(), forces
+        return energies.detach(), forces, atomic_charges.detach()
 
 
 def _example_inputs(model: _ANI, atoms: int = 30) -> tuple[Tensor, ...]:
@@ -62,6 +137,7 @@ def _example_inputs(model: _ANI, atoms: int = 30) -> tuple[Tensor, ...]:
     # Random molecule at roughly liquid density, so it has many pairs and triples
     side = (atoms / 0.1) ** (1 / 3)
     coords = torch.rand(1, atoms, 3, generator=gen, dtype=param.dtype) * side
+    cell = torch.eye(3, dtype=param.dtype) * side
     if model.periodic_table_index:
         elements = torch.tensor([ATOMIC_NUMBER[s] for s in model.symbols])
     else:
@@ -71,57 +147,189 @@ def _example_inputs(model: _ANI, atoms: int = 30) -> tuple[Tensor, ...]:
     is_upper = torch.ones(atoms, atoms, dtype=torch.bool).triu(1)
     neighbor_idxs = ((dist < model.cutoff) & is_upper).nonzero().t().contiguous()
     shifts = torch.zeros(neighbor_idxs.shape[1], 3, dtype=param.dtype)
-    return tuple(t.to(param.device) for t in (species, coords, neighbor_idxs, shifts))
+    inputs = (species, coords, cell, neighbor_idxs, shifts)
+    return tuple(t.to(param.device) for t in inputs)
 
 
-def compile_model(model: _ANI, package_path: str | Path) -> Path:
-    r"""Compile a model's energies and forces into an AOTInductor package
-
-    The model is compiled for the device and dtype of its parameters. See the
-    module docstring for the signature of the compiled package.
-
-    Args:
-        model: The model to compile.
-        package_path: Path of the output ``.pt2`` package.
-    Returns:
-        The path of the package.
-    """
-    args = _example_inputs(model)
+def _export_energies_forces(model: _ANI, entrypoint: str) -> ExportedProgram:
+    species, coords, cell, neighbor_idxs, shifts = _example_inputs(model)
+    pbc = torch.ones(3, dtype=torch.bool, device=coords.device)
+    net_charge = torch.tensor([0], device=coords.device)
     static = Dim.STATIC
     atoms = Dim("atoms", min=2)
     pairs = Dim("pairs", min=2)
-    dynamic_shapes = [
-        (static, atoms),
-        (static, atoms, static),
-        (static, pairs),
-        (pairs, static),
-    ]
+    species_coords_shapes = [(static, atoms), (static, atoms, static)]
+    module: torch.nn.Module
+    if entrypoint == "single_point":
+        module = _SinglePoint(model)
+        args: tuple[Tensor, ...] = (species, coords, net_charge)
+        dynamic_shapes = species_coords_shapes + [(static,)]
+    elif entrypoint == "single_point_pbc":
+        module = _SinglePointPBC(model)
+        args = (species, coords, cell, pbc, net_charge)
+        dynamic_shapes = species_coords_shapes + [
+            (static, static),
+            (static,),
+            (static,),
+        ]
+    else:
+        module = _ExternalNeighbors(model)
+        args = (species, coords, neighbor_idxs, shifts, net_charge)
+        dynamic_shapes = species_coords_shapes + [
+            (static, pairs),
+            (pairs, static),
+            (static,),
+        ]
     # Neighborlist and triple sizes are data-dependent (nonzero, unique, .item())
     with torch._dynamo.config.patch(
         capture_dynamic_output_shape_ops=True, capture_scalar_outputs=True
     ):
         # Strict mode is needed, non-strict can't trace the triples computation
         energies_program = torch.export.export(
-            _Energies(model), args, dynamic_shapes=dynamic_shapes, strict=True
+            module,
+            args,
+            dynamic_shapes=dynamic_shapes,
+            strict=True,
         )
         # torch.export can't trace autograd.grad (forces). make_fx traces below the
         # autograd layer, so it records the backward ops into the graph. The model
         # buffers are real tensors, so non-fake inputs must be allowed
         energies_forces_graph = make_fx(
-            _EnergiesForces(energies_program.module()),
+            _EnergiesForcesAtomicCharges(energies_program.module()),
             tracing_mode="symbolic",
             _allow_non_fake_inputs=True,
         )(*args)
-        program = torch.export.export(
+        return torch.export.export(
             energies_forces_graph, args, dynamic_shapes=dynamic_shapes
         )
-    # The default asm build of the weights produces a shared library that requires
-    # an executable stack, which glibc >= 2.41 refuses to load
-    with torch._inductor.config.patch({"aot_inductor.use_consts_asm_build": False}):
-        path = torch._inductor.aoti_compile_and_package(
-            program, package_path=str(package_path)
+
+
+def _clear_executable_stack(so_path: str) -> None:
+    # Same as 'patchelf --clear-execstack', for 64-bit little-endian ELF files
+    _PT_GNU_STACK = 0x6474E551
+    _PF_X = 0x1
+    with open(so_path, "r+b") as f:
+        header = f.read(64)
+        if header[:6] != b"\x7fELF\x02\x01":
+            raise RuntimeError(f"{so_path} is not a 64-bit little-endian ELF file")
+        program_headers_offset = struct.unpack_from("<Q", header, 0x20)[0]
+        program_header_size = struct.unpack_from("<H", header, 0x36)[0]
+        program_headers_num = struct.unpack_from("<H", header, 0x38)[0]
+        for i in range(program_headers_num):
+            offset = program_headers_offset + i * program_header_size
+            f.seek(offset)
+            segment_type, flags = struct.unpack("<II", f.read(8))
+            if segment_type == _PT_GNU_STACK:
+                f.seek(offset + 4)
+                f.write(struct.pack("<I", flags & ~_PF_X))
+
+
+def _neighborlist_owners(model: torch.nn.Module) -> list[tp.Any]:
+    owners: list[tp.Any] = []
+    if hasattr(model, "neighborlist"):
+        owners.append(model)
+    aev_computer = getattr(model, "aev_computer", None)
+    if hasattr(aev_computer, "neighborlist"):
+        owners.append(aev_computer)
+    return owners
+
+
+# Takes around 4 min to compile a *single model*
+# For ANI models, a single package with all configurations is around ~170 MB
+def compile_model(
+    model: _ANI,
+    package_path: str | Path,
+    device: Device | tuple[Device, ...] = ("cpu", "cuda"),
+    precision: Precision | tuple[Precision, ...] = ("f32", "f64"),
+    configs: Config | tuple[Config, ...] = (
+        "single_point",
+        "single_point_pbc",
+        "external_neighbors",
+    ),
+) -> Path:
+    r"""Compile a model's energies and forces into an AOTInductor package
+
+    The model is compiled once for each combination of entrypoint, device and
+    precision, and each compiled model is stored in the package under the name
+    ``"<entrypoint>/<device>/<precision>"``, e.g. ``"single_point_pbc/cuda/f32"``. See
+    the module docstring for the signatures of the entrypoints. The input model is not
+    modified.
+
+    Args:
+        model: The model to compile.
+        package_path: Path of the output ``.pt2`` package.
+        device: Device, or tuple of devices, to compile for.
+        precision: Precision, or tuple of precisions, to compile for.
+        configs: Entrypoint, or tuple of entrypoints, to compile.
+            ``"custom_mlmm"`` is not supported yet.
+    Returns:
+        The path of the package.
+    """
+    devices = (device,) if isinstance(device, str) else device
+    precisions = (precision,) if isinstance(precision, str) else precision
+    _configs = (configs,) if isinstance(configs, str) else configs
+    if "custom_mlmm" in _configs:
+        raise ValueError("The 'custom_mlmm' entrypoint is not supported yet")
+    has_external_neighbors = hasattr(model, "compute_from_external_neighbors")
+    if "external_neighbors" in _configs and not has_external_neighbors:
+        raise ValueError(
+            "The 'external_neighbors' entrypoint requires a model with a"
+            " 'compute_from_external_neighbors' method"
         )
-    return Path(path)
+    # These can't be exported with a dynamic number of atoms (the adaptive lists branch
+    # on it, and AllPairs specializes on it). The compiled models only take one
+    # structure, which CellList supports
+    swappable = (AllPairs, AdaptiveList, FastAdaptiveList)
+    owners = _neighborlist_owners(model)
+    if any(type(owner.neighborlist) in swappable for owner in owners):
+        model = copy.deepcopy(model)
+        cell_list = CellList()
+        for owner in _neighborlist_owners(model):
+            if type(owner.neighborlist) in swappable:
+                owner.neighborlist = cell_list
+    owners = _neighborlist_owners(model)
+    if "single_point" in _configs or "single_point_pbc" in _configs:
+        for owner in owners:
+            if type(owner.neighborlist) not in (CellList, FastCellList):
+                raise ValueError(
+                    "Only CellList and FastCellList neighborlists can be compiled,"
+                    f" got {type(owner.neighborlist).__name__}"
+                )
+    uses_cell_list = any(type(owner.neighborlist) is CellList for owner in owners)
+    aoti_files: dict[str, list[tp.Any]] = {}
+    for entrypoint in _configs:
+        options = {"aot_inductor.package": True}
+        # Autotuning pointwise kernels runs them on made-up data, which triggers
+        # out-of-bounds asserts in the indexing kernels of CellList
+        uses_neighborlist = entrypoint != "external_neighbors"
+        if uses_neighborlist and uses_cell_list:
+            options["triton.autotune_pointwise"] = False
+        for _device in devices:
+            for _precision in precisions:
+                dtype = _DTYPES[_precision]
+                _model = copy.deepcopy(model).to(device=_device, dtype=dtype)
+                # cuAEV is only compiled for CUDA. 'auto' selects it if the model
+                # supports it, and otherwise falls back to pyaev
+                if hasattr(_model, "set_strategy"):
+                    _model.set_strategy("auto" if _device == "cuda" else "pyaev")
+                program = _export_energies_forces(_model, entrypoint)
+                files = tp.cast(
+                    list[str],
+                    torch._inductor.aot_compile(
+                        program.module(check_guards=False),
+                        program.example_inputs[0],
+                        options=options,
+                    ),
+                )
+                # The default asm build of the weights produces a shared library that
+                # requires an executable stack, which glibc >= 2.41 refuses to load
+                for file in files:
+                    if file.endswith(".so"):
+                        _clear_executable_stack(file)
+                name = f"{entrypoint}/{_device}/{_precision}"
+                aoti_files[name] = files
+    package_aoti(str(package_path), aoti_files)
+    return Path(package_path)
 
 
 __all__ = ["compile_model"]

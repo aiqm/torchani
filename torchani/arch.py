@@ -240,7 +240,7 @@ class _ANI(torch.nn.Module):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -261,10 +261,10 @@ class _ANI(torch.nn.Module):
         coords: Tensor,
         neighbor_idxs: Tensor,  # External neighbors
         shifts: Tensor,  # External neighbors
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: Tensor | None = None,
+        molecule_idxs: Tensor | None = None,
     ) -> EnergiesScalars:
         r"""This entrypoint supports input from an external neighborlist
 
@@ -278,16 +278,16 @@ class _ANI(torch.nn.Module):
         # (Verlet lists in MD engine). Also discard dummy atoms
         neighbors = narrow_down(self.cutoff, species, coords, neighbor_idxs, shifts)
 
-        if _molecule_idxs is not None:
+        if molecule_idxs is not None:
             if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
                 warnings.warn("molecule_idxs is experimental and subject to change")
             if coords.shape[0] != 1:
                 raise ValueError("molecule_idxs expects only one conformation")
-            if len(_molecule_idxs) != coords.shape[1]:
+            if len(molecule_idxs) != coords.shape[1]:
                 raise ValueError(
                     "molecule_idxs must be the same length as num atoms, if passed"
                 )
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
         return self.compute_from_neighbors(
             elem_idxs, coords, neighbors, charge, atomic, ensemble_values
         )
@@ -384,10 +384,20 @@ class _ANI(torch.nn.Module):
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     @staticmethod
-    def _check_inputs(elem_idxs: Tensor, coords: Tensor, charge: int = 0) -> None:
+    def _check_inputs(
+        elem_idxs: Tensor, coords: Tensor, charge: Tensor | None = None
+    ) -> None:
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert charge == 0, "Model only supports neutral molecules"
+        if charge is None:
+            return
+        if charge.dim() != 1 or charge.shape[0] != elem_idxs.shape[0]:
+            raise ValueError("charge must have shape (molecules,)")
+        # Compiled models don't check the charge values
+        if torch.compiler.is_compiling():
+            return
+        if bool((charge != 0).any()):
+            raise ValueError("Model only supports neutral molecules")
 
 
 class ANI(_ANI):
@@ -398,17 +408,17 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: Tensor | None = None,
+        molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergies:
         r"""Obtain a species-energies tuple from an input species-coords tuple"""
         species, coords = species_coordinates
         self._check_inputs(species, coords, charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
         # Optimized branch that may bypass the neighborlist through the cuAEV-fused
-        if not self._has_extra_potentials and pbc is None and _molecule_idxs is None:
+        if not self._has_extra_potentials and pbc is None and molecule_idxs is None:
             energies = coords.new_zeros(elem_idxs.shape[0])
             if atomic:
                 energies = energies.unsqueeze(1)
@@ -435,17 +445,17 @@ class ANI(_ANI):
         # Branch that goes through the neighborlist
         neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
 
-        # Experimental _molecule_idxs feature
-        if _molecule_idxs is not None:
+        # Experimental molecule_idxs feature
+        if molecule_idxs is not None:
             if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
                 warnings.warn("molecule_idxs is experimental and subject to change")
             if coords.shape[0] != 1:
                 raise ValueError("molecule_idxs expects only one conformation")
-            if len(_molecule_idxs) != coords.shape[1]:
+            if len(molecule_idxs) != coords.shape[1]:
                 raise ValueError(
                     "molecule_idxs must be the same length as num atoms, if passed"
                 )
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
 
         result = self.compute_from_neighbors(
             elem_idxs, coords, neighbors, charge, atomic, ensemble_values
@@ -460,7 +470,7 @@ class ANI(_ANI):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -495,7 +505,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
         r"""Calculate predicted atomic energies of all atoms in a molecule
@@ -513,7 +523,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
     ) -> SpeciesForces:
         r"""Calculates predicted forces from ensemble members
 
@@ -550,7 +560,7 @@ class ANI(_ANI):
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
         unbiased: bool = True,
-        charge: int = 0,
+        charge: Tensor | None = None,
     ) -> SpeciesEnergiesQBC:
         r"""Calculates predicted predicted energies and qbc factors
 
@@ -598,7 +608,7 @@ class ANI(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> AtomicStdev:
@@ -737,7 +747,7 @@ class ANIq(_ANI):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> EnergiesScalars:
@@ -783,10 +793,10 @@ class ANIq(_ANI):
         species_coordinates: tuple[Tensor, Tensor],
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        charge: int = 0,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: Tensor | None = None,
+        molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergiesAtomicCharges:
         species, coords = species_coordinates
         self._check_inputs(species, coords, charge)
@@ -794,18 +804,18 @@ class ANIq(_ANI):
 
         neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
 
-        # Experimental _molecule_idxs feature
+        # Experimental molecule_idxs feature
         # TODO include inside neighborlist if useful
-        if _molecule_idxs is not None:
+        if molecule_idxs is not None:
             if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
                 warnings.warn("molecule_idxs is experimental and subject to change")
             if coords.shape[0] != 1:
                 raise ValueError("molecule_idxs expects only one conformation")
-            if len(_molecule_idxs) != coords.shape[1]:
+            if len(molecule_idxs) != coords.shape[1]:
                 raise ValueError(
                     "molecule_idxs must be the same length as num atoms, if passed"
                 )
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
 
         result = self.compute_from_neighbors(
             elem_idxs, coords, neighbors, charge, atomic, ensemble_values

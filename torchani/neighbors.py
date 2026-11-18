@@ -550,6 +550,9 @@ def _cell_list(
     # atom that many times.
     # shape (C*A,), (C*A) -> (B,)
     upper_between = torch.repeat_interleave(atom_to_image, total_count_in_atom_surround)
+    if torch.compiler.is_compiling():
+        # See the upper bounds in image_pairs_within
+        torch._check(upper_between.shape[0] <= 2**31 - 1)
     # shape (2, B)
     _image_pairs_between = torch.stack((upper_between, lower_between), dim=0)
 
@@ -642,10 +645,9 @@ def flatten_idx3(
     # Convert a tensor that holds idx3 (all of which lie inside the central
     # grid) to one that holds flat idxs (last dimension is removed). For
     # row-major flattening the factors needed are: (GY * GZ, GZ, 1)
-    grid_factors = grid_shape.clone()
-    grid_factors[0] = grid_shape[1] * grid_shape[2]
-    grid_factors[1] = grid_shape[2]
-    grid_factors[2] = 1
+    grid_factors = torch.stack(
+        (grid_shape[1] * grid_shape[2], grid_shape[2], torch.ones_like(grid_shape[2]))
+    )
     return (idx3 * grid_factors).sum(-1)
 
 
@@ -780,6 +782,10 @@ def image_pairs_within(
         image_pairs_in_fullest_bucket = (
             (_arange.view(-1, 1) > _arange.view(1, -1)).nonzero().t()
         )
+        # Without upper bounds, inductor bounds the product H*cp-max by ~2**126,
+        # which doesn't fit in the int64 literals of the AOTInductor runtime checks
+        torch._check(haspairs_idx_to_grid_idx.shape[0] <= 2**31 - 1)
+        torch._check(image_pairs_in_fullest_bucket.shape[1] <= 2**31 - 1)
     else:
         image_pairs_in_fullest_bucket = torch.tril_indices(
             count_in_grid_max, count_in_grid_max, offset=-1, device=device

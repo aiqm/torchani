@@ -1,8 +1,12 @@
 # NOTE: These tests are experimental
 import os
+import tempfile
+import zipfile
+from pathlib import Path
 import torch
 from torch import Tensor
 from torch.export import Dim
+from torch._inductor.package import load_package
 import unittest
 
 import pytest
@@ -17,6 +21,7 @@ from torchani._testing import (
     make_neighbors,
 )
 from torchani.arch import simple_ani, simple_aniq
+from torchani.compile import compile_model, _example_inputs
 from torchani.nn import ANINetworks
 from torchani.neighbors import (
     discard_outside_cutoff,
@@ -24,12 +29,15 @@ from torchani.neighbors import (
     AdaptiveList,
     AllPairs,
     CellList,
+    FastAdaptiveList,
+    FastCellList,
+    Neighborlist,
     Neighbors,
     Triples,
 )
 from torchani.aev import ANIRadial, ANIAngular, AEVComputer
 from torchani.potentials import Coulomb
-from torchani.csrc import CUAEV_IS_INSTALLED
+from torchani.csrc import CUAEV_IS_INSTALLED, CLIST_IS_INSTALLED
 
 SYMBOLS = ("H", "C", "N", "O")
 
@@ -156,6 +164,20 @@ class TestCompile(ANITestCasePT2):
             (AdaptiveList(threshold=8, threshold_nopbc=8), 6),
             (AdaptiveList(threshold=8, threshold_nopbc=8), 10),
         )
+        self._assert_compiled_neighborlists_match(cases)
+
+    def testCppNeighborlists(self) -> None:
+        self._skip_if_no_cell_list()
+        cases = (
+            (FastCellList(), 6),
+            (FastAdaptiveList(threshold=8, threshold_nopbc=8), 6),
+            (FastAdaptiveList(threshold=8, threshold_nopbc=8), 10),
+        )
+        self._assert_compiled_neighborlists_match(cases)
+
+    def _assert_compiled_neighborlists_match(
+        self, cases: tuple[tuple[Neighborlist, int], ...]
+    ) -> None:
         for neighborlist, atoms in cases:
             for pbc in (False, True):
                 with self.subTest(neighborlist=neighborlist, atoms=atoms, pbc=pbc):
@@ -223,6 +245,27 @@ class TestCompile(ANITestCasePT2):
         molec = make_molec(6, cell_size=6.0, pbc=True, seed=1234, device=self.device)
         self._assert_compiled_model_matches(model.to(self.device), molec)
 
+    def _skip_if_no_cell_list(self) -> None:
+        if not CLIST_IS_INSTALLED:
+            self.skipTest("Cell list extension is not installed")
+
+    def testModelCppCellList(self) -> None:
+        self._skip_if_no_cell_list()
+        model = simple_ani(
+            SYMBOLS,
+            "wb97x-631gd",
+            repulsion=False,
+            strategy="pyaev",
+            neighborlist="fast_cell_list",
+        )
+        for pbc in (False, True):
+            with self.subTest(pbc=pbc):
+                torch.compiler.reset()
+                molec = make_molec(
+                    6, cell_size=6.0, pbc=pbc, seed=1234, device=self.device
+                )
+                self._assert_compiled_model_matches(model.to(self.device), molec)
+
     def _skip_if_no_cuaev(self) -> None:
         if not CUAEV_IS_INSTALLED or self.device.type != "cuda":
             self.skipTest("cuAEV is only compiled for CUDA")
@@ -260,12 +303,169 @@ class TestCompile(ANITestCasePT2):
     def testVerletCellList(self) -> None:
         pass
 
-    @unittest.skip(
-        "mnp and cell_list ops have no fake kernels,"
-        " and TorchBind classes no fake class"
-    )
+    @unittest.skip("mnp ops have no fake kernels, and TorchBind classes no fake class")
     def testCppExtensions(self) -> None:
         pass
+
+
+class TestCompileModel(ANITestCasePT2):
+    # Compiling is slow (~30 s per package), so only a few configs are compiled
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        self._package_path = Path(self._tmp_dir.name, "model.pt2")
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        self._tmp_dir.cleanup()
+
+    def _model_names(self, path: Path) -> set[str]:
+        names = set()
+        for record in zipfile.ZipFile(path).namelist():
+            parts = record.split("/")
+            if "aotinductor" in parts:
+                start = parts.index("aotinductor") + 1
+                names.add("/".join(parts[start:-1]))
+        return names
+
+    def _assert_package_matches(
+        self,
+        name: str,
+        args: tuple[Tensor, ...],
+        expect_energies: Tensor,
+        expect_forces: Tensor,
+    ) -> Tensor:
+        energies, forces, atomic_charges = load_package(
+            str(self._package_path), name
+        )(*args)
+        self.assertEqual(energies, expect_energies)
+        self.assertEqual(forces, expect_forces)
+        return atomic_charges
+
+    def _eager_energies_forces(
+        self, model: torch.nn.Module, species: Tensor, coords: Tensor, **kwargs
+    ) -> tuple[Tensor, Tensor]:
+        coords = coords.clone().requires_grad_(True)
+        energies = model((species, coords), **kwargs).energies
+        forces = -torch.autograd.grad(energies.sum(), coords)[0]
+        return energies.detach(), forces
+
+    def testSinglePointEntrypoints(self) -> None:
+        # AllPairs is swapped internally for CellList, the input model is unchanged
+        model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev")
+        compile_model(
+            model,
+            self._package_path,
+            device="cpu",
+            precision="f64",
+            configs=("single_point", "single_point_pbc"),
+        )
+        self.assertIs(type(model.neighborlist), AllPairs)
+        self.assertEqual(
+            self._model_names(self._package_path),
+            {"single_point/cpu/f64", "single_point_pbc/cpu/f64"},
+        )
+        model = model.double()
+        pbc = torch.ones(3, dtype=torch.bool)
+        net_charge = torch.tensor([0])
+        # Different sizes check that the number of atoms is dynamic
+        for atoms in (20, 31):
+            species, coords, cell, _, _ = _example_inputs(model, atoms=atoms)
+            expect = self._eager_energies_forces(model, species, coords)
+            atomic_charges = self._assert_package_matches(
+                "single_point/cpu/f64", (species, coords, net_charge), *expect
+            )
+            self.assertEqual(atomic_charges.shape, (1, 0))
+            expect = self._eager_energies_forces(
+                model, species, coords, cell=cell, pbc=pbc
+            )
+            self._assert_package_matches(
+                "single_point_pbc/cpu/f64",
+                (species, coords, cell, pbc, net_charge),
+                *expect,
+            )
+
+    def testExternalNeighborsCharges(self) -> None:
+        model = simple_aniq(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev")
+        compile_model(
+            model,
+            self._package_path,
+            device="cpu",
+            precision="f32",
+            configs="external_neighbors",
+        )
+        self.assertEqual(
+            self._model_names(self._package_path), {"external_neighbors/cpu/f32"}
+        )
+        species, coords, _, neighbor_idxs, shifts = _example_inputs(model)
+        _coords = coords.clone().requires_grad_(True)
+        result = model.compute_from_external_neighbors(
+            species, _coords, neighbor_idxs, shifts
+        )
+        forces = -torch.autograd.grad(result.energies.sum(), _coords)[0]
+        atomic_charges = self._assert_package_matches(
+            "external_neighbors/cpu/f32",
+            (species, coords, neighbor_idxs, shifts, torch.tensor([0])),
+            result.energies.detach(),
+            forces,
+        )
+        assert result.scalars is not None
+        self.assertEqual(atomic_charges, result.scalars.detach())
+
+    def testCudaCuaev(self) -> None:
+        if not CUAEV_IS_INSTALLED or not torch.cuda.is_available():
+            self.skipTest("cuAEV compilation requires CUDA and the cuAEV extension")
+        # The input strategy is ignored, CUDA uses cuAEV if the model supports it
+        model = simple_ani(
+            SYMBOLS,
+            "wb97x-631gd",
+            repulsion=False,
+            strategy="pyaev",
+            neighborlist="cell_list",
+        )
+        compile_model(
+            model,
+            self._package_path,
+            device="cuda",
+            precision="f32",
+            configs="single_point",
+        )
+        # Ops without a C shim, such as cuAEV's, are listed in the package json files
+        archive = zipfile.ZipFile(self._package_path)
+        archive_text = ""
+        for record in archive.namelist():
+            if record.endswith((".json", ".cpp")):
+                archive_text += archive.read(record).decode()
+        self.assertTrue("cuaev::run" in archive_text)
+        model = model.to("cuda")
+        species, coords, _, _, _ = _example_inputs(model)
+        expect = self._eager_energies_forces(model, species, coords)
+        net_charge = torch.tensor([0], device="cuda")
+        runner = load_package(str(self._package_path), "single_point/cuda/f32")
+        energies, forces, _ = runner(species, coords, net_charge)
+        self.assertEqual(energies, expect[0], rtol=1e-4, atol=1e-4)
+        self.assertEqual(forces, expect[1], rtol=1e-4, atol=1e-4)
+
+    def testInvalidArgs(self) -> None:
+        model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev")
+        with self.assertRaisesRegex(ValueError, "custom_mlmm"):
+            compile_model(model, self._package_path, configs="custom_mlmm")
+        with self.assertRaisesRegex(ValueError, "compute_from_external_neighbors"):
+            compile_model(
+                torch.nn.Linear(1, 1),  # type: ignore[arg-type]
+                self._package_path,
+                configs="external_neighbors",
+            )
+        model = simple_ani(
+            SYMBOLS,
+            "wb97x-631gd",
+            repulsion=False,
+            strategy="pyaev",
+            neighborlist="verlet_cell_list",
+        )
+        with self.assertRaisesRegex(ValueError, "VerletCellList"):
+            compile_model(model, self._package_path)
 
 
 class TestExport(ANITestCasePT2):
