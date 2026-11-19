@@ -194,7 +194,7 @@ class TestDispersion(ANITestCase):
         )
         energy = disp.compute_from_neighbors(
             self.species, self.coordinates, neighbors
-        ).energies
+        )["energies"]
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,

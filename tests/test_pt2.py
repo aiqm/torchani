@@ -460,15 +460,14 @@ class TestCompileModel(ANITestCasePT2):
         result = model.compute_from_external_neighbors(
             species, _coords, neighbor_idxs, shifts
         )
-        forces = -torch.autograd.grad(result.energies.sum(), _coords)[0]
+        forces = -torch.autograd.grad(result["energies"].sum(), _coords)[0]
         atomic_charges = self._assert_package_matches(
             "external_neighbors/cpu/f32",
             (species, coords, neighbor_idxs, shifts, torch.tensor([0])),
-            result.energies.detach(),
+            result["energies"].detach(),
             forces,
         )
-        assert result.scalars is not None
-        self.assertEqual(atomic_charges, result.scalars.detach())
+        self.assertEqual(atomic_charges, result["atomic_charges"].detach())
 
     def testCustomMLMM(self) -> None:
         model = _CoulombMLMM()
