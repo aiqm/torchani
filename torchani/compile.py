@@ -19,19 +19,25 @@ entrypoints and their signatures are:
   ``(species, coords, neighbor_idxs, shifts, net_charge)
   -> (energies, forces, atomic_charges)``
 - ``"custom_mlmm"``:
-  ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff,
-  bonding) -> (energies, forces, mm_forces, atomic_charges)``
+  ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff)
+  -> (energies, forces, mm_forces, atomic_charges)``
+- ``"multipole_mlmm"``:
+  ``(species, coords, mm_coords, mm_charges, mm_dipoles, mm_quads, net_charge,
+  spin_mult, mm_cutoff) -> (energies, forces, mm_forces, atomic_charges)``
 
 with input shapes ``species: (1, A)``, ``coords: (1, A, 3)``, ``cell: (3, 3)``,
 ``pbc: (3,)``, ``net_charge: (1,)``, ``spin_mult: (1,)``, ``neighbor_idxs: (2, P)``,
 ``shifts: (P, 3)``, ``mm_coords: (1, M, 3)``, ``mm_charges: (1, M)``,
-``mm_cutoff: (1,)`` and ``bonding: (2, B)`` (``B`` may be 0), and output shapes
-``(1,)``, ``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A)``. If the model
-doesn't predict atomic charges, they are an empty tensor of shape ``(1, 0)``. The
-``"custom_mlmm"`` entrypoint requires a model that exports a ``compute_mlmm`` method,
-which accepts ``spin_mult``, ``mm_cutoff`` and ``bonding`` keyword arguments and
-returns either the energies or a tuple ``(energies, atomic_charges)``. Models may also
-output a dict with the ``"energies"`` key and, optionally, ``"atomic_charges"``.
+``mm_dipoles: (1, M, 3)``, ``mm_quads: (1, M, 3, 3)`` and ``mm_cutoff: (1,)``, and
+output shapes ``(1,)``, ``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A)``.
+If the model doesn't predict atomic charges, they are an empty tensor of shape
+``(1, 0)``. The ``"custom_mlmm"`` entrypoint requires a model that exports a
+``compute_mlmm`` method, which accepts ``spin_mult`` and ``mm_cutoff`` keyword
+arguments and returns either the energies or a tuple ``(energies, atomic_charges)``. Models may also
+output a dict with the ``"energies"`` key and, optionally, ``"atomic_charges"``. The
+``"multipole_mlmm"`` entrypoint is the same, but it requires a
+``compute_multipole_mlmm`` method, which also takes ``mm_dipoles`` and ``mm_quads``
+after ``mm_charges``.
 
 All inputs must be contiguous, and for ``"external_neighbors"`` the ``coords`` must be
 mapped to the central cell. The CUDA models use cuAEV if the model supports it, and ANI
@@ -63,7 +69,11 @@ from torchani.tuples import SpeciesEnergiesAtomicCharges
 Device = tp.Literal["cpu", "cuda"]
 Precision = tp.Literal["f32", "f64"]
 Config = tp.Literal[
-    "single_point", "single_point_pbc", "external_neighbors", "custom_mlmm"
+    "single_point",
+    "single_point_pbc",
+    "external_neighbors",
+    "custom_mlmm",
+    "multipole_mlmm",
 ]
 _DTYPES = {"f32": torch.float32, "f64": torch.float64}
 
@@ -131,6 +141,17 @@ class _ExternalNeighbors(torch.nn.Module):
         return result.energies, result.scalars
 
 
+def _mlmm_energies_atomic_charges(
+    result: tp.Any, coords: Tensor
+) -> tuple[Tensor, Tensor]:
+    if isinstance(result, dict):
+        empty_charges = coords.new_empty((1, 0))
+        return result["energies"], result.get("atomic_charges", empty_charges)
+    if isinstance(result, tuple):
+        return result[0], result[1]
+    return result, coords.new_empty((1, 0))
+
+
 class _CustomMLMM(torch.nn.Module):
     # The model is any module with a 'compute_mlmm' method
     def __init__(self, model: tp.Any) -> None:
@@ -146,7 +167,6 @@ class _CustomMLMM(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        bonding: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_mlmm(
             (species, coords),
@@ -155,14 +175,39 @@ class _CustomMLMM(torch.nn.Module):
             charge=net_charge,
             spin_mult=spin_mult,
             mm_cutoff=mm_cutoff,
-            bonding=bonding,
         )
-        if isinstance(result, dict):
-            empty_charges = coords.new_empty((1, 0))
-            return result["energies"], result.get("atomic_charges", empty_charges)
-        if isinstance(result, tuple):
-            return result[0], result[1]
-        return result, coords.new_empty((1, 0))
+        return _mlmm_energies_atomic_charges(result, coords)
+
+
+class _MultipoleMLMM(torch.nn.Module):
+    # The model is any module with a 'compute_multipole_mlmm' method
+    def __init__(self, model: tp.Any) -> None:
+        super().__init__()
+        self._model = model
+
+    def forward(
+        self,
+        species: Tensor,
+        coords: Tensor,
+        mm_coords: Tensor,
+        mm_charges: Tensor,
+        mm_dipoles: Tensor,
+        mm_quads: Tensor,
+        net_charge: Tensor,
+        spin_mult: Tensor,
+        mm_cutoff: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        result = self._model.compute_multipole_mlmm(
+            (species, coords),
+            mm_coords,
+            mm_charges,
+            mm_dipoles,
+            mm_quads,
+            charge=net_charge,
+            spin_mult=spin_mult,
+            mm_cutoff=mm_cutoff,
+        )
+        return _mlmm_energies_atomic_charges(result, coords)
 
 
 class _EnergiesForcesAtomicCharges(torch.nn.Module):
@@ -194,7 +239,6 @@ class _EnergiesMLMMForcesAtomicCharges(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        bonding: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         with torch.enable_grad():
             coords = coords.detach().requires_grad_(True)
@@ -207,7 +251,43 @@ class _EnergiesMLMMForcesAtomicCharges(torch.nn.Module):
                 net_charge,
                 spin_mult,
                 mm_cutoff,
-                bonding,
+            )
+            grads = torch.autograd.grad(energies.sum(), (coords, mm_coords))
+        forces = -grads[0]
+        mm_forces = -grads[1]
+        return energies.detach(), forces, mm_forces, atomic_charges.detach()
+
+
+class _EnergiesMultipoleMLMMForcesAtomicCharges(torch.nn.Module):
+    def __init__(self, energies_module: torch.nn.Module) -> None:
+        super().__init__()
+        self._energies_module = energies_module
+
+    def forward(
+        self,
+        species: Tensor,
+        coords: Tensor,
+        mm_coords: Tensor,
+        mm_charges: Tensor,
+        mm_dipoles: Tensor,
+        mm_quads: Tensor,
+        net_charge: Tensor,
+        spin_mult: Tensor,
+        mm_cutoff: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        with torch.enable_grad():
+            coords = coords.detach().requires_grad_(True)
+            mm_coords = mm_coords.detach().requires_grad_(True)
+            energies, atomic_charges = self._energies_module(
+                species,
+                coords,
+                mm_coords,
+                mm_charges,
+                mm_dipoles,
+                mm_quads,
+                net_charge,
+                spin_mult,
+                mm_cutoff,
             )
             grads = torch.autograd.grad(energies.sum(), (coords, mm_coords))
         forces = -grads[0]
@@ -259,8 +339,20 @@ def _export_energies_forces(
     atoms = Dim("atoms", min=2)
     pairs = Dim("pairs", min=2)
     mm_atoms = Dim("mm_atoms", min=2)
-    bonds = Dim("bonds", min=0)
     species_coords_shapes = [(static, atoms), (static, atoms, static)]
+    gen = torch.Generator().manual_seed(1)
+    # MM charges in the cell next to the ML atoms, so that no pair is too close
+    mm_coords = torch.rand(1, 20, 3, generator=gen, dtype=coords.dtype)
+    mm_coords[..., 0] += 1.0
+    mm_coords = (mm_coords * cell.diagonal().cpu()).to(coords.device)
+    mm_charges = torch.rand(1, 20, generator=gen, dtype=coords.dtype) - 0.5
+    mm_charges = mm_charges.to(coords.device)
+    mm_dipoles = torch.rand(1, 20, 3, generator=gen, dtype=coords.dtype) - 0.5
+    mm_dipoles = mm_dipoles.to(coords.device)
+    mm_quads = torch.rand(1, 20, 3, 3, generator=gen, dtype=coords.dtype) - 0.5
+    mm_quads = mm_quads.to(coords.device)
+    spin_mult = torch.tensor([1], device=coords.device)
+    mm_cutoff = coords.new_zeros(1)
     module: torch.nn.Module
     forces_wrapper: type[torch.nn.Module] = _EnergiesForcesAtomicCharges
     if entrypoint == "single_point":
@@ -283,28 +375,17 @@ def _export_energies_forces(
             (pairs, static),
             (static,),
         ]
-    else:
+    elif entrypoint == "custom_mlmm":
         module = _CustomMLMM(model)
         forces_wrapper = _EnergiesMLMMForcesAtomicCharges
-        gen = torch.Generator().manual_seed(1)
-        # MM charges in the cell next to the ML atoms, so that no pair is too close
-        mm_coords = torch.rand(1, 20, 3, generator=gen, dtype=coords.dtype)
-        mm_coords[..., 0] += 1.0
-        mm_coords = (mm_coords * cell.diagonal().cpu()).to(coords.device)
-        mm_charges = torch.rand(1, 20, generator=gen, dtype=coords.dtype) - 0.5
-        spin_mult = torch.tensor([1], device=coords.device)
-        mm_cutoff = coords.new_zeros(1)
-        # Sizes 0, 1, and sizes equal to other dims get specialized, so 5 bonds are used
-        bonding = torch.arange(5, device=coords.device).repeat(2, 1)
         args = (
             species,
             coords,
             mm_coords,
-            mm_charges.to(coords.device),
+            mm_charges,
             net_charge,
             spin_mult,
             mm_cutoff,
-            bonding,
         )
         dynamic_shapes = species_coords_shapes + [
             (static, mm_atoms, static),
@@ -312,7 +393,29 @@ def _export_energies_forces(
             (static,),
             (static,),
             (static,),
-            (static, bonds),
+        ]
+    else:
+        module = _MultipoleMLMM(model)
+        forces_wrapper = _EnergiesMultipoleMLMMForcesAtomicCharges
+        args = (
+            species,
+            coords,
+            mm_coords,
+            mm_charges,
+            mm_dipoles,
+            mm_quads,
+            net_charge,
+            spin_mult,
+            mm_cutoff,
+        )
+        dynamic_shapes = species_coords_shapes + [
+            (static, mm_atoms, static),
+            (static, mm_atoms),
+            (static, mm_atoms, static),
+            (static, mm_atoms, static, static),
+            (static,),
+            (static,),
+            (static,),
         ]
     # Neighborlist and triple sizes are data-dependent (nonzero, unique, .item())
     with torch._dynamo.config.patch(
@@ -383,11 +486,13 @@ def compile_model(
         device: Device, or tuple of devices, to compile for.
         precision: Precision, or tuple of precisions, to compile for.
         configs: Entrypoint, or tuple of entrypoints, to compile. ``"custom_mlmm"``
-            requires a model with a ``compute_mlmm`` method. If ``None``,
+            requires a model with a ``compute_mlmm`` method, and ``"multipole_mlmm"``
+            one with a ``compute_multipole_mlmm`` method. If ``None``,
             ``"single_point"`` and ``"single_point_pbc"`` are always compiled,
             ``"external_neighbors"`` is compiled if the model has a
-            ``compute_from_external_neighbors`` method, and ``"custom_mlmm"`` if it has
-            a ``compute_mlmm`` method.
+            ``compute_from_external_neighbors`` method, ``"custom_mlmm"`` if it has
+            a ``compute_mlmm`` method, and ``"multipole_mlmm"`` if it has a
+            ``compute_multipole_mlmm`` method.
         symbols: Chemical symbols supported by the model, used to build the example
             inputs. If ``None``, ``model.symbols`` is used.
         cutoff: Cutoff of the model, used to build the example inputs. If ``None``,
@@ -399,6 +504,7 @@ def compile_model(
     precisions = (precision,) if isinstance(precision, str) else precision
     has_external_neighbors = hasattr(model, "compute_from_external_neighbors")
     has_custom_mlmm = hasattr(model, "compute_mlmm")
+    has_multipole_mlmm = hasattr(model, "compute_multipole_mlmm")
     _configs: tuple[Config, ...]
     if configs is None:
         _configs = ("single_point", "single_point_pbc")
@@ -406,6 +512,8 @@ def compile_model(
             _configs += ("external_neighbors",)
         if has_custom_mlmm:
             _configs += ("custom_mlmm",)
+        if has_multipole_mlmm:
+            _configs += ("multipole_mlmm",)
     elif isinstance(configs, str):
         _configs = (configs,)
     else:
@@ -413,6 +521,11 @@ def compile_model(
     if "custom_mlmm" in _configs and not has_custom_mlmm:
         raise ValueError(
             "The 'custom_mlmm' entrypoint requires a model with a 'compute_mlmm' method"
+        )
+    if "multipole_mlmm" in _configs and not has_multipole_mlmm:
+        raise ValueError(
+            "The 'multipole_mlmm' entrypoint requires a model with a"
+            " 'compute_multipole_mlmm' method"
         )
     if "external_neighbors" in _configs and not has_external_neighbors:
         raise ValueError(
