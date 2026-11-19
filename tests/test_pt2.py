@@ -321,6 +321,11 @@ class _CoulombMLMM(torch.nn.Module):
         mm_coords: Tensor,
         mm_charges: Tensor,
         charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
+        mm_cutoff: Tensor | None = None,
+        pairs_12: Tensor | None = None,
+        pairs_13: Tensor | None = None,
+        pairs_14: Tensor | None = None,
     ) -> tuple[Tensor, Tensor]:
         coords = species_coordinates[1]
         output = self.model(species_coordinates, charge=charge)
@@ -331,6 +336,33 @@ class _CoulombMLMM(torch.nn.Module):
             mm_charges.unsqueeze(2) * output.atomic_charges.unsqueeze(1) / distances
         )
         return output.energies + pair_coulomb.sum((1, 2)), output.atomic_charges
+
+    def compute_multipole_mlmm(
+        self,
+        species_coordinates: tuple[Tensor, Tensor],
+        mm_coords: Tensor,
+        mm_charges: Tensor,
+        mm_dipoles: Tensor,
+        mm_quads: Tensor,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
+        mm_cutoff: Tensor | None = None,
+        pairs_12: Tensor | None = None,
+        pairs_13: Tensor | None = None,
+        pairs_14: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
+        energies, atomic_charges = self.compute_mlmm(
+            species_coordinates, mm_coords, mm_charges, charge
+        )
+        delta = mm_coords.unsqueeze(2) - species_coordinates[1].unsqueeze(1)
+        distances = torch.linalg.norm(delta, dim=-1)
+        dipole_potential = -(mm_dipoles.unsqueeze(2) * delta).sum(-1) / distances**3
+        delta_outer = delta.unsqueeze(-1) * delta.unsqueeze(-2)
+        quad_contraction = (mm_quads.unsqueeze(2) * delta_outer).sum((-1, -2))
+        quad_potential = 1.5 * quad_contraction / distances**5
+        mm_potential = dipole_potential + quad_potential
+        pair_energies = mm_potential * atomic_charges.unsqueeze(1)
+        return energies + pair_energies.sum((1, 2)), atomic_charges
 
 
 class TestCompileModel(ANITestCasePT2):
@@ -455,10 +487,15 @@ class TestCompileModel(ANITestCasePT2):
         model = model.double()
         runner = load_package(str(self._package_path), "custom_mlmm/cpu/f64")
         net_charge = torch.tensor([0])
-        # Different sizes check that the number of ML and MM atoms is dynamic
-        for atoms, mm_atoms in ((20, 7), (31, 25)):
+        spin_mult = torch.tensor([1])
+        mm_cutoff = torch.tensor([0.0], dtype=torch.double)
+        # Different sizes check that the number of ML and MM atoms, and pairs is dynamic
+        for atoms, mm_atoms, pairs_num in ((20, 7, 0), (31, 25, 5)):
             species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
             gen = torch.Generator().manual_seed(atoms)
+            pairs_12 = torch.randint(0, atoms, (2, pairs_num), generator=gen)
+            pairs_13 = torch.randint(0, atoms, (2, pairs_num + 1), generator=gen)
+            pairs_14 = torch.randint(0, atoms, (2, pairs_num + 2), generator=gen)
             mm_coords = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
             mm_coords = (mm_coords + 1.0) * cell.diagonal()
             mm_charges = torch.rand(1, mm_atoms, generator=gen, dtype=torch.double)
@@ -468,7 +505,74 @@ class TestCompileModel(ANITestCasePT2):
                 (species, _coords), _mm_coords, mm_charges
             )
             grads = torch.autograd.grad(energies.sum(), (_coords, _mm_coords))
-            output = runner(species, coords, mm_coords, mm_charges, net_charge)
+            output = runner(
+                species,
+                coords,
+                mm_coords,
+                mm_charges,
+                net_charge,
+                spin_mult,
+                mm_cutoff,
+                pairs_12,
+                pairs_13,
+                pairs_14,
+            )
+            self.assertEqual(output[0], energies.detach())
+            self.assertEqual(output[1], -grads[0])
+            self.assertEqual(output[2], -grads[1])
+            self.assertEqual(output[3], atomic_charges.detach())
+
+    def testMultipoleMLMM(self) -> None:
+        model = _CoulombMLMM()
+        compile_model(
+            model,
+            self._package_path,
+            device="cpu",
+            precision="f64",
+            configs="multipole_mlmm",
+            symbols=SYMBOLS,
+            cutoff=model.model.cutoff,
+        )
+        self.assertEqual(
+            self._model_names(self._package_path), {"multipole_mlmm/cpu/f64"}
+        )
+        model = model.double()
+        runner = load_package(str(self._package_path), "multipole_mlmm/cpu/f64")
+        net_charge = torch.tensor([0])
+        spin_mult = torch.tensor([1])
+        mm_cutoff = torch.tensor([0.0], dtype=torch.double)
+        # Different sizes check that the number of ML and MM atoms, and pairs is dynamic
+        for atoms, mm_atoms, pairs_num in ((20, 7, 0), (31, 25, 5)):
+            species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
+            gen = torch.Generator().manual_seed(atoms)
+            pairs_12 = torch.randint(0, atoms, (2, pairs_num), generator=gen)
+            pairs_13 = torch.randint(0, atoms, (2, pairs_num + 1), generator=gen)
+            pairs_14 = torch.randint(0, atoms, (2, pairs_num + 2), generator=gen)
+            mm_coords = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
+            mm_coords = (mm_coords + 1.0) * cell.diagonal()
+            mm_charges = torch.rand(1, mm_atoms, generator=gen, dtype=torch.double)
+            mm_dipoles = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
+            mm_quads = torch.rand(1, mm_atoms, 3, 3, generator=gen, dtype=torch.double)
+            _coords = coords.clone().requires_grad_(True)
+            _mm_coords = mm_coords.clone().requires_grad_(True)
+            energies, atomic_charges = model.compute_multipole_mlmm(
+                (species, _coords), _mm_coords, mm_charges, mm_dipoles, mm_quads
+            )
+            grads = torch.autograd.grad(energies.sum(), (_coords, _mm_coords))
+            output = runner(
+                species,
+                coords,
+                mm_coords,
+                mm_charges,
+                mm_dipoles,
+                mm_quads,
+                net_charge,
+                spin_mult,
+                mm_cutoff,
+                pairs_12,
+                pairs_13,
+                pairs_14,
+            )
             self.assertEqual(output[0], energies.detach())
             self.assertEqual(output[1], -grads[0])
             self.assertEqual(output[2], -grads[1])
@@ -512,6 +616,8 @@ class TestCompileModel(ANITestCasePT2):
         model = simple_ani(SYMBOLS, "wb97x-631gd", repulsion=False, strategy="pyaev")
         with self.assertRaisesRegex(ValueError, "compute_mlmm"):
             compile_model(model, self._package_path, configs="custom_mlmm")
+        with self.assertRaisesRegex(ValueError, "compute_multipole_mlmm"):
+            compile_model(model, self._package_path, configs="multipole_mlmm")
         with self.assertRaisesRegex(ValueError, "compute_from_external_neighbors"):
             compile_model(
                 torch.nn.Linear(1, 1),  # type: ignore[arg-type]
