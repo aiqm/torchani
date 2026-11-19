@@ -73,10 +73,10 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         )
         out = model((species, coords), cell, pbc)
         if hasattr(out, "atomic_charges"):
-            self.assertEqual(out.atomic_charges, result.scalars)
+            self.assertEqual(out.atomic_charges, result["atomic_charges"])
         else:
-            self.assertEqual(None, result.scalars)
-        self.assertEqual(out.energies, result.energies)
+            self.assertNotIn("atomic_charges", result)
+        self.assertEqual(out.energies, result["energies"])
 
 
 @expand()
@@ -92,10 +92,10 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         result = model.compute_from_neighbors(elem_idxs, coords, neighbors)
         out = model((species, coords), cell, pbc)
         if hasattr(out, "atomic_charges"):
-            self.assertEqual(out.atomic_charges, result.scalars)
+            self.assertEqual(out.atomic_charges, result["atomic_charges"])
         else:
-            self.assertEqual(None, result.scalars)
-        self.assertEqual(out.energies, result.energies)
+            self.assertNotIn("atomic_charges", result)
+        self.assertEqual(out.energies, result["energies"])
 
 
 @expand(jit=True, device="cpu")

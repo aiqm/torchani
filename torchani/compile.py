@@ -68,7 +68,7 @@ from torchani.neighbors import (
     FastAdaptiveList,
     FastCellList,
 )
-from torchani.tuples import SpeciesEnergiesAtomicCharges
+from torchani.tuples import SpeciesEnergiesAtomicCharges, SpeciesEnergiesScalars
 
 Device = tp.Literal["cpu", "cuda"]
 Precision = tp.Literal["f32", "f64"]
@@ -96,6 +96,9 @@ class _SinglePoint(torch.nn.Module):
             return result["energies"], result.get("atomic_charges", empty_charges)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
+        if isinstance(result, SpeciesEnergiesScalars):
+            empty_charges = coords.new_empty((1, 0))
+            return result.energies, result.scalars.get("atomic_charges", empty_charges)
         return result.energies, coords.new_empty((1, 0))
 
 
@@ -118,6 +121,9 @@ class _SinglePointPBC(torch.nn.Module):
             return result["energies"], result.get("atomic_charges", empty_charges)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
+        if isinstance(result, SpeciesEnergiesScalars):
+            empty_charges = coords.new_empty((1, 0))
+            return result.energies, result.scalars.get("atomic_charges", empty_charges)
         return result.energies, coords.new_empty((1, 0))
 
 
@@ -137,12 +143,8 @@ class _ExternalNeighbors(torch.nn.Module):
         result = self._model.compute_from_external_neighbors(
             species, coords, neighbor_idxs, shifts, charge=net_charge
         )
-        if isinstance(result, dict):
-            empty_charges = coords.new_empty((1, 0))
-            return result["energies"], result.get("atomic_charges", empty_charges)
-        if result.scalars is None:
-            return result.energies, coords.new_empty((1, 0))
-        return result.energies, result.scalars
+        empty_charges = coords.new_empty((1, 0))
+        return result["energies"], result.get("atomic_charges", empty_charges)
 
 
 def _mlmm_energies_atomic_charges(

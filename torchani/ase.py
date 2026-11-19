@@ -142,8 +142,9 @@ class Calculator(AseCalculator):
 
             _idxs = self.model.species_converter(species)
             out = self.model.compute_from_neighbors(_idxs, crds, neighbors)
+            energies = out["energies"]
         else:
-            out = self.model((species, crds), cell, pbc)
+            energies = self.model((species, crds), cell, pbc).energies
 
         # Check if properties requires a backwards pass, if so, run it
         if self._properties_need_autograd(properties):
@@ -157,14 +158,14 @@ class Calculator(AseCalculator):
                 elif self._stress_kind == "scaling":
                     inputs[1] = strain
             grads = torch.autograd.grad(
-                out.energies.squeeze(), inputs, allow_unused=True
+                energies.squeeze(), inputs, allow_unused=True
             )
 
         # Set all calculated properties in the "results" mapping
         if "energy" in properties:
-            self._set_result("energy", out.energies)
+            self._set_result("energy", energies)
         if "free_energy" in properties:
-            self._set_result("free_energy", out.energies)
+            self._set_result("free_energy", energies)
         if "forces" in properties:
             self._set_result("forces", -grads[0])
         if "stress" in properties:

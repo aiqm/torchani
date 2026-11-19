@@ -48,8 +48,7 @@ and the relevant publications:
 We recommend installing `torchani` inside a `conda|mamba` environment, or a `venv`.
 
 ⚠️  **Important**: *We recommend you install torchani with `pip``uv`you want the latest version, even
-if using a conda env. The torchani conda package is maintained by external developers
-and may be out of date.*
+if using a conda env. The torchani conda package may be out of date.*
 
 We also recommended you first install a specific torch version, with a specific CUDA
 toolkit backend, for example:
@@ -59,9 +58,7 @@ pip install torch==2.13 --index-url https://download.pytorch.org/whl/cu130
 ```
 
 for the version with CUDA 13.0. This is not strictly required, but is easier if you want
-to control these versions. Note that TorchANI 2 requires PyTorch >= 2.0.
-
-Afterwards:
+to control these versions. TorchANI 2 requires PyTorch >= 2.0. Afterwards run:
 
 ```bash
 pip install torchani

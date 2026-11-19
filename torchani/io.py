@@ -1,4 +1,7 @@
-r"""Convenience functions for reading and writing molecules in ".xyz" format"""
+r"""Convenience functions for reading and writing molecules in ".xyz" format
+
+Also supports reading the coordinates block of ORCA input files
+"""
 
 import shlex
 from pathlib import Path
@@ -15,7 +18,7 @@ class TorchaniIOError(IOError):
     pass
 
 
-__all__ = ["write_xyz", "read_xyz"]
+__all__ = ["write_xyz", "read_xyz", "read_orca"]
 
 
 def write_xyz(
@@ -173,3 +176,51 @@ def read_xyz(
     if return_comments:
         return pad_properties["species"], pad_properties["coordinates"], cell, pbc, comments_list  # type: ignore  # noqa: E501
     return pad_properties["species"], pad_properties["coordinates"], cell, pbc
+
+
+def read_orca(
+    path: StrPath,
+    dtype: DType = None,
+    device: Device = None,
+    detect_padding: bool = True,
+    pad_species_value: int = 100,
+) -> tuple[Tensor, Tensor]:
+    r"""Read the ``* xyz ... *`` coordinates block of an ORCA input file
+
+    Returns a (species, coordinates) tuple of tensors, of shapes (1, A) and (1, A, 3).
+    Comments (starting with ``#``) and blank lines are ignored.
+    """
+    path = Path(path).resolve()
+    species: list[int] = []
+    coordinates: list[list[float]] = []
+    block_is_open = False
+    block_is_closed = False
+    with open(path, mode="rt", encoding="utf-8") as f:
+        for line in f:
+            tokens = line.split("#", 1)[0].replace("*", " * ").split()
+            if not tokens:
+                continue
+            if not block_is_open:
+                block_is_open = tokens[:2] == ["*", "xyz"]
+                continue
+            if tokens[0] == "*":
+                block_is_closed = True
+                break
+            if len(tokens) < 4:
+                raise TorchaniIOError(f"Incorrect atom line in {path}: {line}")
+            symbol = tokens[0].capitalize()
+            if symbol in ATOMIC_NUMBER:
+                znum = ATOMIC_NUMBER[symbol]
+            else:
+                znum = int(symbol)
+            xyz = [float(v) for v in tokens[1:4]]
+            if detect_padding and znum == pad_species_value:
+                znum = -1
+                xyz = [0.0, 0.0, 0.0]
+            species.append(znum)
+            coordinates.append(xyz)
+    if not (block_is_open and block_is_closed):
+        raise TorchaniIOError(f"Could not find a '* xyz ... *' block in {path}")
+    species_tensor = torch.tensor([species], dtype=torch.long, device=device)
+    coords_tensor = torch.tensor([coordinates], dtype=dtype, device=device)
+    return species_tensor, coords_tensor

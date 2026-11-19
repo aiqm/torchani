@@ -9,7 +9,7 @@ import typing as tp
 from torch import Tensor
 import torch
 
-from torchani.arch import ANI, ANIq
+from torchani.arch import ANI, ANIq, ANIscalars
 from torchani.potentials import Potential
 from torchani.tuples import (
     EnergiesForcesHessians,
@@ -36,7 +36,7 @@ __all__ = [
     "calc_forces_and_hessians",  # alias
 ]
 
-Model = Potential | ANI | ANIq
+Model = Potential | ANI | ANIq | ANIscalars
 
 
 def forces(
@@ -290,8 +290,16 @@ def energies_and_forces(
     return EnergiesForces(energies, _forces)
 
 
+def _atomic_scalar(result: tp.Any, key: str) -> Tensor:
+    if hasattr(result, "scalars") and key in result.scalars:
+        return result.scalars[key]
+    if hasattr(result, key):
+        return getattr(result, key)
+    raise ValueError(f"Model doesn't support {key.replace('_', ' ')}")
+
+
 def single_point(
-    model: ANI | ANIq,
+    model: ANI | ANIq | ANIscalars,
     species: Tensor,
     coordinates: Tensor,
     cell: Tensor | None = None,
@@ -302,6 +310,8 @@ def single_point(
     atomic_energies: bool = False,
     atomic_charges: bool = False,
     atomic_charges_grad: bool = False,
+    atomic_volumes: bool = False,
+    atomic_volumes_grad: bool = False,
     ensemble_values: bool = False,
     keep_vars: bool = False,
 ) -> dict[str, Tensor]:
@@ -324,6 +334,10 @@ def single_point(
             Shape ``(molecules, atoms)``
         atomic_charges_grad: Only for models that support it, output atomic charge
             gradients. Shape ``(molecules, atoms, 3)``.
+        atomic_volumes: Only for models that support it, output atomic volumes.
+            Shape ``(molecules, atoms)``
+        atomic_volumes_grad: Only for models that support it, output atomic volume
+            gradients. Shape ``(molecules, atoms, 3)``.
         ensemble_values: Differentiate values of different models of the ensemble
             Also output ensemble standard deviation and qbc factors
         keep_vars: The output scalars are detached from the graph unless
@@ -333,7 +347,7 @@ def single_point(
         various result tensors.
     """
     saved_requires_grad = coordinates.requires_grad
-    if forces or hessians or atomic_charges_grad:
+    if forces or hessians or atomic_charges_grad or atomic_volumes_grad:
         coordinates.requires_grad_(True)
     result = model(
         species_coordinates=(species, coordinates),
@@ -346,13 +360,20 @@ def single_point(
     energies = result.energies
     out: dict[str, Tensor] = {}
     if atomic_charges:
-        if not hasattr(result, "atomic_charges"):
-            raise ValueError("Model doesn't support atomic charges")
-        out["atomic_charges"] = result.atomic_charges
+        charges = _atomic_scalar(result, "atomic_charges")
+        out["atomic_charges"] = charges
         if atomic_charges_grad:
-            retain = forces or hessians
+            retain = forces or hessians or (atomic_volumes and atomic_volumes_grad)
             out["atomic_charges_grad"] = calc_grads(
-                result.atomic_charges, coordinates, retain_graph=retain
+                charges, coordinates, retain_graph=retain
+            )
+    if atomic_volumes:
+        volumes = _atomic_scalar(result, "atomic_volumes")
+        out["atomic_volumes"] = volumes
+        if atomic_volumes_grad:
+            retain = forces or hessians
+            out["atomic_volumes_grad"] = calc_grads(
+                volumes, coordinates, retain_graph=retain
             )
 
     if ensemble_values:

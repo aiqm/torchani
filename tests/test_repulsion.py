@@ -26,7 +26,7 @@ class TestRepulsion(ANITestCase):
         )
         energies = self.rep.compute_from_neighbors(
             element_idxs, coords, neighbors
-        ).energies
+        )["energies"]
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
@@ -79,7 +79,7 @@ class TestRepulsion(ANITestCase):
         )
         energies = self.rep.compute_from_neighbors(
             element_idxs, coords, neighbors
-        ).energies
+        )["energies"]
         self.assertEqual(torch.tensor([0.0], device=self.device), energies)
 
     def testAtomicEnergy(self):

@@ -1,11 +1,12 @@
+import torch
 from torch import Tensor
 
-from torchani.tuples import EnergiesScalars
 from torchani.nn import AtomicContainer
 from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
+from torchani.sae import SelfEnergy
 
 
 # Adaptor to use the aev computer as a three body potential
@@ -25,11 +26,11 @@ class NNPotential(Potential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
-        return EnergiesScalars(energies)
+        return {"energies": energies}
 
 
 # Output of NN is assumed to be of shape (molecules, 2) with
@@ -57,7 +58,7 @@ class MergedChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         # AtomicContainer is assumed to output a tensor with a final dimension "2"
@@ -71,7 +72,10 @@ class MergedChargesNNPotential(NNPotential):
         energies, qs = energies_qs.unbind(-1)
         if not atomic:
             energies = energies.sum(dim=-1)
-        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
+        return {
+            "energies": energies,
+            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
+        }
 
 
 class SeparateChargesNNPotential(NNPotential):
@@ -98,9 +102,62 @@ class SeparateChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)
-        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
+        return {
+            "energies": energies,
+            "atomic_charges": self.charge_normalizer(elem_idxs, qs, charge),
+        }
+
+
+class SeparateScalarsNNPotential(NNPotential):
+    r"""Potential that also outputs arbitrary named atomic scalars
+
+    Each scalar is predicted by its own atomic networks, which share the input
+    features with the energy networks. The scalar named ``"atomic_charges"`` is
+    normalized with the charge normalizer.
+    """
+
+    def __init__(
+        self,
+        aev_computer: AEVComputer,
+        neural_networks: AtomicContainer,
+        scalar_networks: dict[str, AtomicContainer],
+        scalar_shifters: dict[str, SelfEnergy],
+        charge_normalizer: BaseChargeNormalizer | None = None,
+    ):
+        super().__init__(aev_computer, neural_networks)
+        if set(scalar_networks) != set(scalar_shifters):
+            raise ValueError("scalar_networks and scalar_shifters must have equal keys")
+        if charge_normalizer is None:
+            charge_normalizer = ChargeNormalizer(self.symbols)
+        self.scalar_networks = torch.nn.ModuleDict(scalar_networks)
+        self.scalar_shifters = torch.nn.ModuleDict(scalar_shifters)
+        self.charge_normalizer = charge_normalizer
+
+    def compute_from_neighbors(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        scalars: Tensor | None = None,
+        charge: Tensor | None = None,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+        ghost_flags: Tensor | None = None,
+    ) -> dict[str, Tensor]:
+        assert scalars is None
+        aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
+        energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
+        out = {"energies": energies}
+        for k, networks in self.scalar_networks.items():
+            out[k] = networks(elem_idxs, aevs, atomic=True)
+        for k, shifter in self.scalar_shifters.items():
+            out[k] = out[k] + shifter(elem_idxs, atomic=True)
+        if "atomic_charges" in out:
+            qs = out["atomic_charges"]
+            out["atomic_charges"] = self.charge_normalizer(elem_idxs, qs, charge)
+        return out
