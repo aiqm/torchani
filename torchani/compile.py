@@ -370,12 +370,15 @@ def _export_energies_forces(
     pairs_12_dim = Dim("pairs_12", min=0)
     pairs_13_dim = Dim("pairs_13", min=0)
     pairs_14_dim = Dim("pairs_14", min=0)
-    pairs_shapes = [
+    pairs_shapes: tp.List[tp.Tuple[tp.Any, ...]] = [
         (static, pairs_12_dim),
         (static, pairs_13_dim),
         (static, pairs_14_dim),
     ]
-    species_coords_shapes = [(static, atoms), (static, atoms, static)]
+    species_coords_shapes: tp.List[tp.Tuple[tp.Any, ...]] = [
+        (static, atoms),
+        (static, atoms, static),
+    ]
     gen = torch.Generator().manual_seed(1)
     # MM charges in the cell next to the ML atoms, so that no pair is too close
     mm_coords = torch.rand(1, 20, 3, generator=gen, dtype=coords.dtype)
