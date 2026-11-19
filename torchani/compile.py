@@ -33,9 +33,11 @@ output shapes ``(1,)``, ``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A
 If the model doesn't predict atomic charges, they are an empty tensor of shape
 ``(1, 0)``. The ``"custom_mlmm"`` entrypoint requires a model that exports a
 ``compute_mlmm`` method, which accepts ``spin_mult`` and ``mm_cutoff`` keyword
-arguments and returns either the energies or a tuple ``(energies, atomic_charges)``. Models may also
-output a dict with the ``"energies"`` key and, optionally, ``"atomic_charges"``. The
-``"multipole_mlmm"`` entrypoint is the same, but it requires a
+arguments and returns either the energies or a tuple ``(energies, atomic_charges)``.
+Models may also output a dict with the ``"energies"`` key and, optionally,
+``"atomic_charges"``.
+
+The ``"multipole_mlmm"`` entrypoint is the same, but it requires a
 ``compute_multipole_mlmm`` method, which also takes ``mm_dipoles`` and ``mm_quads``
 after ``mm_charges``.
 
