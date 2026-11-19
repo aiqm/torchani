@@ -126,6 +126,7 @@ def _build_extensions(
     _ = load(
         name="cuaev",
         sources=[
+            f"{this_dir}/csrc/cuaev_schema.cpp",
             f"{this_dir}/csrc/cuaev.cpp",
             f"{this_dir}/csrc/aev.cu",
             f"{this_dir}/csrc/aev_cpu.cpp",
