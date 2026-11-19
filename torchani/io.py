@@ -185,7 +185,7 @@ def read_orca(
     detect_padding: bool = True,
     pad_species_value: int = 100,
 ) -> tuple[Tensor, Tensor]:
-    r"""Read the ``* xyz ... *`` coordinates block of an ORCA input file
+    r"""Read the ``* xyz`` coordinates block of an ORCA input file
 
     Returns a (species, coordinates) tuple of tensors, of shapes (1, A) and (1, A, 3).
     Comments (starting with ``#``) and blank lines are ignored.
