@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 import torch
@@ -8,7 +9,7 @@ from torchani import single_point
 from torchani._testing import ANITestCase, expand, make_molecs
 from torchani.arch import ANI, ANIq, ANIscalars, Assembler
 from torchani.io import read_orca, TorchaniIOError
-from torchani.potentials import Coulomb
+from torchani.potentials import Coulomb, SeparateScalarsNNPotential
 from torchani.utils import SYMBOLS_1X
 
 
@@ -120,6 +121,45 @@ class TestANIscalars(ANITestCase):
         self.assertEqual(result["atomic_charges_grad"].shape, coords_shape)
         self.assertEqual(result["atomic_volumes_grad"].shape, coords_shape)
 
+    def testOutActivation(self):
+        asm = _assembler(keys=("atomic_charges",))
+        asm.add_scalar_networks(
+            "atomic_volumes", ctor="ani1x", out_activation="softplus"
+        )
+        model = asm.assemble(2).to(self.device)
+        no_act_model = deepcopy(model)
+        no_act_model.nnp.scalar_out_activations = torch.nn.ModuleDict()
+        _, energies, scalars = self._setup(model)(self.species_coords)
+        _, no_act_energies, no_act_scalars = self._setup(no_act_model)(
+            self.species_coords
+        )
+        softplus = torch.nn.Softplus(beta=10.0)
+        self.assertEqual(energies, no_act_energies)
+        self.assertEqual(scalars["atomic_charges"], no_act_scalars["atomic_charges"])
+        self.assertEqual(
+            scalars["atomic_volumes"], softplus(no_act_scalars["atomic_volumes"])
+        )
+        self.assertTrue((scalars["atomic_volumes"] > 0).all())
+
+    def testShiftAfterOutActivation(self):
+        asm = _assembler(keys=())
+        asm.add_scalar_networks(
+            "atomic_volumes", ctor="ani1x", out_activation="softplus"
+        )
+        asm.set_shift_before_out_activation(False)
+        model = asm.assemble(2).to(self.device)
+        shifter = model.nnp.scalar_shifters["atomic_volumes"]
+        shifter.self_energies.fill_(-1.0)
+        no_act_model = deepcopy(model)
+        no_act_model.nnp.scalar_out_activations = torch.nn.ModuleDict()
+        _, _, scalars = self._setup(model)(self.species_coords)
+        _, _, no_act_scalars = self._setup(no_act_model)(self.species_coords)
+        softplus = torch.nn.Softplus(beta=10.0)
+        self.assertEqual(
+            scalars["atomic_volumes"],
+            softplus(no_act_scalars["atomic_volumes"] + 1.0) - 1.0,
+        )
+
     def testSinglePointUnsupported(self):
         model = _assembler(keys=("atomic_charges",)).assemble(1).to(self.device)
         with self.assertRaisesRegex(ValueError, "atomic volumes"):
@@ -143,6 +183,17 @@ class TestAssemblerScalars(unittest.TestCase):
         asm = _assembler()
         with self.assertRaises(ValueError):
             asm.add_scalar_networks("atomic_volumes")
+
+    def testOutActivationUnknownKey(self):
+        model = _assembler().assemble()
+        with self.assertRaises(ValueError):
+            SeparateScalarsNNPotential(
+                model.nnp.aev_computer,
+                model.nnp.neural_networks,
+                dict(model.nnp.scalar_networks),
+                dict(model.nnp.scalar_shifters),
+                scalar_out_activations={"foo": torch.nn.Softplus()},
+            )
 
     def testCoulombRequiresCharges(self):
         asm = _assembler(keys=("atomic_volumes",), coulomb=True)

@@ -177,5 +177,7 @@ def parse_activation(module: str | torch.nn.Module) -> torch.nn.Module:
         return torch.nn.GELU()
     if module == "celu":
         return TightCELU()
+    if module == "softplus":
+        return torch.nn.Softplus(beta=10.0)
     assert isinstance(module, torch.nn.Module)  # mypy
     return module
