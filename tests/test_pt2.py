@@ -321,6 +321,9 @@ class _CoulombMLMM(torch.nn.Module):
         mm_coords: Tensor,
         mm_charges: Tensor,
         charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
+        mm_cutoff: Tensor | None = None,
+        bonding: Tensor | None = None,
     ) -> tuple[Tensor, Tensor]:
         coords = species_coordinates[1]
         output = self.model(species_coordinates, charge=charge)
@@ -455,6 +458,9 @@ class TestCompileModel(ANITestCasePT2):
         model = model.double()
         runner = load_package(str(self._package_path), "custom_mlmm/cpu/f64")
         net_charge = torch.tensor([0])
+        spin_mult = torch.tensor([1])
+        mm_cutoff = torch.tensor([0.0], dtype=torch.double)
+        bonding = torch.empty(2, 0, dtype=torch.long)
         # Different sizes check that the number of ML and MM atoms is dynamic
         for atoms, mm_atoms in ((20, 7), (31, 25)):
             species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
@@ -468,7 +474,16 @@ class TestCompileModel(ANITestCasePT2):
                 (species, _coords), _mm_coords, mm_charges
             )
             grads = torch.autograd.grad(energies.sum(), (_coords, _mm_coords))
-            output = runner(species, coords, mm_coords, mm_charges, net_charge)
+            output = runner(
+                species,
+                coords,
+                mm_coords,
+                mm_charges,
+                net_charge,
+                spin_mult,
+                mm_cutoff,
+                bonding,
+            )
             self.assertEqual(output[0], energies.detach())
             self.assertEqual(output[1], -grads[0])
             self.assertEqual(output[2], -grads[1])

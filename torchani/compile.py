@@ -19,17 +19,19 @@ entrypoints and their signatures are:
   ``(species, coords, neighbor_idxs, shifts, net_charge)
   -> (energies, forces, atomic_charges)``
 - ``"custom_mlmm"``:
-  ``(species, coords, mm_coords, mm_charges, net_charge)
-  -> (energies, forces, mm_forces, atomic_charges)``
+  ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff,
+  bonding) -> (energies, forces, mm_forces, atomic_charges)``
 
 with input shapes ``species: (1, A)``, ``coords: (1, A, 3)``, ``cell: (3, 3)``,
-``pbc: (3,)``, ``net_charge: (1,)``, ``neighbor_idxs: (2, P)``, ``shifts: (P, 3)``,
-``mm_coords: (1, M, 3)`` and ``mm_charges: (1, M)``, and output shapes ``(1,)``,
-``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A)``. If the model doesn't
-predict atomic charges, they are an empty tensor of shape ``(1, 0)``. The
+``pbc: (3,)``, ``net_charge: (1,)``, ``spin_mult: (1,)``, ``neighbor_idxs: (2, P)``,
+``shifts: (P, 3)``, ``mm_coords: (1, M, 3)``, ``mm_charges: (1, M)``,
+``mm_cutoff: (1,)`` and ``bonding: (2, B)`` (``B`` may be 0), and output shapes
+``(1,)``, ``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A)``. If the model
+doesn't predict atomic charges, they are an empty tensor of shape ``(1, 0)``. The
 ``"custom_mlmm"`` entrypoint requires a model that exports a ``compute_mlmm`` method,
-which returns either the energies or a tuple ``(energies, atomic_charges)``. Models may
-also output a dict with the ``"energies"`` key and, optionally, ``"atomic_charges"``.
+which accepts ``spin_mult``, ``mm_cutoff`` and ``bonding`` keyword arguments and
+returns either the energies or a tuple ``(energies, atomic_charges)``. Models may also
+output a dict with the ``"energies"`` key and, optionally, ``"atomic_charges"``.
 
 All inputs must be contiguous, and for ``"external_neighbors"`` the ``coords`` must be
 mapped to the central cell. The CUDA models use cuAEV if the model supports it, and ANI
@@ -142,9 +144,18 @@ class _CustomMLMM(torch.nn.Module):
         mm_coords: Tensor,
         mm_charges: Tensor,
         net_charge: Tensor,
+        spin_mult: Tensor,
+        mm_cutoff: Tensor,
+        bonding: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_mlmm(
-            (species, coords), mm_coords, mm_charges, charge=net_charge
+            (species, coords),
+            mm_coords,
+            mm_charges,
+            charge=net_charge,
+            spin_mult=spin_mult,
+            mm_cutoff=mm_cutoff,
+            bonding=bonding,
         )
         if isinstance(result, dict):
             empty_charges = coords.new_empty((1, 0))
@@ -181,12 +192,22 @@ class _EnergiesMLMMForcesAtomicCharges(torch.nn.Module):
         mm_coords: Tensor,
         mm_charges: Tensor,
         net_charge: Tensor,
+        spin_mult: Tensor,
+        mm_cutoff: Tensor,
+        bonding: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         with torch.enable_grad():
             coords = coords.detach().requires_grad_(True)
             mm_coords = mm_coords.detach().requires_grad_(True)
             energies, atomic_charges = self._energies_module(
-                species, coords, mm_coords, mm_charges, net_charge
+                species,
+                coords,
+                mm_coords,
+                mm_charges,
+                net_charge,
+                spin_mult,
+                mm_cutoff,
+                bonding,
             )
             grads = torch.autograd.grad(energies.sum(), (coords, mm_coords))
         forces = -grads[0]
@@ -238,6 +259,7 @@ def _export_energies_forces(
     atoms = Dim("atoms", min=2)
     pairs = Dim("pairs", min=2)
     mm_atoms = Dim("mm_atoms", min=2)
+    bonds = Dim("bonds", min=0)
     species_coords_shapes = [(static, atoms), (static, atoms, static)]
     module: torch.nn.Module
     forces_wrapper: type[torch.nn.Module] = _EnergiesForcesAtomicCharges
@@ -270,11 +292,27 @@ def _export_energies_forces(
         mm_coords[..., 0] += 1.0
         mm_coords = (mm_coords * cell.diagonal().cpu()).to(coords.device)
         mm_charges = torch.rand(1, 20, generator=gen, dtype=coords.dtype) - 0.5
-        args = (species, coords, mm_coords, mm_charges.to(coords.device), net_charge)
+        spin_mult = torch.tensor([1], device=coords.device)
+        mm_cutoff = coords.new_zeros(1)
+        # Sizes 0, 1, and sizes equal to other dims get specialized, so 5 bonds are used
+        bonding = torch.arange(5, device=coords.device).repeat(2, 1)
+        args = (
+            species,
+            coords,
+            mm_coords,
+            mm_charges.to(coords.device),
+            net_charge,
+            spin_mult,
+            mm_cutoff,
+            bonding,
+        )
         dynamic_shapes = species_coords_shapes + [
             (static, mm_atoms, static),
             (static, mm_atoms),
             (static,),
+            (static,),
+            (static,),
+            (static, bonds),
         ]
     # Neighborlist and triple sizes are data-dependent (nonzero, unique, .item())
     with torch._dynamo.config.patch(
