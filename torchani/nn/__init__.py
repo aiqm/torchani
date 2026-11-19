@@ -24,6 +24,7 @@ from torchani.nn._core import (
 from torchani.nn._infer import BmmAtomicNetwork, BmmEnsemble, BmmLinear, MNPNetworks
 from torchani.nn._containers import (
     ANINetworks,
+    ANINetworksForThermoIntegration,
     ANISharedNetworks,
     SingleNN,
     Ensemble,
@@ -40,6 +41,7 @@ __all__ = [
     "parse_activation",
     # Containers
     "ANINetworks",
+    "ANINetworksForThermoIntegration",
     "ANISharedNetworks",
     "SingleNN",
     "Ensemble",
