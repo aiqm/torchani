@@ -35,6 +35,7 @@ add_library(
     cuaev
     SHARED
     aev.h
+    cuaev_schema.cpp
     cuaev.cpp
     aev.cu
     aev_cpu.cpp
