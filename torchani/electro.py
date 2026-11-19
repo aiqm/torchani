@@ -4,10 +4,11 @@ Useful for systems that have charges and coulomb-like electrostatic interactions
 """
 
 import typing as tp
+from typing import Self
+from collections.abc import Iterable, Sequence
 
 import torch
 from torch import Tensor
-import typing_extensions as tpx
 
 from torchani.annotations import Device, DType
 from torchani.utils import AtomicNumbersToMasses
@@ -21,7 +22,7 @@ Reference = tp.Literal["center_of_mass", "center_of_geometry", "origin"]
 
 class BaseChargeNormalizer(torch.nn.Module):
     def forward(
-        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: Tensor | None = None
     ) -> Tensor:
         return raw_charges
 
@@ -33,7 +34,7 @@ class ChargeNormalizer(BaseChargeNormalizer):
     .. code-block::python
 
         normalizer = ChargeNormalizer()
-        charge = 0
+        charge = torch.tensor([0])
         elem_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
         raw_charges = torch.tensor([[0.3, 0.5, -0.5]])
         norm_charges = normalizer(elem_idxs, raw_charges, charge)
@@ -45,8 +46,8 @@ class ChargeNormalizer(BaseChargeNormalizer):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
-        weights: tp.Sequence[float] = (),
+        symbols: Sequence[str],
+        weights: Sequence[float] = (),
         scale_weights_by_charges_squared: bool = False,
     ):
         super().__init__()
@@ -64,11 +65,11 @@ class ChargeNormalizer(BaseChargeNormalizer):
     @classmethod
     def from_electronegativity_and_hardness(
         cls,
-        symbols: tp.Sequence[str],
-        electronegativity: tp.Sequence[float] = (),
-        hardness: tp.Sequence[float] = (),
+        symbols: Sequence[str],
+        electronegativity: Sequence[float] = (),
+        hardness: Sequence[float] = (),
         scale_weights_by_charges_squared: bool = False,
-    ) -> tpx.Self:
+    ) -> Self:
         atomic_numbers = [ATOMIC_NUMBER[e] for e in symbols]
         # Get constant values from literature if not provided
         if not electronegativity:
@@ -86,10 +87,12 @@ class ChargeNormalizer(BaseChargeNormalizer):
         return weights / torch.sum(weights, dim=-1, keepdim=True)
 
     def forward(
-        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: Tensor | None = None
     ) -> Tensor:
         r"""Normalize charges so that they add up to a total charge"""
-        excess = charge - raw_charges.sum(dim=-1, keepdim=True)
+        excess = -raw_charges.sum(dim=-1, keepdim=True)
+        if charge is not None:
+            excess = excess + charge.unsqueeze(-1)
         return raw_charges + excess * self.factor(elem_idxs, raw_charges)
 
 
@@ -105,7 +108,7 @@ class DipoleComputer(torch.nn.Module):
 
     def __init__(
         self,
-        masses: tp.Iterable[float] = (),
+        masses: Iterable[float] = (),
         reference: Reference = "center_of_mass",
         device: Device = None,
         dtype: DType = None,

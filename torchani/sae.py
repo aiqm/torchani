@@ -4,7 +4,7 @@ You can use `torchani.sae.SelfEnergy` to add a values to all atoms according to 
 atomic numbers (typically these values will be ground state atomic energies, or GSAEs.
 """
 
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -26,7 +26,7 @@ class SelfEnergy(_ChemModule):
     self_energies: Tensor
     _enabled: bool
 
-    def __init__(self, symbols: tp.Sequence[str], self_energies: tp.Sequence[float]):
+    def __init__(self, symbols: Sequence[str], self_energies: Sequence[float]):
         super().__init__(symbols)
         self_energies = self._validate_elem_seq("self_energies", self_energies)
         self.register_buffer("self_energies", torch.tensor(self_energies))
@@ -39,13 +39,13 @@ class SelfEnergy(_ChemModule):
     # Functional and basis set are case insensitive
     @staticmethod
     def _sorted_gsaes(
-        symbols: tp.Sequence[str], functional: str, basis_set: str
-    ) -> tp.List[float]:
+        symbols: Sequence[str], functional: str, basis_set: str
+    ) -> list[float]:
         gsaes = GSAES[f"{functional.lower()}-{basis_set.lower()}"]
         return [gsaes[e] for e in symbols]
 
     @classmethod
-    def with_gsaes(cls, symbols: tp.Sequence[str], functional: str, basis_set: str):
+    def with_gsaes(cls, symbols: Sequence[str], functional: str, basis_set: str):
         r"""Instantiate SelfEnergy with ground state atomic energies"""
         return cls(symbols, cls._sorted_gsaes(symbols, functional, basis_set))
 

@@ -12,13 +12,14 @@ import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import typing as tp
+from typing import Self
+from collections.abc import Sequence
 import struct
 import bz2
 import shutil
 from collections import OrderedDict
 
 import torch
-import typing_extensions as tpx
 
 from torchani.paths import neurochem_dir
 from torchani.arch import ANI
@@ -72,7 +73,7 @@ def load_aev_computer_and_symbols(
     strategy: str = "pyaev",
     neighborlist: NeighborlistArg = "all_pairs",
     cutoff_fn: CutoffArg = "cosine",
-) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
+) -> tuple[AEVComputer, tuple[str, ...]]:
     consts, symbols = load_aev_constants_and_symbols(consts_file)
     aev_computer = AEVComputer.from_constants(
         radial_cutoff=consts.radial_cutoff,
@@ -95,19 +96,19 @@ def load_aev_computer_and_symbols(
 class AEVConstants:
     radial_cutoff: float
     radial_eta: float
-    radial_shifts: tp.Tuple[float, ...]
+    radial_shifts: tuple[float, ...]
     angular_cutoff: float
     angular_eta: float
     angular_zeta: float
-    angular_shifts: tp.Tuple[float, ...]
-    sections: tp.Tuple[float, ...]
+    angular_shifts: tuple[float, ...]
+    sections: tuple[float, ...]
 
 
 def load_aev_constants_and_symbols(
     consts_file: StrPath,
-) -> tp.Tuple[AEVConstants, tp.Tuple[str, ...]]:
-    aev_floats: tp.Dict[str, float] = {}
-    aev_seqs: tp.Dict[str, tp.Tuple[float, ...]] = {}
+) -> tuple[AEVConstants, tuple[str, ...]]:
+    aev_floats: dict[str, float] = {}
+    aev_seqs: dict[str, tuple[float, ...]] = {}
     file_name_mapping = {
         "Rcr": "radial_cutoff",
         "Rca": "angular_cutoff",
@@ -199,7 +200,7 @@ def _decompress_nnf(buffer_: bytes) -> str:
     return bz2.decompress(buffer_)[:-1].decode("ascii").strip()
 
 
-def _parse_nnf(nnf_str: str) -> tp.List[NeurochemLayerSpec]:
+def _parse_nnf(nnf_str: str) -> list[NeurochemLayerSpec]:
     # Hack: replace tokens so the file can be evale'd as a list of python dicts
     # This is unsafe and hacky but since neurochem is legacy it is not a problem
     layers = [
@@ -244,10 +245,10 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     except Exception:
         raise NeurochemParseError(f"Could not parse nnf file {filename}") from None
 
-    activations: tp.List[int] = []
-    layer_dims: tp.List[int] = []
-    weight_files: tp.List[Path] = []
-    bias_files: tp.List[Path] = []
+    activations: list[int] = []
+    layer_dims: list[int] = []
+    weight_files: list[Path] = []
+    bias_files: list[Path] = []
     for j, spec in enumerate(layer_specs):
         # construct linear layer and load parameters
         _in = spec.blocksize
@@ -302,7 +303,7 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     return network
 
 
-def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
+def load_member(symbols: Sequence[str], model_dir: StrPath) -> ANINetworks:
     """Returns a `torchani.nn.ANINetworks` loaded from NeuroChem's network directory.
 
     Args:
@@ -318,7 +319,7 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
 
 
 def load_ensemble(
-    symbols: tp.Sequence[str], prefix: StrPath, count: int
+    symbols: Sequence[str], prefix: StrPath, count: int
 ) -> Ensemble:
     r"""Loads `torchani.nn.Ensemble` from NeuroChem's dirs with a given prefix
 
@@ -344,9 +345,9 @@ class NeurochemInfo:
     ensemble_size: int
 
     @classmethod
-    def from_info_file(cls, info_file_path: Path) -> tpx.Self:
+    def from_info_file(cls, info_file_path: Path) -> Self:
         with open(info_file_path, mode="rt", encoding="utf-8") as f:
-            lines: tp.List[str] = [x.strip() for x in f.readlines()][:4]
+            lines: list[str] = [x.strip() for x in f.readlines()][:4]
             _const_file, _sae_file, _ensemble_prefix, _ensemble_size = lines
 
             ensemble_size: int = int(_ensemble_size)
@@ -356,7 +357,7 @@ class NeurochemInfo:
         return cls(sae_file_path, const_file_path, ensemble_prefix, ensemble_size)
 
     @classmethod
-    def from_model_name(cls, model_name: str) -> tpx.Self:
+    def from_model_name(cls, model_name: str) -> Self:
         if model_name not in SUPPORTED_MODELS:
             raise ValueError(
                 f"Neurochem model {model_name} not supported,"
@@ -371,7 +372,7 @@ class NeurochemInfo:
 
 
 def download_model_parameters(
-    root: tp.Optional[Path] = None, verbose: bool = True
+    root: Path | None = None, verbose: bool = True
 ) -> None:
     root = root or neurochem_dir()
     if any(root.iterdir()):
@@ -391,9 +392,9 @@ def download_model_parameters(
 
 def modules_from_info(
     info: NeurochemInfo,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         strategy=strategy,
@@ -422,9 +423,9 @@ def modules_from_info(
 
 def modules_from_model_name(
     model_name: str,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     r"""Creates the necessary modules to generate a pre-trained ANI model
 
     Parses data from legacy neurochem files, which are fetched according to the model
@@ -439,9 +440,9 @@ def modules_from_model_name(
 
 def modules_from_info_file(
     info_file: Path,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
+) -> tuple[AEVComputer, AtomicContainer, SelfEnergy, Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
     from legacy neurochem files.
@@ -455,7 +456,7 @@ def modules_from_info_file(
 
 def load_model_from_info_file(
     info_file: StrPath,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
@@ -477,7 +478,7 @@ def load_model_from_info_file(
 
 def load_model_from_name(
     model_name: str,
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:

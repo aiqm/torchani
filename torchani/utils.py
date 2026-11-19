@@ -1,7 +1,7 @@
 r"""Misc utilities used throughout the code"""
 
 from collections import OrderedDict
-import typing as tp
+from collections.abc import Iterable, Mapping, Sequence
 import tarfile
 import zipfile
 import math
@@ -14,11 +14,11 @@ from numpy.typing import NDArray
 import torch
 from torch import Tensor
 import torch.utils.data
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from torchani.annotations import Device, DType
 from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.tuples import SpeciesEnergies
-
 
 __all__ = [
     "download_and_extract",
@@ -32,6 +32,7 @@ __all__ = [
     "sort_by_atomic_num",
     "EnergyShifter",
     "get_atomic_masses",
+    "rmse_is_better",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
     "SYMBOLS_1X",
@@ -40,10 +41,25 @@ __all__ = [
 ]
 
 
+def rmse_is_better(scheduler: ReduceLROnPlateau, rmse: float, best: float) -> bool:
+    if scheduler.mode == "min" and scheduler.threshold_mode == "rel":
+        rel_epsilon = 1.0 - scheduler.threshold
+        return rmse < best * rel_epsilon
+
+    elif scheduler.mode == "min" and scheduler.threshold_mode == "abs":
+        return rmse < best - scheduler.threshold
+
+    elif scheduler.mode == "max" and scheduler.threshold_mode == "rel":
+        rel_epsilon = scheduler.threshold + 1.0
+        return rmse > best * rel_epsilon
+    # mode == 'max' and epsilon_mode == 'abs':
+    return rmse > best + scheduler.threshold
+
+
 def _parse_device_and_dtype(
-    device: tp.Optional["str"] = None,
-    dtype: tp.Optional["str"] = None,
-) -> tp.Tuple[Device, DType]:
+    device: str | None = None,
+    dtype: str | None = None,
+) -> tuple[Device, DType]:
 
     if dtype == "f32" or dtype is None:
         _dtype = torch.float32
@@ -82,11 +98,11 @@ ATOMIC_KEYS = (
 )
 
 #: Elements used in the ANI-1x and ANI-1ccx models, in order
-SYMBOLS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
+SYMBOLS_1X: tuple[str, ...] = ("H", "C", "N", "O")
 #: Elements used in the ANI-2x model, in ani2x-model-order
-SYMBOLS_2X: tp.Tuple[str, ...] = ("H", "C", "N", "O", "S", "F", "Cl")
+SYMBOLS_2X: tuple[str, ...] = ("H", "C", "N", "O", "S", "F", "Cl")
 #: Elements used in the ANI-2x model, in znum order
-SYMBOLS_2X_ZNUM_ORDER: tp.Tuple[str, ...] = ("H", "C", "N", "O", "F", "S", "Cl")
+SYMBOLS_2X_ZNUM_ORDER: tuple[str, ...] = ("H", "C", "N", "O", "F", "S", "Cl")
 
 PADDING = {
     "species": -1,
@@ -122,7 +138,7 @@ def download_and_extract(
     dest_path.unlink()
 
 
-def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
+def linspace(start: float, stop: float, steps: int) -> tuple[float, ...]:
     r"""Pure python linspace
 
     Used to ensure repro of constants in case `numpy` changes its internal
@@ -131,7 +147,7 @@ def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
     return tuple(start + ((stop - start) / steps) * j for j in range(steps))
 
 
-def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
+def species_to_formula(species: NDArray[np.str_]) -> list[str]:
     r"""Transform a numpy array of strings into the corresponding formulas
 
     Take a `numpy` ndarray of shape ``(molecules, atoms)`` with chemical symbols and
@@ -144,7 +160,7 @@ def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
         raise ValueError("Species needs to have two dims/axes")
     formulas = []
     for s in species:
-        symbol_counts: tp.List[tp.Tuple[str, int]] = sorted(Counter(s).items())
+        symbol_counts: list[tuple[str, int]] = sorted(Counter(s).items())
         iterable = (
             str(i) if str(i) != "1" else ""
             for i in itertools.chain.from_iterable(symbol_counts)
@@ -155,6 +171,8 @@ def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
     r"""Cumulative sum just like `torch.cumsum`, but result starts from 0"""
+    if torch.compiler.is_compiling():
+        return torch.cumsum(input_, dim=0) - input_
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
@@ -172,14 +190,14 @@ def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
     tensor = tensor.view(-1)
     num_splits = math.ceil(tensor.numel() / chunk_size)
 
-    if num_splits <= 1:
+    if torch.compiler.is_compiling() or num_splits <= 1:
         return tensor.nonzero().view(-1)
 
     # Split tensor into chunks, and for each chunk find nonzero elements and
     # adjust the indices in each chunk to account for their original position
     # in the tensor. Finally collect the results
     offset = 0
-    nonzero_chunks: tp.List[Tensor] = []
+    nonzero_chunks: list[Tensor] = []
     for chunk in torch.chunk(tensor, num_splits):
         nonzero_chunks.append(chunk.nonzero() + offset)
         offset += chunk.shape[0]
@@ -196,9 +214,9 @@ def fast_masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
 
 
 def pad_atomic_properties(
-    properties: tp.Sequence[tp.Mapping[str, Tensor]],
-    padding_values: tp.Optional[tp.Dict[str, float]] = None,
-) -> tp.Dict[str, Tensor]:
+    properties: Sequence[Mapping[str, Tensor]],
+    padding_values: dict[str, float] | None = None,
+) -> dict[str, Tensor]:
     r"""
     Combine a sequence of properties together into single tensor.
 
@@ -245,9 +263,9 @@ def pad_atomic_properties(
 
 
 def strip_redundant_padding(
-    properties: tp.Dict[str, Tensor],
-    atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
-) -> tp.Dict[str, Tensor]:
+    properties: dict[str, Tensor],
+    atomic_properties: Iterable[str] = ATOMIC_KEYS,
+) -> dict[str, Tensor]:
     r"""Strip padding from a sequence of padded properties"""
     # NOTE: Assume that the padding value is -1
     species = properties["species"]
@@ -277,27 +295,26 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
     # torch.remainder(-1.e-8, 1.0) == 1.0
     #
     # The other possibilities are most likely redundant and not required
-    frac[frac >= 1.0] -= 1.0
-    frac[frac < 0.0] += 1.0
+    frac = torch.where(frac >= 1.0, frac - 1.0, frac)
+    frac = torch.where(frac < 0.0, frac + 1.0, frac)
     # Step 2: convert from cell coordinates back to standard cartesian
     # coordinate, and substitute back those for which pbc is off
     out_coordinates = torch.matmul(frac, cell)
     # Only substitute those
-    out_coordinates[:, :, ~pbc] = coordinates[:, :, ~pbc].clone()
-    return out_coordinates
+    return torch.where(pbc, out_coordinates, coordinates)
 
 
 class _NumbersConvert(torch.nn.Module):
-    def __init__(self, symbol_dict: tp.Dict[int, str]):
+    def __init__(self, symbol_dict: dict[int, str]):
         self.symbol_dict = symbol_dict
         super().__init__()
 
-    def forward(self, species: Tensor) -> tp.List[str]:
+    def forward(self, species: Tensor) -> list[str]:
         r"""Convert species to a list of chemical symbols"""
         assert species.dim() == 1, "Only 1D tensors supported"
         species = species[species != -1]
         # This can't be an in-place loop to be jit-compilable
-        out: tp.List[str] = []
+        out: list[str] = []
         for x in species:
             out.append(self.symbol_dict[x.item()])
         return out
@@ -359,7 +376,7 @@ class IntsToChemicalSymbols(_NumbersConvert):
         species_converter(species)  # Output: ['O', 'H', 'H']
     """
 
-    def __init__(self, symbols: tp.Sequence[str]):
+    def __init__(self, symbols: Sequence[str]):
         if isinstance(symbols, str):
             raise ValueError("symbols must be a sequence of str, but it can't be a str")
         super().__init__({i: s for i, s in enumerate(symbols)})
@@ -368,15 +385,15 @@ class IntsToChemicalSymbols(_NumbersConvert):
 class _ChemicalSymbolsConvert(torch.nn.Module):
     _dummy: Tensor
 
-    def __init__(self, symbol_dict: tp.Dict[str, int], device: Device = None):
+    def __init__(self, symbol_dict: dict[str, int], device: Device = None):
         super().__init__()
         self.symbol_dict = symbol_dict
         self.register_buffer("_dummy", torch.empty(0, device=device), persistent=False)
 
-    def forward(self, species: tp.List[str]) -> Tensor:
+    def forward(self, species: list[str]) -> Tensor:
         r"""Converts a list of chemical symbols to an integer tensor"""
         # This can't be an in-place loop to be jit-compilable
-        numbers_list: tp.List[int] = []
+        numbers_list: list[int] = []
         for x in species:
             numbers_list.append(self.symbol_dict[x])
         return torch.tensor(numbers_list, dtype=torch.long, device=self._dummy.device)
@@ -428,7 +445,7 @@ class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
         symbols: |symbols|
     """
 
-    def __init__(self, symbols: tp.Sequence[str], device: Device = None):
+    def __init__(self, symbols: Sequence[str], device: Device = None):
         if isinstance(symbols, str):
             raise ValueError("symbols must be a sequence of str, but it can't be a str")
         int_dict = {s: i for i, s in enumerate(symbols)}
@@ -442,7 +459,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
 
     def __init__(
         self,
-        masses: tp.Iterable[float] = (),
+        masses: Iterable[float] = (),
         device: Device = None,
         dtype: DType = None,
     ) -> None:
@@ -492,7 +509,7 @@ def atomic_numbers_to_masses(
 get_atomic_masses = atomic_numbers_to_masses
 
 
-def sort_by_atomic_num(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
+def sort_by_atomic_num(it: Iterable[str]) -> tuple[str, ...]:
     r"""Sort an iterable of chemical symbols by atomic number
 
     Args:
@@ -505,11 +522,11 @@ def sort_by_atomic_num(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
     return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
 
 
-def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
+def merge_state_dicts(paths: Iterable[Path]) -> OrderedDict[str, Tensor]:
     r"""Merge multiple single-model state dicts into an ensemble state dict"""
     if any(not path.is_file() for path in paths):
         raise ValueError("All passed paths must be existing files with state dicts")
-    merged_dict: tp.Dict[str, Tensor] = {}
+    merged_dict: dict[str, Tensor] = {}
     for j, path in enumerate(sorted(paths)):
         state_dict = torch.load(
             path, map_location=torch.device("cpu"), weights_only=True
@@ -591,9 +608,9 @@ class EnergyShifter(torch.nn.Module):
 
     def forward(
         self,
-        species_energies: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_energies: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> SpeciesEnergies:
         r"""Transforms a species_energies tuples by adding self-energies"""
         species, energies = species_energies
@@ -607,12 +624,12 @@ class EnergyShifter(torch.nn.Module):
 # Useful function for simple classes meant as user extension points
 def _validate_user_kwargs(
     clsname: str,
-    names_dict: tp.Dict[str, tp.Sequence[str]],
-    kwargs: tp.Dict[str, tp.Union[tp.Tuple, tp.List, float]],
-    trainable: tp.Sequence[str],
+    names_dict: dict[str, Sequence[str]],
+    kwargs: dict[str, tuple | list | float],
+    trainable: Sequence[str],
 ) -> None:
     _num_tensors = sum(len(seq) for seq in names_dict.values())
-    kwargs_set: tp.Set[str] = set()
+    kwargs_set: set[str] = set()
     for v in names_dict.values():
         kwargs_set = kwargs_set.union(v)
 

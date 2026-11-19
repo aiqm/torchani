@@ -25,6 +25,7 @@ transforms, which you may be familiar with already. An example of their usage:
 """
 
 import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -47,12 +48,12 @@ class Transform(torch.nn.Module):
     then the atomic_numbers tensor should be defined, otherwise it should be None
     """
 
-    atomic_numbers: tp.Optional[Tensor]
+    atomic_numbers: Tensor | None
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         super().__init__()
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         r"""
         Transform a batch of properties
 
@@ -71,7 +72,7 @@ class Identity(Transform):
         super().__init__()
         self.atomic_numbers = None
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         return properties
 
 
@@ -92,7 +93,7 @@ class SubtractEnergyAndForce(Transform):
         self.atomic_numbers = potential.atomic_numbers
         self.subtract_force = subtract_force
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         if torch.jit.is_scripting():
             raise RuntimeError("SubtractEnergyAndForce doesn't support JIT")
         species = properties["species"]
@@ -124,7 +125,7 @@ class SubtractRepulsionXTB(Transform):
         )
         self.atomic_numbers = self._transform.atomic_numbers
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         return self._transform(properties)
 
 
@@ -147,7 +148,7 @@ class SubtractTwoBodyDispersionD3(Transform):
         )
         self.atomic_numbers = self._transform.atomic_numbers
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         return self._transform(properties)
 
 
@@ -157,12 +158,12 @@ class SubtractSAE(Transform):
     Takes same arguments as `torchani.sae.SelfEnergy`
     """
 
-    def __init__(self, symbols: tp.Sequence[str], self_energies: tp.Sequence[float]):
+    def __init__(self, symbols: Sequence[str], self_energies: Sequence[float]):
         super().__init__()
         self._shifter = SelfEnergy(symbols, self_energies)
         self.atomic_numbers = self._shifter.atomic_numbers
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         elem_idxs = self._shifter._conv_tensor[properties["species"]]
         properties["energies"] -= self._shifter(elem_idxs)
         return properties
@@ -178,14 +179,14 @@ class AtomicNumbersToIndices(Transform):
         symbols: |symbols|
     """
 
-    def __init__(self, symbols: tp.Sequence[str]):
+    def __init__(self, symbols: Sequence[str]):
         super().__init__()
         self.atomic_numbers = torch.tensor(
             [ATOMIC_NUMBER[s] for s in symbols], dtype=torch.long
         )
         self.converter = SpeciesConverter(symbols)
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         properties["species"] = self.converter(properties["species"])
         return properties
 
@@ -198,11 +199,11 @@ class Compose(Transform):
         transforms: Transforms to compose, in order.
     """
 
-    def __init__(self, transforms: tp.Sequence[Transform]):
+    def __init__(self, transforms: Sequence[Transform]):
         super().__init__()
 
         # Validate that all transforms use the same atomic numbers
-        atomic_numbers: tp.List[Tensor] = [
+        atomic_numbers: list[Tensor] = [
             t.atomic_numbers for t in transforms if t.atomic_numbers is not None
         ]
         if atomic_numbers:
@@ -216,7 +217,7 @@ class Compose(Transform):
 
         self.transforms = torch.nn.ModuleList(transforms)
 
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+    def forward(self, properties: dict[str, Tensor]) -> dict[str, Tensor]:
         for t in self.transforms:
             properties = t(properties)
         return properties

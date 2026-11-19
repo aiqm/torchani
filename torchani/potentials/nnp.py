@@ -1,5 +1,3 @@
-import typing as tp
-
 from torch import Tensor
 
 from torchani.tuples import EnergiesScalars
@@ -22,11 +20,13 @@ class NNPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        scalars: Tensor | None = None,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         return EnergiesScalars(energies)
@@ -40,7 +40,7 @@ class MergedChargesNNPotential(NNPotential):
         self,
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -52,11 +52,13 @@ class MergedChargesNNPotential(NNPotential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        scalars: Tensor | None = None,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         # AtomicContainer is assumed to output a tensor with a final dimension "2"
         # which holds energies and charges
@@ -78,7 +80,7 @@ class SeparateChargesNNPotential(NNPotential):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         charge_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -91,11 +93,13 @@ class SeparateChargesNNPotential(NNPotential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        scalars: Tensor | None = None,
+        charge: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
+        ghost_flags: Tensor | None = None,
     ) -> EnergiesScalars:
+        assert scalars is None
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
         energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)

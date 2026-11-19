@@ -1,9 +1,10 @@
 import typing as tp
+from typing import Self
+from collections.abc import Sequence
 import math
 
 import torch
 from torch import Tensor
-import typing_extensions as tpx
 
 from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
 from torchani.utils import linspace, _validate_user_kwargs
@@ -147,7 +148,7 @@ class ANIRadial(_BaseRadial):
     def __init__(
         self,
         eta: float,
-        shifts: tp.Sequence[float],
+        shifts: Sequence[float],
         cutoff: float,
         cutoff_fn: CutoffArg = "cosine",
     ):
@@ -195,7 +196,7 @@ class ANIRadial(_BaseRadial):
         eta: float = 19.7,
         num_shifts: int = 16,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Builds angular terms by linearly dividing space radially up to a cutoff
 
         ``num_shifts`` are created, starting from ``start`` until ``cutoff``, excluding
@@ -216,7 +217,7 @@ class ANIRadial(_BaseRadial):
         eta: float = 16.0,
         num_shifts: int = 16,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         return cls.cover_linearly(
             start=start,
             cutoff=cutoff,
@@ -233,7 +234,7 @@ class ANIRadial(_BaseRadial):
         eta: float = 19.7,
         num_shifts: int = 16,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         return cls.cover_linearly(
             start=start,
             cutoff=cutoff,
@@ -286,8 +287,8 @@ class ANIAngular(_BaseAngular):
         self,
         eta: float,
         zeta: float,
-        shifts: tp.Sequence[float],
-        sections: tp.Sequence[float],
+        shifts: Sequence[float],
+        sections: Sequence[float],
         cutoff: float,
         cutoff_fn: CutoffArg = "cosine",
     ):
@@ -359,7 +360,7 @@ class ANIAngular(_BaseAngular):
         num_shifts: int = 8,
         num_sections: int = 4,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Builds angular terms by dividing angular and radial coords, up to a cutoff
 
         The divisions are equally spaced "num_shifts" are created, starting from "start"
@@ -382,7 +383,7 @@ class ANIAngular(_BaseAngular):
         num_shifts: int = 4,
         num_sections: int = 8,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         return cls.cover_linearly(
             start=start,
             cutoff=cutoff,
@@ -403,7 +404,7 @@ class ANIAngular(_BaseAngular):
         num_shifts: int = 8,
         num_sections: int = 4,
         cutoff_fn: CutoffArg = "cosine",
-    ) -> tpx.Self:
+    ) -> Self:
         return cls.cover_linearly(
             start=start,
             cutoff=cutoff,
@@ -420,14 +421,14 @@ class ANIAngular(_BaseAngular):
 
 class Angular(_BaseAngular):
 
-    angles_tensors: tp.List[str] = []
-    radial_tensors: tp.List[str] = []
+    angles_tensors: list[str] = []
+    radial_tensors: list[str] = []
 
     def __init__(
         self,
         /,
         cutoff: float,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:
@@ -463,13 +464,13 @@ class Angular(_BaseAngular):
 
 class Radial(_BaseRadial):
 
-    tensors: tp.List[str] = []
+    tensors: list[str] = []
 
     def __init__(
         self,
         /,
         cutoff: float,
-        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        trainable: str | Sequence[str] = (),
         cutoff_fn: CutoffArg = "cosine",
         **kwargs,
     ) -> None:
@@ -496,8 +497,8 @@ class Radial(_BaseRadial):
 
 
 _Models = tp.Literal["ani1x", "ani2x", "ani1ccx"]
-AngularArg = tp.Union[_Models, _BaseAngular]
-RadialArg = tp.Union[_Models, _BaseRadial]
+AngularArg = _Models | _BaseAngular
+RadialArg = _Models | _BaseRadial
 
 
 def _parse_angular_term(angular_term: AngularArg) -> _BaseAngular:

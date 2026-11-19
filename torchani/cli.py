@@ -4,17 +4,17 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
-import os
-from enum import Enum
 import shutil
-import typing as tp
 import json
 import tarfile
 import csv
-from typer import Argument, Option, Typer, Abort
-from pathlib import Path
-import typing_extensions as tpx
 import re
+import os
+from typing import Annotated, Any, cast
+from enum import Enum
+from pathlib import Path
+
+from typer import Argument, Option, Typer, Abort
 
 from ._builtin_dataset_ids import _DatasetId, _LotId
 
@@ -68,20 +68,28 @@ class DeviceKind(Enum):
 
 @main.command("build-extensions")
 def _build_extensions(
-    sms: tpx.Annotated[
-        tp.Optional[tp.List[str]],
+    sms: Annotated[
+        list[str] | None,
         Option(
             "-s", "--sm", show_default=False, help="SMs to build for. (e.g. 8.9 10 12)"
         ),
     ] = None,
+    all_sms: Annotated[
+        bool,
+        Option("--all-sms/ ", help="Build for all PyTorch supported sms"),
+    ] = False,
 ) -> None:
     r"""Build CUDA and C++ extensions"""
     import torch
     import torchani.paths
     from torch.utils.cpp_extension import load
+    from torch.utils.cpp_extension import TORCH_LIB_PATH
+
+    if all_sms:
+        sms = ["7.0", "7.5", "8.0", "8.9", "9.0", "10.0", "12.0"]
 
     if sms is not None:
-        os.environ["TORCH_CUDA_ARCH_LIST"] = ",".join(sms)
+        os.environ["TORCH_CUDA_ARCH_LIST"] = ";".join(sms)
 
     nvcc_args = ["--expt-extended-lambda"]
     nvcc_args.extend(
@@ -104,18 +112,31 @@ def _build_extensions(
                 f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/include"
             )
         os.environ["CUDA_HOME"] = f"{os.environ['CONDA_PREFIX']}/targets/x86_64-linux/"
+    # Linking rules are explained in setup.py. Here user ldflags precede the
+    # torch libs, so --as-needed drops libtorch_python
+    torch_cuda_ldflags = [
+        "-Wl,--no-as-needed",
+        f"-L{TORCH_LIB_PATH}",
+        "-ltorch_cuda",
+        "-Wl,--as-needed",
+    ]
     print("Building cuAEV extension...")
     build_dir = torchani.paths.data_dir().parent.parent / "lib" / "Torchani"
     build_dir.mkdir(exist_ok=True, parents=True)
     _ = load(
         name="cuaev",
-        sources=[f"{this_dir}/csrc/cuaev.cpp", f"{this_dir}/csrc/aev.cu"],
+        sources=[
+            f"{this_dir}/csrc/cuaev.cpp",
+            f"{this_dir}/csrc/aev.cu",
+            f"{this_dir}/csrc/aev_cpu.cpp",
+        ],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
         extra_cuda_cflags=nvcc_args,
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -128,6 +149,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17", "-fopenmp"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()
@@ -140,6 +162,7 @@ def _build_extensions(
         extra_cflags=["-std=c++17"],
         with_cuda=True,
         is_python_module=False,
+        extra_ldflags=["-Wl,--as-needed"],
     )
     print("Done!")
     print()
@@ -152,31 +175,31 @@ def _build_extensions(
 
 @main.command(hidden=True)
 def opt(
-    paths: tpx.Annotated[
-        tp.List[Path],
+    paths: Annotated[
+        list[Path],
         Argument(),
     ],
-    output_path: tpx.Annotated[
-        tp.Optional[Path],
+    output_path: Annotated[
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
-    model_key: tpx.Annotated[
+    model_key: Annotated[
         str,
         Option("-m", "--model"),
     ] = "ANI2x",
-    device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+    device: Annotated[
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
-    dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+    dtype: Annotated[
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
-    forces: tpx.Annotated[
+    forces: Annotated[
         bool,
         Option("-f/-F", "--forces/--no-forces"),
     ] = False,
-    hessians: tpx.Annotated[
+    hessians: Annotated[
         bool,
         Option("-s/-S", "--hessians/--no-hessians"),
     ] = False,
@@ -191,7 +214,7 @@ def opt(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -224,37 +247,37 @@ def opt(
 
 @main.command()
 def sp(
-    paths: tpx.Annotated[
-        tp.List[Path],
+    paths: Annotated[
+        list[Path],
         Argument(
             help="Paths to input files. Any format supported by ASE is accepted, such as .xyz or .pdb"  # noqa:E501
         ),
     ],
-    output_path: tpx.Annotated[
-        tp.Optional[Path],
+    output_path: Annotated[
+        Path | None,
         Option("-o", "--output", show_default=False),
     ] = None,
-    model_key: tpx.Annotated[
+    model_key: Annotated[
         str,
         Option("-m", "--model"),
     ] = "ANI2x",
-    device: tpx.Annotated[
-        tp.Optional[DeviceKind],
+    device: Annotated[
+        DeviceKind | None,
         Option("-d", "--device"),
     ] = None,
-    dtype: tpx.Annotated[
-        tp.Optional[DTypeKind],
+    dtype: Annotated[
+        DTypeKind | None,
         Option("-t", "--dtype"),
     ] = None,
-    atomic_charges: tpx.Annotated[
+    atomic_charges: Annotated[
         bool,
         Option("-q/-Q", "--charges/--no-charges"),
     ] = False,
-    forces: tpx.Annotated[
+    forces: Annotated[
         bool,
         Option("-f/-F", "--forces/--no-forces"),
     ] = False,
-    hessians: tpx.Annotated[
+    hessians: Annotated[
         bool,
         Option("-s/-S", "--hessians/--no-hessians"),
     ] = False,
@@ -271,7 +294,7 @@ def sp(
         getattr(device, "value", None), getattr(dtype, "value", None)
     )
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
-    output: tp.Dict[str, tp.Any] = {"energies": []}
+    output: dict[str, Any] = {"energies": []}
     if hessians:
         forces = True  # It is free to get the forces if you ask for the hessians
         output["hessians"] = []
@@ -286,7 +309,7 @@ def sp(
             )
         else:
             # Single molecule supported only
-            atoms = tp.cast(Atoms, ase_read(p))
+            atoms = cast(Atoms, ase_read(p))
             if isinstance(atoms, list):
                 raise ValueError("Batch eval only supported for single molecules")
             coords = (
@@ -328,14 +351,14 @@ def sp(
 
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
-    names: tpx.Annotated[
-        tp.Optional[tp.List[_DatasetId]],
+    names: Annotated[
+        list[_DatasetId] | None,
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
-    lots: tpx.Annotated[
-        tp.Optional[tp.List[_LotId]],
+    lots: Annotated[
+        list[_LotId] | None,
         Option(
             "-l",
             "--lot",
@@ -346,8 +369,8 @@ def data_pull(
             " are available for a given dataset run ``ani data info <dataset-name>``",
         ),
     ] = None,
-    ds_dir: tpx.Annotated[
-        tp.Optional[Path],
+    ds_dir: Annotated[
+        Path | None,
         Option(
             "-d",
             "--datasets-dir",
@@ -355,11 +378,11 @@ def data_pull(
             help="Datasets are downloaded to <datasets-dir>/<dataset-name>",
         ),
     ] = None,
-    verbose: tpx.Annotated[
+    verbose: Annotated[
         bool,
         Option("-v/-V", "--verbose/--no-verbose"),
     ] = True,
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = True,
@@ -444,9 +467,9 @@ def data_clean() -> None:
 
 @data_app.command("rm", help="Remove a downloaded dataset")
 def data_rm(
-    name: tpx.Annotated[_DatasetId, Argument()],
-    lot: tpx.Annotated[
-        tp.Optional[_LotId],
+    name: Annotated[_DatasetId, Argument()],
+    lot: Annotated[
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
 ) -> None:
@@ -468,7 +491,7 @@ def data_rm(
 
 @data_app.command("ls", help="List downloaded built-in datasets")
 def data_ls(
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = False,
@@ -494,12 +517,12 @@ def data_ls(
 
 @data_app.command("info", help="Display info regarding downloaded built-in datasets")
 def data_info(
-    name: tpx.Annotated[_DatasetId, Argument()],
-    lot: tpx.Annotated[
-        tp.Optional[_LotId],
+    name: Annotated[_DatasetId, Argument()],
+    lot: Annotated[
+        _LotId | None,
         Option("-l", "--lot"),
     ] = None,
-    check: tpx.Annotated[
+    check: Annotated[
         bool,
         Option("-s/-S", "--check/--no-check"),
     ] = True,
@@ -530,11 +553,11 @@ def data_info(
     hidden=True,
 )
 def data_pack(
-    src_dir: tpx.Annotated[Path, Argument()],
-    dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
-    name: tpx.Annotated[str, Option("-n", "--name")] = "",
-    lot: tpx.Annotated[str, Option("-l", "--lot")] = "",
-    suffix: tpx.Annotated[
+    src_dir: Annotated[Path, Argument()],
+    dest: Annotated[Path | None, Option("-o")] = None,
+    name: Annotated[str, Option("-n", "--name")] = "",
+    lot: Annotated[str, Option("-l", "--lot")] = "",
+    suffix: Annotated[
         str,
         Option("-s", "--suffix"),
     ] = ".h5",
@@ -568,7 +591,7 @@ def data_pack(
     csv_path = dest_dir / f"{name}.md5s.csv"
     json_path = dest_dir / f"{name}.json"
 
-    data_dict: tp.Dict[str, tp.Any] = {
+    data_dict: dict[str, Any] = {
         name: {
             "lot": {
                 lot: {

@@ -4,14 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
-      - dev:
+      - dev
   push:
     branches:
       - dev
-  schedule:
-    - cron: '0 0 * * *'
-  release:
-    type: [published]
 
 env:
   TAG: ani-ci:${{ github.sha }}
@@ -25,7 +21,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Build Docker image (with NO extensions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ env.TAG }}
   build-image-ext:
@@ -33,7 +29,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Build Docker image (with extensions, for SM75)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ env.EXT_TAG }}
           build-args: BUILD_EXT=sm75
@@ -59,7 +55,7 @@ jobs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "pytest ."
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "pytest . -m 'pt2 or not pt2'"
   docs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]

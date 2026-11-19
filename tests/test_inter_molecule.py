@@ -29,7 +29,7 @@ class TestMoleculeIdxs(ANITestCase):
         double = self.model((znums, coords)).energies * 2
 
         molecule_idxs = torch.tensor([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], device=self.device)
-        out = self.model((znums2, coords2), _molecule_idxs=molecule_idxs).energies
+        out = self.model((znums2, coords2), molecule_idxs=molecule_idxs).energies
         # Excluding inter-molecule interactions
         self.assertEqual(out, double)
 

@@ -16,6 +16,7 @@ import ase
 from ase.optimize import LBFGS
 
 import torch
+from torchani.ase import from_ase
 from torchani.models import ANI1x
 from torchani.grad import energies_forces_and_hessians, vibrational_analysis
 from torchani.utils import get_atomic_masses
@@ -26,7 +27,7 @@ device = torch.device("cpu")
 model = ANI1x(device=device, dtype=torch.double)
 # %%
 # Let's first construct a water molecule and do structure optimization:
-molecule = ase.Atoms(
+atoms = ase.Atoms(
     symbols=("H", "H", "O"),
     positions=[
         [0.9575, 0.0, 0.0],
@@ -35,21 +36,12 @@ molecule = ase.Atoms(
     ],
     calculator=model.ase(),
 )
-opt = LBFGS(molecule)
+opt = LBFGS(atoms)
 opt.run(fmax=1e-6)
 # %%
 # Now let's extract coordinates and species from ASE to use it directly with
 # TorchANI:
-species = torch.tensor(
-    molecule.get_atomic_numbers(),
-    device=device,
-    dtype=torch.long,
-).unsqueeze(0)
-coordinates = torch.tensor(
-    molecule.get_positions(),
-    device=device,
-    dtype=torch.float,
-).unsqueeze(0)
+species, coords, _, _ = from_ase(atoms, device=device, dtype=torch.float)
 # %%
 # To do vibrational analysis, we need the hessian matrix. and the masses
 # of the elements in AMU. The
@@ -59,7 +51,7 @@ coordinates = torch.tensor(
 # forces, even when we don't use them, since TorchANI uses `torch.autograd` to do this,
 # which would internally calculate energies and forces anyways).
 masses = get_atomic_masses(species, dtype=torch.float)
-hessian, _, _ = energies_forces_and_hessians(model, species, coordinates)
+hessian, _, _ = energies_forces_and_hessians(model, species, coords)
 # %%
 # The Hessian matrix should have shape ``(1, 9, 9)``, where 1 means there is only
 # one molecule to compute, 9 means "3 atoms * 3D space = 9 degree of freedom".
