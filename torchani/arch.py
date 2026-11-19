@@ -832,6 +832,8 @@ class ANIscalars(_ANI):
         potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
         charge_normalizer: BaseChargeNormalizer | None = None,
+        scalar_out_activations: dict[str, torch.nn.Module] | None = None,
+        shift_before_out_activation: bool = True,
     ):
         super().__init__(
             symbols=symbols,
@@ -849,6 +851,8 @@ class ANIscalars(_ANI):
             scalar_networks,
             scalar_shifters,
             charge_normalizer,
+            scalar_out_activations,
+            shift_before_out_activation,
         )
         # Push coulomb potential to the end if it is present, to ensure
         # charges are calculated before the potential
@@ -1002,6 +1006,8 @@ class Assembler:
         self._container: _AtomicContainerWrapper | None = None
         self._charge_container: _AtomicContainerWrapper | None = None
         self._scalar_containers: dict[str, _AtomicContainerWrapper] = {}
+        self._scalar_out_activations: dict[str, torch.nn.Module] = {}
+        self._shift_before_out_activation = True
         self._charge_normalizer: BaseChargeNormalizer | None = None
         self._symbols: tuple[str, ...] = tuple(symbols)
 
@@ -1107,8 +1113,13 @@ class Assembler:
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
         kwargs: dict[str, tp.Any] = {},
+        out_activation: str | torch.nn.Module | None = None,
     ) -> None:
-        r"""Add networks that predict the atomic scalar ``key`` (ANIscalars only)"""
+        r"""Add networks that predict the atomic scalar ``key`` (ANIscalars only)
+
+        If ``out_activation`` is passed, it is applied to the scalar, by default after
+        its shifter (see ``set_shift_before_out_activation``)
+        """
         ctor = {
             "ani1x": "like_1x",
             "ani2x": "like_2x",
@@ -1120,6 +1131,14 @@ class Assembler:
         if key in self._scalar_containers:
             raise ValueError(f"Scalar networks for {key} were already added")
         self._scalar_containers[key] = _AtomicContainerWrapper(cls, ctor, kwargs)
+        if out_activation is not None:
+            self._scalar_out_activations[key] = parse_activation(out_activation)
+
+    def set_shift_before_out_activation(self, value: bool) -> None:
+        r"""Whether scalar shifters are applied before the output activations"""
+        if not issubclass(self._cls, ANIscalars):
+            raise ValueError("Model must be a subclass of ANIscalars to use scalars")
+        self._shift_before_out_activation = value
 
     def set_charge_normalizer(self, normalizer: BaseChargeNormalizer | None) -> None:
         if not issubclass(self._cls, (ANIq, ANIscalars)):
@@ -1259,6 +1278,8 @@ class Assembler:
                 networks = container.make(self.symbols, aevcomp.out_dim)
                 kwargs["scalar_networks"][k] = networks
                 kwargs["scalar_shifters"][k] = SelfEnergy(self.symbols, zeros)
+            kwargs["scalar_out_activations"] = deepcopy(self._scalar_out_activations)
+            kwargs["shift_before_out_activation"] = self._shift_before_out_activation
         if self._charge_normalizer is not None:
             kwargs["charge_normalizer"] = self._charge_normalizer
         return self._cls(
