@@ -78,6 +78,7 @@ def cuaev_extension_kwargs(
     return dict(
         name="torchani.cuaev",
         sources=[
+            "torchani/csrc/cuaev_schema.cpp",
             "torchani/csrc/cuaev.cpp",
             "torchani/csrc/aev.cu",
             "torchani/csrc/aev_cpu.cpp",
