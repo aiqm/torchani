@@ -42,7 +42,7 @@ add_library(
     cuaev_cub.cuh
 )
 set_property(TARGET cuaev PROPERTY PREFIX "")
-target_compile_features(cuaev PRIVATE cxx_std_17)
+target_compile_features(cuaev PRIVATE cxx_std_20)
 target_link_libraries(cuaev PRIVATE ${TORCH_LIBRARIES})
 set(CUAEV_CUB_NAMESPACE_DEFS "CUB_NS_QUALIFIER=::cuaev::cub" "CUB_NS_PREFIX=namespace cuaev {" "CUB_NS_POSTFIX=}")
 target_compile_definitions(
@@ -67,7 +67,7 @@ add_library(
     mnp.cpp
 )
 set_property(TARGET mnp PROPERTY PREFIX "")
-target_compile_features(mnp PRIVATE cxx_std_17)
+target_compile_features(mnp PRIVATE cxx_std_20)
 target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} OpenMP::OpenMP_CXX)
 target_compile_definitions(mnp PRIVATE  ${TORCH_CXX_FLAGS})
 
@@ -77,7 +77,7 @@ add_library(
     cell_list.cpp
 )
 set_property(TARGET cell_list PROPERTY PREFIX "")
-target_compile_features(cell_list PRIVATE cxx_std_17)
+target_compile_features(cell_list PRIVATE cxx_std_20)
 target_link_libraries(cell_list PRIVATE ${TORCH_LIBRARIES})
 target_compile_definitions(cell_list PRIVATE  ${TORCH_CXX_FLAGS})
 
