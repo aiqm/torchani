@@ -71,13 +71,14 @@ def cuaev_extension_kwargs(
     if os.name == "nt":
         cxx_args = ["/std:c++20"]
     else:
-        cxx_args = ["-std=c++17"]
+        cxx_args = ["-std=c++20"]
     print("C++ compiler args:")
     for arg in cxx_args:
         print(f"    {arg}")
     return dict(
         name="torchani.cuaev",
         sources=[
+            "torchani/csrc/cuaev_schema.cpp",
             "torchani/csrc/cuaev.cpp",
             "torchani/csrc/aev.cu",
             "torchani/csrc/aev_cpu.cpp",
@@ -94,7 +95,7 @@ def mnp_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     if os.name == "nt":
         cxx_args = ["/std:c++20", "/openmp"]
     else:
-        cxx_args = ["-std=c++17", "-fopenmp"]
+        cxx_args = ["-std=c++20", "-fopenmp"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
@@ -115,7 +116,7 @@ def clist_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     if os.name == "nt":
         cxx_args = ["/std:c++20", "/openmp"]
     else:
-        cxx_args = ["-std=c++17", "-fopenmp"]
+        cxx_args = ["-std=c++20", "-fopenmp"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 

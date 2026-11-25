@@ -59,9 +59,9 @@ class TestCustomPotential(ANITestCase):
                 self,
                 elem_idxs: Tensor,
                 neighbors: Neighbors,
-                scalars: Tensor | None = None,
+                features: Tensor | None = None,
             ) -> Tensor:
-                assert scalars is None
+                assert features is None
                 elem_pairs = elem_idxs.view(-1)[neighbors.indices]
 
                 eq = self.to_pair_values(self.eq, elem_pairs)

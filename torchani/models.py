@@ -19,8 +19,8 @@ Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), an
 they output their averaged values. Individual members of these ensembles can be accessed
 by indexing, and ``len(ANI)`` can be used to query the number of networks in it.
 
-The models also have three extra entry points for more specific use cases:
-atomic_energies and energies_qbcs.
+The models also have an extra entry point for a more specific use case:
+energies_qbcs.
 
 All entrypoints expect a tuple of tensors ``(species, coords)`` as input, together
 with two optional tensors, ``cell`` and ``pbc``. ``coords`` and ``cell`` should be in
@@ -43,10 +43,6 @@ For more details consult the examples documentation
     # Output shape is (molecules,)
     energies = model((atomic_nums, coords)).energies
 
-    # Average atomic energies over the ensemble for the batch
-    # Output shape is (molecules, atoms)
-    atomic_energies = model.atomic_energies((atomic_nums, coords)).energies
-
     # Individual energies of the members of the ensemble
     # Output shape is (ensemble-size, molecules)
     energies = model((atomic_nums, coords), ensemble_values=True).energies
@@ -68,7 +64,14 @@ import importlib.util
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
 from torchani.potentials import SeparateChargesNNPotential
 from torchani.electro import ChargeNormalizer
-from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict, simple_ani
+from torchani.arch import (
+    Assembler,
+    ANI,
+    ANIq,
+    MultiHeadANI,
+    _fetch_state_dict,
+    simple_ani,
+)
 from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
@@ -251,6 +254,48 @@ def ANImbis(
     nnp.aev_computer.load_state_dict(aev_state_dict)
     nnp.neural_networks.load_state_dict(energy_nn_state_dict)
     nnp.charge_networks.load_state_dict(charge_nn_state_dict)
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANImbisv(
+    model_index: int | None = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> MultiHeadANI:
+    asm = Assembler(cls=MultiHeadANI, periodic_table_index=periodic_table_index)
+    asm.set_symbols(SYMBOLS_2X)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
+    asm.set_atomic_networks(ctor="ani2x")
+    asm.add_extra_networks(
+        "atomic_charges",
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
+    )
+    asm.add_extra_networks(
+        "atomic_volumes",
+        ctor="ani2x",
+        kwargs={"bias": True, "activation": "gelu"},
+        out_activation="softplus",
+    )
+    asm.set_shift_before_out_activation(False)
+    asm.set_charge_normalizer(
+        ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        )
+    )
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = tp.cast(MultiHeadANI, asm.assemble(8))
+    model.load_state_dict(_fetch_state_dict("animbisv_state_dict.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)

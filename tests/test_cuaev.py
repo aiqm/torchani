@@ -813,7 +813,7 @@ class TestCUAEV(TestCase):
         neighbors = Neighbors(
             neighbors.indices, diff_vectors.norm(2, -1), diff_vectors
         )
-        aev = aev_computer.compute_from_neighbors(species, coordinates, neighbors)
+        aev = aev_computer.compute_from_neighbors(species, neighbors)
         return torch.autograd.grad(self.nn(aev).sum(), diff_vectors)[0]
 
     def testStressPBC(self):

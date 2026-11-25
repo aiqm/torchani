@@ -243,13 +243,12 @@ class AEVComputer(torch.nn.Module):
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
             return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "pyaev":
-            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._pyaev_compute_from_neighbors(elem_idxs, neighbors)
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
     ) -> Tensor:
         r"""Compute the AEVs from the result of a neighborlist calculation
@@ -262,7 +261,7 @@ class AEVComputer(torch.nn.Module):
             |aevs|
         """
         if self._strategy == "pyaev":
-            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._pyaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
             return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "cuaev-fused":
@@ -270,7 +269,7 @@ class AEVComputer(torch.nn.Module):
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def _pyaev_compute_from_neighbors(
-        self, elem_idxs: Tensor, coords: Tensor, neighbors: Neighbors
+        self, elem_idxs: Tensor, neighbors: Neighbors
     ) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")

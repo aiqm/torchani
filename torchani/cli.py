@@ -126,6 +126,7 @@ def _build_extensions(
     _ = load(
         name="cuaev",
         sources=[
+            f"{this_dir}/csrc/cuaev_schema.cpp",
             f"{this_dir}/csrc/cuaev.cpp",
             f"{this_dir}/csrc/aev.cu",
             f"{this_dir}/csrc/aev_cpu.cpp",
@@ -133,7 +134,7 @@ def _build_extensions(
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
         extra_cuda_cflags=nvcc_args,
-        extra_cflags=["-std=c++17"],
+        extra_cflags=["-std=c++20"],
         with_cuda=True,
         is_python_module=False,
         extra_ldflags=torch_cuda_ldflags,
@@ -146,7 +147,7 @@ def _build_extensions(
         sources=[f"{this_dir}/csrc/mnp.cpp"],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
-        extra_cflags=["-std=c++17", "-fopenmp"],
+        extra_cflags=["-std=c++20", "-fopenmp"],
         with_cuda=True,
         is_python_module=False,
         extra_ldflags=torch_cuda_ldflags,
@@ -159,7 +160,7 @@ def _build_extensions(
         sources=[f"{this_dir}/csrc/cell_list.cpp"],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
-        extra_cflags=["-std=c++17"],
+        extra_cflags=["-std=c++20"],
         with_cuda=True,
         is_python_module=False,
         extra_ldflags=["-Wl,--as-needed"],
@@ -307,11 +308,17 @@ def sp(
             znums, coords, cell, pbc = torchani.io.read_xyz(
                 p, device=_device, dtype=_dtype
             )
+        elif p.name.endswith(".orca.in"):
+            znums, coords = torchani.io.read_orca(p, device=_device, dtype=_dtype)
+            cell = None
+            pbc = None
         else:
             # Single molecule supported only
             atoms = cast(Atoms, ase_read(p))
             if isinstance(atoms, list):
                 raise ValueError("Batch eval only supported for single molecules")
+            if not atoms.symbols:
+                raise ValueError(f"No atoms could be found in {p}")
             coords = (
                 torch.from_numpy(atoms.positions)
                 .to(dtype=_dtype, device=_device)

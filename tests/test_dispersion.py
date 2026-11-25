@@ -192,9 +192,7 @@ class TestDispersion(ANITestCase):
         neighbors = self.aev_computer.neighborlist(
             disp.cutoff, self.species, self.coordinates
         )
-        energy = disp.compute_from_neighbors(
-            self.species, self.coordinates, neighbors
-        ).energies
+        energy = disp.compute_from_neighbors(self.species, neighbors)["energies"]
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,

@@ -4,7 +4,6 @@ from collections.abc import Sequence
 import torch
 from torch import Tensor
 
-from torchani.tuples import EnergiesScalars
 from torchani.cutoffs import _parse_cutoff_fn, CutoffArg, CutoffDummy
 from torchani.neighbors import Neighbors, adaptive_list, all_pairs
 from torchani.utils import _validate_user_kwargs
@@ -40,7 +39,7 @@ class Potential(_ChemModule):
         coords: Tensor,
         cell: Tensor | None = None,
         pbc: Tensor | None = None,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         atomic_nums_input: bool = True,
@@ -65,24 +64,23 @@ class Potential(_ChemModule):
             neighbors = all_pairs(self.cutoff, elem_idxs, coords, cell, pbc)
         return self.compute_from_neighbors(
             elem_idxs,
-            coords,
             neighbors,
-            scalars=scalars,
+            features=features,
             atomic=atomic,
             ensemble_values=ensemble_values,
-        ).energies
+        )["energies"]
 
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
         charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         r"""Compute the energies associated with the potential
 
         If the potential is an ensemble of multiple models, ensemble_values=True should
@@ -98,17 +96,17 @@ class DummyPotential(Potential):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
         charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         if atomic:
-            return EnergiesScalars(coords.new_zeros(elem_idxs.shape))
-        return EnergiesScalars(coords.new_zeros(elem_idxs.shape[0]))
+            return {"energies": neighbors.diff_vectors.new_zeros(elem_idxs.shape)}
+        return {"energies": neighbors.diff_vectors.new_zeros(elem_idxs.shape[0])}
 
 
 class BasePairPotential(Potential):
@@ -150,7 +148,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
         r"""Return energy of all pairs of neighbors
 
@@ -165,7 +163,7 @@ class BasePairPotential(Potential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
         ghost_flags: Tensor | None = None,
     ) -> Tensor:
         # Input validation
@@ -174,7 +172,7 @@ class BasePairPotential(Potential):
         assert neighbors.indices.ndim == 2, "atom_index12 should be 2 dimensional"
         assert neighbors.distances.shape[0] == neighbors.indices.shape[1]
 
-        pair_energies = self.pair_energies(elem_idxs, neighbors, scalars)
+        pair_energies = self.pair_energies(elem_idxs, neighbors, features)
         pair_energies *= self.cutoff_fn(neighbors.distances, self.cutoff)
 
         if ghost_flags is not None:
@@ -191,19 +189,19 @@ class BasePairPotential(Potential):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
         charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: Tensor | None = None,
-    ) -> EnergiesScalars:
+    ) -> dict[str, Tensor]:
         # NOTE: Currently having ensembles of pair potentials is not supported, so
         # ensemble_values is disregarded
-        # NOTE: Currently charge is not passed to the pair_potentials
+        # NOTE: Currently charge and spin_mult are not passed to the pair_potentials
         pair_energies = self._pair_energies_wrapper(
-            elem_idxs, neighbors, scalars, ghost_flags
+            elem_idxs, neighbors, features, ghost_flags
         )
         molecs_num, atoms_num = elem_idxs.shape
         if atomic:
@@ -218,7 +216,7 @@ class BasePairPotential(Potential):
             )
             # scatter_add_ since inductor-cpu fails with index_add_ to 1-elem tensors
             energies.scatter_add_(0, molecs_idxs, pair_energies)
-        return EnergiesScalars(energies)
+        return {"energies": energies}
 
     @staticmethod
     def symm(x: Tensor) -> Tensor:
@@ -254,7 +252,7 @@ class PairPotential(BasePairPotential):
             tensors = ['bias']  # Vectors (all with the same len) or scalars
             pair_elem_tensors = ["k", "eq"]  # shape (num-sym * (num-sym + 1) / 2)
 
-            def pair_energies(self, elem_idxs, neighbors, scalars=None):
+            def pair_energies(self, elem_idxs, neighbors, features=None):
                 elem_pairs = elem_idxs.view(-1)[neighbors.indices]
                 eq = self.to_pair_values(self.eq, elem_pairs)
                 k = self.to_pair_values(self.k, elem_pairs)

@@ -5,11 +5,6 @@ import typing as tp
 from torch import Tensor
 
 
-class EnergiesScalars(tp.NamedTuple):
-    energies: Tensor
-    scalars: Tensor | None = None
-
-
 class EnergiesForces(tp.NamedTuple):
     energies: Tensor
     forces: Tensor
@@ -62,6 +57,12 @@ class SpeciesEnergiesAtomicCharges(tp.NamedTuple):
     atomic_charges: Tensor
 
 
+class SpeciesEnergiesResults(tp.NamedTuple):
+    species: Tensor
+    energies: Tensor
+    results: dict[str, Tensor]
+
+
 class EnergiesAtomicCharges(tp.NamedTuple):
     energies: Tensor
     atomic_charges: Tensor
@@ -78,35 +79,3 @@ class SpeciesEnergiesQBC(tp.NamedTuple):
     species: Tensor
     energies: Tensor
     qbcs: Tensor
-
-
-class AtomicStdev(tp.NamedTuple):
-    r"""Tuple used in output from atomic_stdev function"""
-
-    species: Tensor
-    energies: Tensor
-    stdev_atomic_energies: Tensor
-
-
-class SpeciesForces(tp.NamedTuple):
-    r"""Tuple used in output from members_forces function"""
-
-    species: Tensor
-    energies: Tensor
-    forces: Tensor
-
-
-class ForceStdev(tp.NamedTuple):
-    r"""Tuple used in output from force_qbc function"""
-
-    species: Tensor
-    magnitudes: Tensor
-    relative_stdev: Tensor
-    relative_range: Tensor
-
-
-class ForceMagnitudes(tp.NamedTuple):
-    r"""Tuple used in output from force_magnitudes function"""
-
-    species: Tensor
-    magnitudes: Tensor

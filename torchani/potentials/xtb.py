@@ -62,9 +62,9 @@ class RepulsionXTB(BasePairPotential):
         self,
         element_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
-        assert scalars is None
+        assert features is None
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
