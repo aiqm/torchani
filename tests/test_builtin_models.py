@@ -89,7 +89,7 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         elem_idxs = model.species_converter(species)
         neighbors = model.neighborlist(model.cutoff, elem_idxs, coords, cell, pbc)
-        result = model.compute_from_neighbors(elem_idxs, coords, neighbors)
+        result = model.compute_from_neighbors(elem_idxs, neighbors)
         out = model((species, coords), cell, pbc)
         if hasattr(out, "atomic_charges"):
             self.assertEqual(out.atomic_charges, result["atomic_charges"])

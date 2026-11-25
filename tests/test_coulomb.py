@@ -25,33 +25,33 @@ class TestCoulomb(ANITestCase):
 
     def testTwoCharges(self):
         pot = self._setup(Coulomb(SYMBOLS))
-        energies = pot(self.atomic_nums, self.coords, scalars=self.qs)
+        energies = pot(self.atomic_nums, self.coords, features=self.qs)
         expect = torch.tensor([-0.25 / self.dist], device=self.device)
         self.assertEqual(energies, expect)
 
     def testDielectric(self):
         pot = self._setup(Coulomb(SYMBOLS, dielectric=4.0))
-        energies = pot(self.atomic_nums, self.coords, scalars=self.qs)
+        energies = pot(self.atomic_nums, self.coords, features=self.qs)
         expect = torch.tensor([-0.25 / self.dist / 4.0], device=self.device)
         self.assertEqual(energies, expect)
 
     def testErfDamp(self):
         pot = self._setup(Coulomb(SYMBOLS, damp_fn="erf"))
-        energies = pot(self.atomic_nums, self.coords, scalars=self.qs)
+        energies = pot(self.atomic_nums, self.coords, features=self.qs)
         damp = math.erf(0.5 * self.dist)
         expect = torch.tensor([-0.25 / self.dist * damp], device=self.device)
         self.assertEqual(energies, expect)
 
     def testTanhDamp(self):
         pot = self._setup(Coulomb(SYMBOLS, damp_fn="tanh"))
-        energies = pot(self.atomic_nums, self.coords, scalars=self.qs)
+        energies = pot(self.atomic_nums, self.coords, features=self.qs)
         damp = math.tanh(0.5 * self.dist)
         expect = torch.tensor([-0.25 / self.dist * damp], device=self.device)
         self.assertEqual(energies, expect)
 
     def testAtomic(self):
         pot = self._setup(Coulomb(SYMBOLS))
-        energies = pot(self.atomic_nums, self.coords, scalars=self.qs, atomic=True)
+        energies = pot(self.atomic_nums, self.coords, features=self.qs, atomic=True)
         half = -0.125 / self.dist
         expect = torch.tensor([[half, half]], device=self.device)
         self.assertEqual(energies, expect)
@@ -68,7 +68,7 @@ class TestCoulomb(ANITestCase):
 
         pot = self._setup(Coulomb(SYMBOLS))
         fixed_pot = self._setup(FixedCoulomb(SYMBOLS, charges=ELEM_CHARGES))
-        energies = pot(molecs.atomic_nums, molecs.coords, scalars=qs)
+        energies = pot(molecs.atomic_nums, molecs.coords, features=qs)
         expect = fixed_pot(molecs.atomic_nums, molecs.coords)
         self.assertEqual(energies, expect)
 
@@ -115,7 +115,7 @@ class TestANIqCoulomb(ANITestCase):
             _, no_coulomb_energies, no_coulomb_qs = self._setup(model)(species_coords)
 
             coulomb_energies = pot(
-                self.molecs.atomic_nums, self.molecs.coords, scalars=qs
+                self.molecs.atomic_nums, self.molecs.coords, features=qs
             )
             self.assertEqual(qs, no_coulomb_qs)
             self.assertEqual(energies, no_coulomb_energies + coulomb_energies)

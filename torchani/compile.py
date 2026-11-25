@@ -12,11 +12,12 @@ using ``torch._inductor.package.load_package(package_path, model_name)``. The
 entrypoints and their signatures are:
 
 - ``"single_point"``:
-  ``(species, coords, net_charge) -> (energies, forces, atomic_charges)``
+  ``(species, coords, net_charge, spin_mult) -> (energies, forces, atomic_charges)``
 - ``"single_point_pbc"``:
-  ``(species, coords, cell, pbc, net_charge) -> (energies, forces, atomic_charges)``
+  ``(species, coords, cell, pbc, net_charge, spin_mult)
+  -> (energies, forces, atomic_charges)``
 - ``"external_neighbors"``:
-  ``(species, coords, neighbor_idxs, shifts, net_charge)
+  ``(species, coords, neighbor_idxs, shifts, net_charge, spin_mult)
   -> (energies, forces, atomic_charges)``
 - ``"custom_mlmm"``:
   ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff,
@@ -68,7 +69,7 @@ from torchani.neighbors import (
     FastAdaptiveList,
     FastCellList,
 )
-from torchani.tuples import SpeciesEnergiesAtomicCharges, SpeciesEnergiesScalars
+from torchani.tuples import SpeciesEnergiesAtomicCharges, SpeciesEnergiesResults
 
 Device = tp.Literal["cpu", "cuda"]
 Precision = tp.Literal["f32", "f64"]
@@ -88,17 +89,17 @@ class _SinglePoint(torch.nn.Module):
         self._model = model
 
     def forward(
-        self, species: Tensor, coords: Tensor, net_charge: Tensor
+        self, species: Tensor, coords: Tensor, net_charge: Tensor, spin_mult: Tensor
     ) -> tuple[Tensor, Tensor]:
-        result = self._model((species, coords), charge=net_charge)
+        result = self._model((species, coords), charge=net_charge, spin_mult=spin_mult)
         if isinstance(result, dict):
             empty_charges = coords.new_empty((1, 0))
             return result["energies"], result.get("atomic_charges", empty_charges)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
-        if isinstance(result, SpeciesEnergiesScalars):
+        if isinstance(result, SpeciesEnergiesResults):
             empty_charges = coords.new_empty((1, 0))
-            return result.energies, result.scalars.get("atomic_charges", empty_charges)
+            return result.energies, result.results.get("atomic_charges", empty_charges)
         return result.energies, coords.new_empty((1, 0))
 
 
@@ -114,16 +115,23 @@ class _SinglePointPBC(torch.nn.Module):
         cell: Tensor,
         pbc: Tensor,
         net_charge: Tensor,
+        spin_mult: Tensor,
     ) -> tuple[Tensor, Tensor]:
-        result = self._model((species, coords), cell=cell, pbc=pbc, charge=net_charge)
+        result = self._model(
+            (species, coords),
+            cell=cell,
+            pbc=pbc,
+            charge=net_charge,
+            spin_mult=spin_mult,
+        )
         if isinstance(result, dict):
             empty_charges = coords.new_empty((1, 0))
             return result["energies"], result.get("atomic_charges", empty_charges)
         if isinstance(result, SpeciesEnergiesAtomicCharges):
             return result.energies, result.atomic_charges
-        if isinstance(result, SpeciesEnergiesScalars):
+        if isinstance(result, SpeciesEnergiesResults):
             empty_charges = coords.new_empty((1, 0))
-            return result.energies, result.scalars.get("atomic_charges", empty_charges)
+            return result.energies, result.results.get("atomic_charges", empty_charges)
         return result.energies, coords.new_empty((1, 0))
 
 
@@ -139,9 +147,15 @@ class _ExternalNeighbors(torch.nn.Module):
         neighbor_idxs: Tensor,
         shifts: Tensor,
         net_charge: Tensor,
+        spin_mult: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_from_external_neighbors(
-            species, coords, neighbor_idxs, shifts, charge=net_charge
+            species,
+            coords,
+            neighbor_idxs,
+            shifts,
+            charge=net_charge,
+            spin_mult=spin_mult,
         )
         empty_charges = coords.new_empty((1, 0))
         return result["energies"], result.get("atomic_charges", empty_charges)
@@ -401,22 +415,24 @@ def _export_energies_forces(
     forces_wrapper: type[torch.nn.Module] = _EnergiesForcesAtomicCharges
     if entrypoint == "single_point":
         module = _SinglePoint(model)
-        args: tuple[Tensor, ...] = (species, coords, net_charge)
-        dynamic_shapes = species_coords_shapes + [(static,)]
+        args: tuple[Tensor, ...] = (species, coords, net_charge, spin_mult)
+        dynamic_shapes = species_coords_shapes + [(static,), (static,)]
     elif entrypoint == "single_point_pbc":
         module = _SinglePointPBC(model)
-        args = (species, coords, cell, pbc, net_charge)
+        args = (species, coords, cell, pbc, net_charge, spin_mult)
         dynamic_shapes = species_coords_shapes + [
             (static, static),
+            (static,),
             (static,),
             (static,),
         ]
     elif entrypoint == "external_neighbors":
         module = _ExternalNeighbors(model)
-        args = (species, coords, neighbor_idxs, shifts, net_charge)
+        args = (species, coords, neighbor_idxs, shifts, net_charge, spin_mult)
         dynamic_shapes = species_coords_shapes + [
             (static, pairs),
             (pairs, static),
+            (static,),
             (static,),
         ]
     elif entrypoint == "custom_mlmm":

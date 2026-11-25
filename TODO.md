@@ -61,6 +61,5 @@ Build:
   build only needs the sources split by backend in `setup.py`, `cli.py` and `CMakeLists.txt`.
 
 Cleanup:
-- Unused args: `coords` in `AEVComputer.compute_from_neighbors` (unused by both pyaev and
-  cuAEV), `distances` in `run_with_half_nbrlist_aten`.
+- Unused args: `distances` in `run_with_half_nbrlist_aten`.
 - Generated docs in `docs/build/` still show the old `CuaevComputer` code.

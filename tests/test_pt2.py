@@ -139,7 +139,7 @@ class TestCompile(ANITestCasePT2):
         elem_idxs = make_elem_idxs(1, 10, seed=1234).to(self.device)
         neighbors = AllPairs()(5.2, elem_idxs, molec.coords)
         self._assert_compiled_matches(
-            aev_computer.compute_from_neighbors, elem_idxs, molec.coords, neighbors
+            aev_computer.compute_from_neighbors, elem_idxs, neighbors
         )
 
     # Only some of the supported elements are present, and some atoms are dummy
@@ -426,12 +426,15 @@ class TestCompileModel(ANITestCasePT2):
         model = model.double()
         pbc = torch.ones(3, dtype=torch.bool)
         net_charge = torch.tensor([0])
+        spin_mult = torch.tensor([1])
         # Different sizes check that the number of atoms is dynamic
         for atoms in (20, 31):
             species, coords, cell, _, _ = _example_inputs(model, atoms=atoms)
             expect = self._eager_energies_forces(model, species, coords)
             atomic_charges = self._assert_package_matches(
-                "single_point/cpu/f64", (species, coords, net_charge), *expect
+                "single_point/cpu/f64",
+                (species, coords, net_charge, spin_mult),
+                *expect,
             )
             self.assertEqual(atomic_charges.shape, (1, 0))
             expect = self._eager_energies_forces(
@@ -439,7 +442,7 @@ class TestCompileModel(ANITestCasePT2):
             )
             self._assert_package_matches(
                 "single_point_pbc/cpu/f64",
-                (species, coords, cell, pbc, net_charge),
+                (species, coords, cell, pbc, net_charge, spin_mult),
                 *expect,
             )
 
@@ -456,6 +459,8 @@ class TestCompileModel(ANITestCasePT2):
             self._model_names(self._package_path), {"external_neighbors/cpu/f32"}
         )
         species, coords, _, neighbor_idxs, shifts = _example_inputs(model)
+        net_charge = torch.tensor([0])
+        spin_mult = torch.tensor([1])
         _coords = coords.clone().requires_grad_(True)
         result = model.compute_from_external_neighbors(
             species, _coords, neighbor_idxs, shifts
@@ -463,7 +468,7 @@ class TestCompileModel(ANITestCasePT2):
         forces = -torch.autograd.grad(result["energies"].sum(), _coords)[0]
         atomic_charges = self._assert_package_matches(
             "external_neighbors/cpu/f32",
-            (species, coords, neighbor_idxs, shifts, torch.tensor([0])),
+            (species, coords, neighbor_idxs, shifts, net_charge, spin_mult),
             result["energies"].detach(),
             forces,
         )
@@ -606,8 +611,9 @@ class TestCompileModel(ANITestCasePT2):
         species, coords, _, _, _ = _example_inputs(model)
         expect = self._eager_energies_forces(model, species, coords)
         net_charge = torch.tensor([0], device="cuda")
+        spin_mult = torch.tensor([1], device="cuda")
         runner = load_package(str(self._package_path), "single_point/cuda/f32")
-        energies, forces, _ = runner(species, coords, net_charge)
+        energies, forces, _ = runner(species, coords, net_charge, spin_mult)
         self.assertEqual(energies, expect[0], rtol=1e-4, atol=1e-4)
         self.assertEqual(forces, expect[1], rtol=1e-4, atol=1e-4)
 

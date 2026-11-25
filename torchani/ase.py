@@ -141,7 +141,7 @@ class Calculator(AseCalculator):
                 neighbors = Neighbors(neighbors.indices, diff_vec.norm(2, -1), diff_vec)
 
             _idxs = self.model.species_converter(species)
-            out = self.model.compute_from_neighbors(_idxs, crds, neighbors)
+            out = self.model.compute_from_neighbors(_idxs, neighbors)
             energies = out["energies"]
         else:
             energies = self.model((species, crds), cell, pbc).energies

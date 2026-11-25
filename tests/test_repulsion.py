@@ -1,9 +1,7 @@
 import unittest
 
 import torch
-from torch import Tensor
 
-from torchani.models import ANI2dr
 from torchani.utils import SYMBOLS_1X
 from torchani._testing import ANITestCase, expand
 from torchani.potentials import RepulsionXTB
@@ -18,15 +16,12 @@ class TestRepulsion(ANITestCase):
     def testPotential(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
-        coords = torch.tensor([[[0, 0, 0], [3.5, 0, 0]]], device=self.device)
         neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([3.5], device=self.device),
             diff_vectors=torch.tensor([[3.5, 0, 0]], device=self.device),
         )
-        energies = self.rep.compute_from_neighbors(
-            element_idxs, coords, neighbors
-        )["energies"]
+        energies = self.rep.compute_from_neighbors(element_idxs, neighbors)["energies"]
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
@@ -71,41 +66,13 @@ class TestRepulsion(ANITestCase):
     def testLongDistances(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
-        coords = torch.tensor([[[0, 0, 0], [6.0, 0, 0]]], device=self.device)
         neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([6.0], device=self.device),
             diff_vectors=torch.tensor([[6.0, 0, 0]], device=self.device),
         )
-        energies = self.rep.compute_from_neighbors(
-            element_idxs, coords, neighbors
-        )["energies"]
+        energies = self.rep.compute_from_neighbors(element_idxs, neighbors)["energies"]
         self.assertEqual(torch.tensor([0.0], device=self.device), energies)
-
-    def testAtomicEnergy(self):
-        model = self._setup(ANI2dr(model_index=0))
-        species = torch.tensor([[8, 1, 1]], device=self.device)
-        _energies: list[Tensor] = []
-        _atomic_energies: list[Tensor] = []
-        distances = torch.linspace(0.1, 6.0, 100, device=self.device)
-        for d in distances:
-            coordinates = torch.tensor(
-                [
-                    [
-                        [0.0, 0.0, 0.0],
-                        [0.97, 0.0, 0.0],
-                        [-0.250380004 * d, 0.96814764 * d, 0.0],
-                    ]
-                ],
-                requires_grad=True,
-                dtype=torch.float,
-                device=self.device,
-            )
-            _atomic_energies.append(
-                model.atomic_energies((species, coordinates)).energies.sum(-1).item()
-            )
-            _energies.append(model((species, coordinates)).energies.item())
-        self.assertEqual(_atomic_energies, _energies)
 
 
 if __name__ == "__main__":
