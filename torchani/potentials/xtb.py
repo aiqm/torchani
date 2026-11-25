@@ -1,7 +1,7 @@
 r"""Potentials that calculate repulsive (short-range) interactions"""
 
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
@@ -31,12 +31,12 @@ class RepulsionXTB(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         # Potential
         krep_hydrogen: float = 1.0,
         krep: float = 1.5,
-        alpha: tp.Sequence[float] = (),
-        yeff: tp.Sequence[float] = (),
+        alpha: Sequence[float] = (),
+        yeff: Sequence[float] = (),
         *,  # Cutoff
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -62,7 +62,9 @@ class RepulsionXTB(BasePairPotential):
         self,
         element_idxs: Tensor,
         neighbors: Neighbors,
+        features: Tensor | None = None,
     ) -> Tensor:
+        assert features is None
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR

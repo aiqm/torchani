@@ -1,5 +1,5 @@
 import math
-import typing as tp
+from collections.abc import Sequence
 import torch
 from torch import Tensor
 from torchani.cutoffs import CutoffArg
@@ -18,14 +18,14 @@ class RepulsionZBL(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         # Potential
         k: float = 0.8853,  # LAMMPS uses 0.46850 (internally uses angstrom)
-        screen_coeffs: tp.Sequence[float] = (),
-        screen_exponents: tp.Sequence[float] = (),
+        screen_coeffs: Sequence[float] = (),
+        screen_exponents: Sequence[float] = (),
         eff_exponent: float = 0.23,
-        eff_atomic_nums: tp.Sequence[float] = (),
-        trainable: tp.Sequence[str] = (),
+        eff_atomic_nums: Sequence[float] = (),
+        trainable: Sequence[str] = (),
         *,  # Cutoff
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "smooth",
@@ -69,7 +69,13 @@ class RepulsionZBL(BasePairPotential):
         self._k = k
         self._kz = eff_exponent
 
-    def pair_energies(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
+    def pair_energies(
+        self,
+        elem_idxs: Tensor,
+        neighbors: Neighbors,
+        features: Tensor | None = None,
+    ) -> Tensor:
+        assert features is None
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR

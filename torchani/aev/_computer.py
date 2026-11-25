@@ -1,11 +1,12 @@
 import warnings
 import os
 import typing as tp
+from typing import Self
+from collections.abc import Sequence
 
 import torch
 from torch import Tensor
 from torch.jit import Final
-import typing_extensions as tpx
 
 from torchani.tuples import SpeciesAEV
 from torchani.neighbors import (
@@ -68,7 +69,6 @@ class AEVComputer(torch.nn.Module):
     triu_index: Tensor
     _strategy: str
     _cuaev_is_avail: bool
-    _cuaev_computer_is_init: bool
 
     def __init__(
         self,
@@ -76,7 +76,7 @@ class AEVComputer(torch.nn.Module):
         angular: AngularArg,
         num_species: int,
         strategy: str = "pyaev",
-        cutoff_fn: tp.Optional[CutoffArg] = None,
+        cutoff_fn: CutoffArg | None = None,
         neighborlist: NeighborlistArg = "all_pairs",
     ):
         super().__init__()
@@ -113,13 +113,6 @@ class AEVComputer(torch.nn.Module):
         # Perform init and checks of cuAEV
         # Check if the cuaev and the cuaev fused are available for use
         self._cuaev_is_avail = self._check_cuaev_avail()
-
-        # Do cuAEV dummy init ('registration'), even if not used. Required by JIT
-        if CUAEV_IS_INSTALLED:
-            self._register_cuaev_computer()
-
-        # Delay cuAEV true init to fwd, to put tensors in correct device
-        self._cuaev_computer_is_init = False
 
         # Check the requested strategy is available
         if strategy == "auto":
@@ -198,9 +191,9 @@ class AEVComputer(torch.nn.Module):
     def forward(
         self,
         elem_idxs: Tensor,
-        coords: tp.Optional[Tensor] = None,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        coords: Tensor | None = None,
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ) -> Tensor:
         r"""Compute AEVs for a batch of molecules
 
@@ -248,15 +241,14 @@ class AEVComputer(torch.nn.Module):
         # are **not required** to be mapped to the central cell for pbc calculations.
         neighbors = self.neighborlist(self.radial.cutoff, elem_idxs, coords, cell, pbc)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
-            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "pyaev":
-            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._pyaev_compute_from_neighbors(elem_idxs, neighbors)
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
     ) -> Tensor:
         r"""Compute the AEVs from the result of a neighborlist calculation
@@ -269,15 +261,15 @@ class AEVComputer(torch.nn.Module):
             |aevs|
         """
         if self._strategy == "pyaev":
-            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._pyaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
-            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+            return self._cuaev_compute_from_neighbors(elem_idxs, neighbors)
         if self._strategy == "cuaev-fused":
             raise RuntimeError("cuAEV-fused doesn't support `compute_from_neighbors`")
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def _pyaev_compute_from_neighbors(
-        self, elem_idxs: Tensor, coords: Tensor, neighbors: Neighbors
+        self, elem_idxs: Tensor, neighbors: Neighbors
     ) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")
@@ -355,22 +347,13 @@ class AEVComputer(torch.nn.Module):
         return radial_aev.reshape(num_molecs, num_atoms, self.radial_len)
 
     @jit_unused_if_no_cuaev()
-    def _register_cuaev_computer(self) -> None:
-        # cuaev_computer is needed only when using a cuAEV compute strategy. However jit
-        # always needs to register the CuaevComputer type This 'registration' is only a
-        # kind of "dummy" initialization, it is always necessary to reinitialize in
-        # forward at least once, since some tensors may be on CPU at this point, but on
-        # GPU when forward is called.
-        empty = torch.empty(0)
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
-            0.0, 0.0, empty, empty, empty, empty, empty, empty, 1, True
-        )
-
-    @jit_unused_if_no_cuaev()
-    def _init_cuaev_computer(self) -> None:
+    def _cuaev_fused(self, species: Tensor, coordinates: Tensor) -> Tensor:
+        self._prepare_cuaev_execution(species, "fused")
         # If we reach this part of the code then the radial and
         # angular terms must be Standard*, so these tensors will exist
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
+        return torch.ops.cuaev.run(
+            coordinates.contiguous(),
+            species.to(torch.int32),
             self.radial.cutoff,
             self.angular.cutoff,
             self.radial.eta,
@@ -381,35 +364,33 @@ class AEVComputer(torch.nn.Module):
             self.angular.sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
-        )
-        self._cuaev_computer_is_init = True
-
-    @jit_unused_if_no_cuaev()
-    def _cuaev_fused(self, species: Tensor, coordinates: Tensor) -> Tensor:
-        self._prepare_cuaev_execution(species, "fused")
-        return torch.ops.cuaev.run(
-            coordinates, species.to(torch.int32), self.cuaev_computer
-        )
+        )[0]
 
     @jit_unused_if_no_cuaev()
     def _cuaev_compute_from_neighbors(
         self,
         species: Tensor,
-        coordinates: Tensor,
         neighbors: Neighbors,
     ) -> Tensor:
         self._prepare_cuaev_execution(species, "half-neighborlist")
-        # The coordinates will not be used in forward calculation, but it's
-        # gradient (force) will still be calculated in cuaev kernel, so it's
-        # important to have coordinates passed as an argument.
+        # Gradients flow through neighbors.diff_vectors, which carry the dependence on
+        # both the coordinates and the cell (PBC shifts)
         return torch.ops.cuaev.run_with_half_nbrlist(
-            coordinates,
             species.to(torch.int32),
-            neighbors.indices.to(torch.int32),
-            neighbors.diff_vectors,
-            neighbors.distances,
-            self.cuaev_computer,
-        )
+            neighbors.indices.to(torch.int32).contiguous(),
+            neighbors.diff_vectors.contiguous(),
+            neighbors.distances.contiguous(),
+            self.radial.cutoff,
+            self.angular.cutoff,
+            self.radial.eta,
+            self.radial.shifts,
+            self.angular.eta,
+            self.angular.zeta,
+            self.angular.shifts,
+            self.angular.sections,
+            self.num_species,
+            (self._cuaev_cutoff_fn == "cosine"),
+        )[0]
 
     # NOTE: This function is for testing purposes or for usage with the LAMMPS interface
     # Computing aev with full nbrlist that is from
@@ -434,29 +415,36 @@ class AEVComputer(torch.nn.Module):
         if coordinates.shape[0] != 1:
             raise ValueError("cuAEV with full neighborlist doesn't support batches")
         return torch.ops.cuaev.run_with_full_nbrlist(
-            coordinates,
+            coordinates.contiguous(),
             species.to(torch.int32),
-            ilist_unique.to(torch.int32),
-            jlist.to(torch.int32),
-            numneigh.to(torch.int32),
-            self.cuaev_computer,
-        )
+            ilist_unique.to(torch.int32).contiguous(),
+            jlist.to(torch.int32).contiguous(),
+            numneigh.to(torch.int32).contiguous(),
+            self.radial.cutoff,
+            self.angular.cutoff,
+            self.radial.eta,
+            self.radial.shifts,
+            self.angular.eta,
+            self.angular.zeta,
+            self.angular.shifts,
+            self.angular.sections,
+            self.num_species,
+            (self._cuaev_cutoff_fn == "cosine"),
+        )[0]
 
     @jit_unused_if_no_cuaev()
     def _prepare_cuaev_execution(self, species: Tensor, branch: str) -> None:
+        if torch.compiler.is_compiling() and species.device.type == "cpu":
+            raise RuntimeError(
+                "cuAEV doesn't support torch.compile on CPU, use strategy='pyaev'"
+            )
         if self._print_aev_branch:
             print(f"Executing branch: cuAEV {branch}")
-        if species.device.type != "cuda" and species.shape[1] != 0:
-            raise ValueError(
-                "cuAEV requires inputs in a CUDA device if there is at least 1 atom"
-            )
-        if not self._cuaev_computer_is_init:
-            self._init_cuaev_computer()
 
     # Converet half nbrlist to full nbrlist.
     @jit_unused_if_no_cuaev()
     @staticmethod
-    def _half_to_full_nbrlist(atom_index12: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    def _half_to_full_nbrlist(atom_index12: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         ilist = atom_index12.view(-1)
         jlist = atom_index12.flip(0).view(-1)
         ilist_sorted, indices = ilist.sort(stable=True)
@@ -474,7 +462,7 @@ class AEVComputer(torch.nn.Module):
         numneigh: Tensor,
         species: Tensor,
         fullnbr_diff_vector: Tensor,
-    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    ) -> tuple[Tensor, Tensor, Tensor]:
         # NOTE: This function has the following limitations: itonly works for
         # lammps-type pbc neighborlists (with local and ghost atoms). TorchANI
         # neighborlists only have 1 set of atoms and do mapping with local and image
@@ -519,7 +507,7 @@ class AEVComputer(torch.nn.Module):
         angular_zeta: float = 32.0,
         angular_num_shifts: int = 4,
         angular_num_sections: int = 8,
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
         Uses the same defaults as those in the `torchani.models.ANI1x` model.
@@ -571,7 +559,7 @@ class AEVComputer(torch.nn.Module):
         angular_zeta: float = 14.1,
         angular_num_shifts: int = 8,
         angular_num_sections: int = 4,
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
         Uses the same defaults as those in the `torchani.models.ANI2x` model.
@@ -611,16 +599,16 @@ class AEVComputer(torch.nn.Module):
         radial_cutoff: float,
         angular_cutoff: float,
         radial_eta: float,
-        radial_shifts: tp.Sequence[float],
+        radial_shifts: Sequence[float],
         angular_eta: float,
         angular_zeta: float,
-        angular_shifts: tp.Sequence[float],
-        sections: tp.Sequence[float],
+        angular_shifts: Sequence[float],
+        sections: Sequence[float],
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "all_pairs",
-    ) -> tpx.Self:
+    ) -> Self:
         r"""Build an AEVComputer with standard radial and angular terms, from constants
 
         For more detail consult the equations in the original `ANI article`_.

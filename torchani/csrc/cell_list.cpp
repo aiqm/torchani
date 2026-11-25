@@ -1,4 +1,4 @@
-#include <torch/extension.h>
+#include <torch/all.h>
 #include <tuple>
 #include <vector>
 
@@ -271,8 +271,54 @@ std::tuple<Tensor, Tensor> _cell_list(const Tensor& grid_shape, const Tensor& co
   return {neighbor_idxs, shift_idxs};
 }
 
+// Only calls ATen ops, so the same kernel works on CPU and CUDA
+std::tuple<Tensor, Tensor, Tensor> cell_list_impl(
+    double cutoff,
+    const Tensor& species,
+    const Tensor& coords,
+    const c10::optional<Tensor>& cell,
+    const c10::optional<Tensor>& pbc) {
+  _validate_inputs(cutoff, species, coords, cell, pbc);
+  Tensor displ_coords;
+  Tensor out_cell;
+  if (pbc.has_value()) {
+    TORCH_CHECK(cell.has_value(), "Cell must be provided when PBC is enabled");
+    displ_coords = coords.detach();
+    out_cell = cell.value();
+  } else {
+    std::tie(displ_coords, out_cell) = compute_bounding_cell(
+        coords.detach(),
+        /* eps */ (2 * cutoff + 1.0e-3),
+        /* displace */ true,
+        /* square */ false);
+  }
+  Tensor grid_shape = setup_grid(out_cell, cutoff);
+  if (pbc.has_value()) {
+    if ((grid_shape == 0).any().item<bool>()) {
+      throw std::runtime_error("Cell is too small to perform PBC calculations");
+    }
+  } else {
+    grid_shape = torch::max(grid_shape, torch::ones_like(grid_shape));
+  }
+
+  Tensor neighbor_idxs, shift_idxs;
+  std::tie(neighbor_idxs, shift_idxs) = _cell_list(grid_shape, displ_coords.detach(), out_cell);
+
+  tensor_list outs;
+  if (pbc.has_value()) {
+    Tensor shifts = torch::matmul(shift_idxs.to(out_cell.dtype()), out_cell);
+    Tensor map_coords = map_to_central(coords, out_cell.detach());
+    outs = narrow_down(cutoff, species, map_coords, neighbor_idxs, shifts);
+  } else {
+    outs = narrow_down(cutoff, species, coords, neighbor_idxs);
+  }
+  return {outs[0], outs[1], outs[2]};
+}
+
 class CellListFunction : public torch::autograd::Function<CellListFunction> {
  public:
+  // Calls the op through the dispatcher, so that tracing (e.g. torch.compile) sees the
+  // op and uses its fake kernel instead of running the impl
   static tensor_list forward(
       torch::autograd::AutogradContext* ctx,
       double cutoff,
@@ -280,47 +326,13 @@ class CellListFunction : public torch::autograd::Function<CellListFunction> {
       const Tensor& coords,
       const c10::optional<Tensor>& cell,
       const c10::optional<Tensor>& pbc) {
-    _validate_inputs(cutoff, species, coords, cell, pbc);
-    Tensor displ_coords;
-    Tensor out_cell;
-    if (pbc.has_value()) {
-      TORCH_CHECK(cell.has_value(), "Cell must be provided when PBC is enabled");
-      displ_coords = coords.detach();
-      out_cell = cell.value();
-    } else {
-      std::tie(displ_coords, out_cell) = compute_bounding_cell(
-          coords.detach(),
-          /* eps */ (2 * cutoff + 1.0e-3),
-          /* displace */ true,
-          /* square */ false);
-    }
-    Tensor grid_shape = setup_grid(out_cell, cutoff);
-    if (pbc.has_value()) {
-      if ((grid_shape == 0).any().item<bool>()) {
-        throw std::runtime_error("Cell is too small to perform PBC calculations");
-      }
-    } else {
-      grid_shape = torch::max(grid_shape, torch::ones_like(grid_shape));
-    }
-
-    Tensor neighbor_idxs, shift_idxs;
-    std::tie(neighbor_idxs, shift_idxs) = _cell_list(grid_shape, displ_coords.detach(), out_cell);
-
-    tensor_list outs;
-    if (pbc.has_value()) {
-      Tensor shifts = torch::matmul(shift_idxs.to(out_cell.dtype()), out_cell);
-      Tensor map_coords = map_to_central(coords, out_cell.detach());
-      outs = narrow_down(cutoff, species, map_coords, neighbor_idxs, shifts);
-    } else {
-      outs = narrow_down(cutoff, species, coords, neighbor_idxs);
-    }
-    ctx->save_for_backward({
-        coords,
-        outs[0], // neighbor_idxs
-        outs[1], // distances
-        outs[2], // diff_vectors
-    });
-    return outs;
+    at::AutoDispatchBelowADInplaceOrView guard;
+    static auto op =
+        c10::Dispatcher::singleton().findSchemaOrThrow("cell_list::cell_list", "").typed<decltype(cell_list_impl)>();
+    Tensor neighbor_idxs, distances, diff_vectors;
+    std::tie(neighbor_idxs, distances, diff_vectors) = op.call(cutoff, species, coords, cell, pbc);
+    ctx->save_for_backward({coords, neighbor_idxs, distances, diff_vectors});
+    return {neighbor_idxs, distances, diff_vectors};
   }
 
   static tensor_list backward(torch::autograd::AutogradContext* ctx, tensor_list grad_outputs) {
@@ -347,7 +359,7 @@ class CellListFunction : public torch::autograd::Function<CellListFunction> {
   }
 };
 
-std::tuple<Tensor, Tensor, Tensor> cell_list(
+std::tuple<Tensor, Tensor, Tensor> cell_list_autograd(
     double cutoff,
     const Tensor& species,
     const Tensor& coords,
@@ -357,9 +369,10 @@ std::tuple<Tensor, Tensor, Tensor> cell_list(
   return {output[0], output[1], output[2]};
 }
 TORCH_LIBRARY(cell_list, m) {
+  m.set_python_module("torchani.csrc._cell_list_fake");
   m.def(
       "cell_list(float cutoff, Tensor species, Tensor coords, Tensor? cell, Tensor? pbc) -> (Tensor, Tensor, Tensor)",
-      &cell_list);
+      {at::Tag::pt2_compliant_tag});
   m.def("coords_to_grid_idx3(Tensor coords, Tensor cell, Tensor grid_shape) -> Tensor", &coords_to_grid_idx3);
   m.def(
       "setup_grid(Tensor cell, float cutoff, int buckets_per_cutoff=1, float extra_space=1e-5) -> Tensor", &setup_grid);
@@ -368,4 +381,12 @@ TORCH_LIBRARY(cell_list, m) {
       "image_pairs_within(Tensor count_in_grid, Tensor cumcount_in_grid, int count_in_grid_max) -> Tensor",
       &image_pairs_within);
   m.def("count_atoms_in_buckets(Tensor atom_grid_idx, Tensor grid_shape) -> (Tensor, Tensor)", &count_atoms_in_buckets);
+}
+
+TORCH_LIBRARY_IMPL(cell_list, CompositeExplicitAutograd, m) {
+  m.impl("cell_list", cell_list_impl);
+}
+
+TORCH_LIBRARY_IMPL(cell_list, Autograd, m) {
+  m.impl("cell_list", cell_list_autograd);
 }

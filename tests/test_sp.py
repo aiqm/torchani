@@ -42,6 +42,18 @@ class TestSinglePointEntry(ANITestCase):
             self.assertEqual(out.atomic_charges, result["atomic_charges"])
         self.assertEqual(out.energies, result["energies"])
 
+        charge = torch.zeros(species.shape[0], dtype=torch.long, device=self.device)
+        charged_out = model((species, coords), charge=charge)
+        self.assertEqual(out.energies, charged_out.energies)
+        if hasattr(out, "atomic_charges"):
+            self.assertEqual(out.atomic_charges, charged_out.atomic_charges)
+
+        charge[0] = 1
+        with self.assertRaisesRegex(Exception, "neutral molecules"):
+            model((species, coords), charge=charge)
+        with self.assertRaisesRegex(Exception, "molecules,"):
+            model((species, coords), charge=charge[1:])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

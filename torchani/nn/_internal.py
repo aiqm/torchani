@@ -40,9 +40,9 @@ class Sequential(torch.nn.ModuleList):
 
     def forward(
         self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        input_: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
     ):
         r"""Return the result of chaining together the calculation of the modules"""
         for module in self:
@@ -55,7 +55,7 @@ class _ZeroANINetworks(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -70,7 +70,7 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
+        aevs: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -81,7 +81,9 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
         scalars = aev.new_zeros(flat_elem_idxs.shape)
         for i, m in enumerate(self.atomics.values()):
             selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
-            if selected_idxs.shape[0] > 0:
+            # Not branching under compile: zero-filled grads of empty index_select
+            # are optimized away, but compiled networks are slightly slower
+            if torch.compiler.is_compiling() or selected_idxs.shape[0] > 0:
                 input_ = aev.index_select(0, selected_idxs)
                 scalars.index_add_(0, selected_idxs, m(input_)[:, 1].view(-1))
         scalars = scalars.view_as(elem_idxs)
@@ -92,36 +94,3 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         return self
-
-
-class PositiveVolumeNetworks(ANINetworks):
-    r"""ANI scalar networks that constrain atomic volume outputs to be positive."""
-
-    def forward(
-        self,
-        elem_idxs: Tensor,
-        aevs: tp.Optional[Tensor] = None,
-        atomic: bool = False,
-        ensemble_values: bool = False,
-    ) -> Tensor:
-        assert aevs is not None
-        assert elem_idxs.shape == aevs.shape[:-1]
-        flat_elem_idxs = elem_idxs.flatten()
-        aev = aevs.flatten(0, 1)
-        volumes = aev.new_zeros(flat_elem_idxs.shape + (self.out_dim,))
-        for i, m in enumerate(self.atomics.values()):
-            selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
-            if selected_idxs.shape[0] > 0:
-                input_ = aev.index_select(0, selected_idxs)
-                volumes.index_add_(
-                    0,
-                    selected_idxs,
-                    m(input_).view(-1, self.out_dim),
-                )
-        volumes = volumes.view(elem_idxs.shape[0], elem_idxs.shape[1], self.out_dim)
-        volumes = torch.nn.functional.softplus(volumes.squeeze(-1), beta=10.0)
-        if not atomic:
-            volumes = volumes.sum(dim=1)
-        if ensemble_values:
-            volumes = volumes.unsqueeze(0)
-        return volumes

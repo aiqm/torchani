@@ -1,13 +1,13 @@
 r"""Potentials that calculate dispersion (i.e. van der Waals) interactions"""
 
+from typing import Self
 import math
-import typing as tp
+from collections.abc import Sequence
 
 import torch
 import h5py
 from torch import Tensor
 from torch.jit import Final
-import typing_extensions as tpx
 
 from torchani.constants import (
     ATOMIC_NUMBER,
@@ -34,7 +34,7 @@ from torchani.paths import _resources_dir
 # atom respectively.
 # This means for each pair of elements and reference indices there is an
 # associated coordination number for the first and second items.
-def _load_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
+def _load_c6_constants() -> tuple[Tensor, Tensor, Tensor]:
     with h5py.File(str(_resources_dir() / "c6.h5"), "r") as f:
         c6_constants = torch.from_numpy(f["all/constants"][:])
         c6_coordnums_a = torch.from_numpy(f["all/coordnums_a"][:])
@@ -63,10 +63,10 @@ class BeckeJohnsonDamp(torch.nn.Module):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         a1: float,
         a2: float,
-        sqrt_empirical_charge: tp.Sequence[float] = (),
+        sqrt_empirical_charge: Sequence[float] = (),
     ):
         super().__init__()
         self.atomic_numbers = torch.tensor(
@@ -94,9 +94,9 @@ class BeckeJohnsonDamp(torch.nn.Module):
     @classmethod
     def from_functional(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         functional: str,
-    ) -> tpx.Self:
+    ) -> Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(symbols, a1=d["a1"], a2=d["a2"])
 
@@ -145,14 +145,14 @@ class TwoBodyDispersionD3(BasePairPotential):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         # Potential
         s6: float,
         s8: float,
         damp_a1: float,
         damp_a2: float,
-        sqrt_empirical_charge: tp.Sequence[float] = (),
-        covalent_radii: tp.Sequence[float] = (),
+        sqrt_empirical_charge: Sequence[float] = (),
+        covalent_radii: Sequence[float] = (),
         *,  # Cutoff
         cutoff_fn: CutoffArg = "smooth",
         cutoff: float = math.inf,
@@ -207,12 +207,12 @@ class TwoBodyDispersionD3(BasePairPotential):
     @classmethod
     def from_functional(
         cls,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         functional: str,
         *,
         cutoff_fn: CutoffArg = "smooth",
         cutoff: float = math.inf,
-    ) -> tpx.Self:
+    ) -> Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(
             s6=d["s6"],
@@ -228,7 +228,9 @@ class TwoBodyDispersionD3(BasePairPotential):
         self,
         element_idxs: Tensor,
         neighbors: Neighbors,
+        features: Tensor | None = None,
     ) -> Tensor:
+        assert features is None
         # Internally this module works in AU
         distances = self.ANGSTROM_TO_BOHR * neighbors.distances
 

@@ -1,7 +1,7 @@
 r"""Provides access to all published ANI models.
 
 Provided models are subclasses of `torchani.arch.ANI`. Some models have been published
-in previous articles, and some in TorchANI 2.0. If you use any of these models in your
+in previous articles, and some in TorchANI 2. If you use any of these models in your
 work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
@@ -19,8 +19,8 @@ Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), an
 they output their averaged values. Individual members of these ensembles can be accessed
 by indexing, and ``len(ANI)`` can be used to query the number of networks in it.
 
-The models also have three extra entry points for more specific use cases:
-atomic_energies and energies_qbcs.
+The models also have an extra entry point for a more specific use case:
+energies_qbcs.
 
 All entrypoints expect a tuple of tensors ``(species, coords)`` as input, together
 with two optional tensors, ``cell`` and ``pbc``. ``coords`` and ``cell`` should be in
@@ -42,10 +42,6 @@ For more details consult the examples documentation
     # Average energies over the ensemble, for all molecules
     # Output shape is (molecules,)
     energies = model((atomic_nums, coords)).energies
-
-    # Average atomic energies over the ensemble for the batch
-    # Output shape is (molecules, atoms)
-    atomic_energies = model.atomic_energies((atomic_nums, coords)).energies
 
     # Individual energies of the members of the ensemble
     # Output shape is (ensemble-size, molecules)
@@ -72,45 +68,23 @@ from torchani.arch import (
     Assembler,
     ANI,
     ANIq,
-    ANIscalars,
+    MultiHeadANI,
     _fetch_state_dict,
     simple_ani,
 )
 from torchani.neighbors import NeighborlistArg
 from torchani.annotations import Device, DType
-from torchani.nn._internal import (
-    PositiveVolumeNetworks,
-    _ANINetworksDiscardFirstScalar,
-)
-from torchani.paths import custom_models_dir, state_dicts_dir
+from torchani.nn._internal import _ANINetworksDiscardFirstScalar
+from torchani.paths import custom_models_dir
 
-__all__ = [
-    "ANI1x",
-    "ANI2x",
-    "ANI1ccx",
-    "ANI2xr",
-    "ANI2dr",
-    "ANImbis",
-    "ANImbisv",
-    "SnnANI2xr",
-]
-
-
-def _fetch_animbisv_state_dict() -> tp.Any:
-    try:
-        return _fetch_state_dict("animbisv_state_dict.pt", private=False)
-    except Exception as original_error:
-        state_dict_path = state_dicts_dir() / "animbisv_state_dict.pt"
-        if state_dict_path.is_file():
-            return _fetch_state_dict(str(state_dict_path), local=True)
-        raise original_error
+__all__ = ["ANI1x", "ANI2x", "ANI1ccx", "ANI2xr", "ANI2dr", "ANImbis", "SnnANI2xr"]
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
 class _ModelFactory(tp.Protocol):
     def __call__(
         self,
-        model_index: tp.Optional[int] = None,
+        model_index: int | None = None,
         neighborlist: NeighborlistArg = "all_pairs",
         strategy: str = "pyaev",
         periodic_table_index: bool = True,
@@ -121,7 +95,7 @@ class _ModelFactory(tp.Protocol):
 
 
 def ANI1x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -158,7 +132,7 @@ def ANI1x(
 
 
 def ANI1ccx(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -195,7 +169,7 @@ def ANI1ccx(
 
 
 def ANI2x(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -230,65 +204,8 @@ def ANI2x(
     return model
 
 
-def ANImbisv(
-    model_index: tp.Optional[int] = None,
-    neighborlist: NeighborlistArg = "all_pairs",
-    strategy: str = "pyaev",
-    periodic_table_index: bool = True,
-    device: Device = None,
-    dtype: DType = None,
-) -> ANIscalars:
-    r"""
-    Experimental ANI-2x model with MBIS charges and atomic volumes.
-    """
-    asm = Assembler(cls=ANIscalars, periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_2X)
-    asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
-    asm.set_atomic_networks(ctor="ani2x")
-    asm.set_charge_normalizer(
-        normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
-            asm.symbols, scale_weights_by_charges_squared=True
-        )
-    )
-    asm.add_scalar_networks(
-        key="atomic_charges",
-        cls=_ANINetworksDiscardFirstScalar,
-        ctor="ani2x",
-        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
-    )
-    asm.add_scalar_networks(
-        key="atomic_volumes",
-        cls=PositiveVolumeNetworks,
-        ctor="build",
-        kwargs={
-            "dims": {
-                "H": (256, 192, 160),
-                "C": (224, 192, 160),
-                "N": (192, 160, 128),
-                "O": (192, 160, 128),
-                "S": (160, 128, 96),
-                "F": (160, 128, 96),
-                "Cl": (160, 128, 96),
-            },
-            "out_dim": 1,
-            "bias": True,
-            "activation": "gelu",
-        },
-    )
-    asm.set_neighborlist(neighborlist)
-    # The self energies are overwritten by the state dict
-    asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = tp.cast(ANIscalars, asm.assemble(8))
-    model.load_state_dict(_fetch_animbisv_state_dict())
-    model = model if model_index is None else model[model_index]
-    model.requires_grad_(False)
-    model.to(device=device, dtype=dtype)
-    return model
-
-
 def ANImbis(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -343,8 +260,50 @@ def ANImbis(
     return model
 
 
+def ANImbisv(
+    model_index: int | None = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> MultiHeadANI:
+    asm = Assembler(cls=MultiHeadANI, periodic_table_index=periodic_table_index)
+    asm.set_symbols(SYMBOLS_2X)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
+    asm.set_atomic_networks(ctor="ani2x")
+    asm.add_extra_networks(
+        "atomic_charges",
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
+    )
+    asm.add_extra_networks(
+        "atomic_volumes",
+        ctor="ani2x",
+        kwargs={"bias": True, "activation": "gelu"},
+        out_activation="softplus",
+    )
+    asm.set_shift_before_out_activation(False)
+    asm.set_charge_normalizer(
+        ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        )
+    )
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = tp.cast(MultiHeadANI, asm.assemble(8))
+    model.load_state_dict(_fetch_state_dict("animbisv_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
 def ANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -375,7 +334,7 @@ def ANI2xr(
 
 
 def ANI2dr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -406,13 +365,13 @@ def ANI2dr(
 
 
 def ANIr2s(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
     device: Device = None,
     dtype: DType = None,
-    solvent: tp.Optional[str] = None,
+    solvent: str | None = None,
 ) -> ANI:
     r""":meta private:"""
     # r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
@@ -453,7 +412,7 @@ def ANIr2s(
 
 
 def ANIr2s_ch3cn(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -473,7 +432,7 @@ def ANIr2s_ch3cn(
 
 
 def ANIr2s_chcl3(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -493,7 +452,7 @@ def ANIr2s_chcl3(
 
 
 def ANIr2s_water(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -513,7 +472,7 @@ def ANIr2s_water(
 
 
 def SnnANI2xr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -546,7 +505,7 @@ def SnnANI2xr(
 
 
 def ANI1xnr(
-    model_index: tp.Optional[int] = None,
+    model_index: int | None = None,
     neighborlist: NeighborlistArg = "all_pairs",
     strategy: str = "pyaev",
     periodic_table_index: bool = True,
@@ -601,8 +560,7 @@ def ANI1xnr(
 
 # Custom models
 def __getattr__(name: str):
-    # __mro__ needed for sphinx
-    if name in ["__path__", "__mro__"]:
+    if name == "__path__":
         # This module is not a package
         raise AttributeError
     for p in sorted(custom_models_dir().iterdir()):

@@ -9,7 +9,7 @@ import typing as tp
 from torch import Tensor
 import torch
 
-from torchani.arch import ANI, ANIq
+from torchani.arch import ANI, ANIq, MultiHeadANI
 from torchani.potentials import Potential
 from torchani.tuples import (
     EnergiesForcesHessians,
@@ -36,13 +36,13 @@ __all__ = [
     "calc_forces_and_hessians",  # alias
 ]
 
-Model = tp.Union[Potential, ANI, ANIq]
+Model = Potential | ANI | ANIq | MultiHeadANI
 
 
 def forces(
     energies: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> Tensor:
     if not coordinates.requires_grad:
@@ -68,7 +68,7 @@ def forces(
 def grads(
     scalars: Tensor,
     coords: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> Tensor:
     return -forces(scalars, coords, retain_graph, create_graph)
@@ -86,7 +86,7 @@ def forces_for_training(energies: Tensor, coordinates: Tensor) -> Tensor:
 def forces_and_hessians(
     energies: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
 ) -> ForcesHessians:
     _forces = forces(
         energies,
@@ -108,7 +108,7 @@ calc_forces_and_hessians = forces_and_hessians
 def hessians(
     forces: Tensor,
     coordinates: Tensor,
-    retain_graph: tp.Optional[bool] = None,
+    retain_graph: bool | None = None,
 ) -> Tensor:
     if not coordinates.requires_grad:
         raise ValueError(
@@ -125,7 +125,7 @@ def hessians(
     # 3A Tensors, each of shape (C,)
     flat_forces_tuple = flat_forces.unbind(dim=1)
     result_list = []
-    _retain_graph: tp.Optional[bool] = True
+    _retain_graph: bool | None = True
     for j, component in enumerate(flat_forces_tuple):
         # For the last component we retain the graph only if instructed to
         if j == (num_components - 1):
@@ -264,9 +264,9 @@ def energies_and_forces(
     model: Model,
     species: Tensor,
     coordinates: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
-    retain_graph: tp.Optional[bool] = None,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
+    retain_graph: bool | None = None,
     create_graph: bool = False,
 ) -> EnergiesForces:
     saved_requires_grad = coordinates.requires_grad
@@ -290,13 +290,22 @@ def energies_and_forces(
     return EnergiesForces(energies, _forces)
 
 
+def _extra_output(result: tp.Any, key: str) -> Tensor:
+    if hasattr(result, "results") and key in result.results:
+        return result.results[key]
+    if hasattr(result, key):
+        return getattr(result, key)
+    raise ValueError(f"Model doesn't support {key.replace('_', ' ')}")
+
+
 def single_point(
-    model: tp.Union[ANI, ANIq],
+    model: ANI | ANIq | MultiHeadANI,
     species: Tensor,
     coordinates: Tensor,
-    cell: tp.Optional[Tensor] = None,
-    pbc: tp.Optional[Tensor] = None,
-    charge: int = 0,
+    cell: Tensor | None = None,
+    pbc: Tensor | None = None,
+    charge: Tensor | None = None,
+    spin_mult: Tensor | None = None,
     forces: bool = False,
     hessians: bool = False,
     atomic_energies: bool = False,
@@ -306,7 +315,7 @@ def single_point(
     atomic_volumes_grad: bool = False,
     ensemble_values: bool = False,
     keep_vars: bool = False,
-) -> tp.Dict[str, Tensor]:
+) -> dict[str, Tensor]:
     r"""Calculate properties for a batch of molecules
 
     This is the main entrypoint of ANI-style models
@@ -316,8 +325,10 @@ def single_point(
         coordinates: |coords|
         cell: |cell|
         pbc: |pbc|
-        charge: The total charge of the molecules. Only
-            the scalar 0 is currently supported.
+        charge: The total charge of the molecules. Shape ``(molecules,)``. Only
+            ``None`` or all zeros are currently supported.
+        spin_mult: The spin multiplicity of the molecules. Shape ``(molecules,)``.
+            Only ``None`` or all ones are currently supported.
         forces: Calculate the associated forces. Shape ``(molecules, atoms, 3)``
         hessians: Calculate the hessians. Shape is
             ``(molecules, atoms * 3, atoms * 3)``
@@ -326,9 +337,13 @@ def single_point(
             Shape ``(molecules, atoms)``
         atomic_charges_grad: Only for models that support it, output atomic charge
             gradients. Shape ``(molecules, atoms, 3)``.
+        atomic_volumes: Only for models that support it, output atomic volumes.
+            Shape ``(molecules, atoms)``
+        atomic_volumes_grad: Only for models that support it, output atomic volume
+            gradients. Shape ``(molecules, atoms, 3)``.
         ensemble_values: Differentiate values of different models of the ensemble
             Also output ensemble standard deviation and qbc factors
-        keep_vars: The output scalars are detached from the graph unless
+        keep_vars: The output tensors are detached from the graph unless
             ``keep_vars=True``.
     Returns:
         Result of the single point calculation. Dictionary that maps strings to
@@ -342,41 +357,27 @@ def single_point(
         cell=cell,
         pbc=pbc,
         charge=charge,
+        spin_mult=spin_mult,
         atomic=atomic_energies,
         ensemble_values=ensemble_values,
     )
     energies = result.energies
-    out: tp.Dict[str, Tensor] = {}
+    out: dict[str, Tensor] = {}
     if atomic_charges:
-        if not (
-            hasattr(result, "atomic_charges")
-            or (hasattr(result, "scalars") and "atomic_charges" in result.scalars)
-        ):
-            raise ValueError("Model doesn't support atomic charges")
-        if hasattr(result, "scalars"):
-            out["atomic_charges"] = result.scalars["atomic_charges"]
-        else:
-            out["atomic_charges"] = result.atomic_charges
+        charges = _extra_output(result, "atomic_charges")
+        out["atomic_charges"] = charges
         if atomic_charges_grad:
-            retain = forces or hessians
+            retain = forces or hessians or (atomic_volumes and atomic_volumes_grad)
             out["atomic_charges_grad"] = calc_grads(
-                result.atomic_charges, coordinates, retain_graph=retain
+                charges, coordinates, retain_graph=retain
             )
-
     if atomic_volumes:
-        if not (
-            hasattr(result, "atomic_volumes")
-            or (hasattr(result, "scalars") and "atomic_volumes" in result.scalars)
-        ):
-            raise ValueError("Model doesn't support atomic volumes")
-        if hasattr(result, "scalars"):
-            out["atomic_volumes"] = result.scalars["atomic_volumes"]
-        else:
-            out["atomic_volumes"] = result.atomic_volumes
+        volumes = _extra_output(result, "atomic_volumes")
+        out["atomic_volumes"] = volumes
         if atomic_volumes_grad:
             retain = forces or hessians
             out["atomic_volumes_grad"] = calc_grads(
-                result.atomic_volumes, coordinates, retain_graph=retain
+                volumes, coordinates, retain_graph=retain
             )
 
     if ensemble_values:

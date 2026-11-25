@@ -40,7 +40,7 @@ env = jinja2.Environment(
 
 for fname in ("builtin", "__init__", "_builtin_dataset_ids"):
     template = env.get_template(f"{fname}.jinja")
-    template_kwargs: tp.Dict[str, tp.List[tp.Any]] = {"datasets": []}
+    template_kwargs: dict[str, list[tp.Any]] = {"datasets": []}
     for k, ds in _DATASETS_SPEC.items():
         docstr_parts = []
         if "info" in ds:

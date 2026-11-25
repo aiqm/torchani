@@ -26,14 +26,14 @@ from torchani.potentials.core import (
 from torchani.potentials.nnp import (
     NNPotential,
     SeparateChargesNNPotential,
-    SeparateScalarsNNPotential,
+    SeparateHeadsNNPotential,
     MergedChargesNNPotential,
 )
 from torchani.potentials.xtb import RepulsionXTB
 from torchani.potentials.dftd3 import TwoBodyDispersionD3
 from torchani.potentials.lj import DispersionLJ, RepulsionLJ, LennardJones
 from torchani.potentials.zbl import RepulsionZBL
-from torchani.potentials.fixed_coulomb import FixedCoulomb, FixedMNOK
+from torchani.potentials.coulomb import Coulomb, FixedCoulomb, FixedMNOK
 
 
 __all__ = [
@@ -45,12 +45,13 @@ __all__ = [
     "TwoBodyDispersionD3",
     "NNPotential",
     "SeparateChargesNNPotential",
-    "SeparateScalarsNNPotential",
+    "SeparateHeadsNNPotential",
     "MergedChargesNNPotential",
     "RepulsionZBL",
     "RepulsionLJ",
     "DispersionLJ",
     "LennardJones",
     "FixedCoulomb",
+    "Coulomb",
     "FixedMNOK",
 ]

@@ -46,6 +46,15 @@ repos:
       - id: autoflake
         stages: [pre-push]
 
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v23.1.5
+    hooks:
+      - id: clang-format
+        args: ['-Werror', '-n']
+        files: ^torchani/csrc/.*\.(cpp|cuh|h|cu)$
+        types_or: [c++, c, cuda]
+        stages: [pre-push]
+
   - repo: local
     hooks:
       - id: mypy

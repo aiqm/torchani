@@ -30,20 +30,20 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH ${INSTALLED_TORCH_ROOT})
 
 find_package(Torch REQUIRED)
-# Set Python_LIBRARIES, Python_INCLUDE_DIRS
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
 add_library(
     cuaev
     SHARED
     aev.h
+    cuaev_schema.cpp
     cuaev.cpp
     aev.cu
+    aev_cpu.cpp
     cuaev_cub.cuh
 )
 set_property(TARGET cuaev PROPERTY PREFIX "")
-target_compile_features(cuaev PRIVATE cxx_std_17)
-target_link_libraries(cuaev PRIVATE ${TORCH_LIBRARIES} ${Python_LIBRARIES})
+target_compile_features(cuaev PRIVATE cxx_std_20)
+target_link_libraries(cuaev PRIVATE ${TORCH_LIBRARIES})
 set(CUAEV_CUB_NAMESPACE_DEFS "CUB_NS_QUALIFIER=::cuaev::cub" "CUB_NS_PREFIX=namespace cuaev {" "CUB_NS_POSTFIX=}")
 target_compile_definitions(
     cuaev
@@ -57,7 +57,7 @@ target_compile_options(
         PRIVATE
             $<$<COMPILE_LANGUAGE:CUDA>:-use_fast_math>
         )
-target_include_directories(cuaev PRIVATE ${CMAKE_CURRENT_LIST_DIR} ${Python_INCLUDE_DIRS})
+target_include_directories(cuaev PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 # Required for MNP only
 find_package(OpenMP REQUIRED COMPONENTS CXX)
@@ -67,10 +67,9 @@ add_library(
     mnp.cpp
 )
 set_property(TARGET mnp PROPERTY PREFIX "")
-target_compile_features(mnp PRIVATE cxx_std_17)
-target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} ${Python_LIBRARIES} OpenMP::OpenMP_CXX)
+target_compile_features(mnp PRIVATE cxx_std_20)
+target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} OpenMP::OpenMP_CXX)
 target_compile_definitions(mnp PRIVATE  ${TORCH_CXX_FLAGS})
-target_include_directories(mnp PRIVATE ${Python_INCLUDE_DIRS})
 
 add_library(
     cell_list
@@ -78,10 +77,9 @@ add_library(
     cell_list.cpp
 )
 set_property(TARGET cell_list PROPERTY PREFIX "")
-target_compile_features(cell_list PRIVATE cxx_std_17)
-target_link_libraries(cell_list PRIVATE ${TORCH_LIBRARIES} ${Python_LIBRARIES})
+target_compile_features(cell_list PRIVATE cxx_std_20)
+target_link_libraries(cell_list PRIVATE ${TORCH_LIBRARIES})
 target_compile_definitions(cell_list PRIVATE  ${TORCH_CXX_FLAGS})
-target_include_directories(cell_list PRIVATE ${Python_INCLUDE_DIRS})
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
 

@@ -6,12 +6,14 @@ import unittest
 import pickle
 
 import torch
+from torch.library import opcheck
 from parameterized import parameterized_class
 
 from torchani._testing import ANITestCase, expand
 from torchani.utils import SYMBOLS_2X
 from torchani.nn import SpeciesConverter
 from torchani.aev import AEVComputer
+from torchani.neighbors import Neighbors
 from torchani.models import ANI2dr
 from torchani.io import read_xyz
 from torchani._testing import TestCase, make_tensor
@@ -83,6 +85,20 @@ class TestCUAEVStrategy(ANITestCase):
             m.set_strategy("cuaev-fused")
             _ = m(self.znum_input)[1]
 
+    # Regression test, the half nbrlist used to fail with no pairs within the cutoff
+    @skipIfNoCUAEV
+    def testNoPairsWithinCutoff(self) -> None:
+        species = torch.tensor([[1, 2]], device=self.device)
+        coords = torch.tensor(
+            [[[0.0, 0.0, 0.0], [20.0, 0.0, 0.0]]], device=self.device
+        ).requires_grad_(True)
+        for strategy in ["cuaev-fused", "cuaev-interface"]:
+            m = self._setup(AEVComputer.like_2x(strategy=strategy))
+            aev = m(species, coords)
+            grad = torch.autograd.grad(aev.sum(), coords)[0]
+            self.assertEqual(aev, torch.zeros_like(aev))
+            self.assertEqual(grad, torch.zeros_like(grad))
+
     @skipIfNoCUAEV
     def testAEVChangeStrat(self) -> None:
         m = self._setup(AEVComputer.like_2x(strategy="cuaev-interface"))
@@ -116,7 +132,9 @@ class TestCUAEVNoGPU(TestCase):
             ShfZ,
             num_species: int,
         ):
-            cuaev_computer = torch.classes.cuaev.CuaevComputer(
+            return torch.ops.cuaev.run(
+                coordinates,
+                species,
                 Rcr,
                 Rca,
                 EtaR.flatten(),
@@ -127,8 +145,7 @@ class TestCUAEVNoGPU(TestCase):
                 ShfZ.flatten(),
                 num_species,
                 True,
-            )
-            return torch.ops.cuaev.run(coordinates, species, cuaev_computer)
+            )[0]
 
         self.assertIn("cuaev::run", str(torch.jit.script(f).graph))
 
@@ -149,22 +166,30 @@ class TestCUAEVNoGPU(TestCase):
             _ = pickle.load(f)
 
 
-@skipIfNoGPU
 @skipIfNoCUAEV
 @parameterized_class(
-    ("cutoff_fn", "dtype"),
+    ("default_device", "cutoff_fn", "dtype"),
     [
-        ["cosine", torch.float32],
-        ["cosine", torch.float64],
-        ["smooth", torch.float32],
-        ["smooth", torch.float64],
+        ["cpu", "cosine", torch.float32],
+        ["cpu", "cosine", torch.float64],
+        ["cpu", "smooth", torch.float32],
+        ["cpu", "smooth", torch.float64],
+        ["cuda:0", "cosine", torch.float32],
+        ["cuda:0", "cosine", torch.float64],
+        ["cuda:0", "smooth", torch.float32],
+        ["cuda:0", "smooth", torch.float64],
     ],
 )
 class TestCUAEV(TestCase):
+    default_device: str
     dtype: torch.dtype
     cutoff_fn: tp.Literal["smooth", "cosine"]
 
-    def setUp(self, device="cuda:0"):
+    def setUp(self, device: str | None = None):
+        if device is None:
+            device = self.default_device
+        if device.startswith("cuda") and not torch.cuda.is_available():
+            self.skipTest("There is no device to run this test")
         # double precision error is within 5e-13
         self.tolerance = 5e-5 if self.dtype == torch.float32 else 5e-13
         self.device = device
@@ -198,6 +223,10 @@ class TestCUAEV(TestCase):
     def _skip_if_double(self):
         if self.dtype == torch.float64:
             self.skipTest("Skip slow tests for double precision")
+
+    def _skip_if_cpu(self):
+        if self.device == "cpu":
+            self.skipTest("Skip slow tests on CPU")
 
     def _double_backward_1_test(self, species, coordinates):
         def double_backward(aev_computer, species, coordinates):
@@ -327,12 +356,14 @@ class TestCUAEV(TestCase):
 
     @skipIfNoMultiGPU
     def testMultiGPU(self):
+        if self.device == "cpu":
+            self.skipTest("Multi-GPU test")
         self.setUp(device="cuda:1")
         self.testSimple()
         self.testSimpleBackward()
         self.testSimpleDoubleBackward_1()
         self.testSimpleDoubleBackward_2()
-        self.setUp(device="cuda:0")
+        self.setUp()
 
     def testBatch(self):
         coordinates = torch.rand([100, 50, 3], device=self.device, dtype=self.dtype) * 5
@@ -515,6 +546,7 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cuaev_grad, aev_grad, atol=tolerance, rtol=tolerance)
 
     def testTripeptideMDDoubleBackward_2(self):
+        self._skip_if_cpu()
         # skip if not cosine
         self._skip_if_not_cosine()
 
@@ -532,6 +564,7 @@ class TestCUAEV(TestCase):
                 self._double_backward_2_test(species, coordinates)
 
     def testNIST(self):
+        self._skip_if_cpu()
         # skip if not cosine
         self._skip_if_not_cosine()
         self._skip_if_double()
@@ -547,6 +580,7 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testNISTBackward(self):
+        self._skip_if_cpu()
         self._skip_if_not_cosine()
         self._skip_if_double()
 
@@ -575,6 +609,7 @@ class TestCUAEV(TestCase):
                 )
 
     def testNISTDoubleBackward_2(self):
+        self._skip_if_cpu()
         self._skip_if_not_cosine()
         self._skip_if_double()
 
@@ -756,6 +791,48 @@ class TestCUAEV(TestCase):
                 cuaev_grad, aev_grad, atol=self.tolerance, rtol=self.tolerance
             )
 
+    def _small_pbc_system(self):
+        coordinates = torch.rand([1, 8, 3], device=self.device, dtype=self.dtype) * 4
+        species = torch.tensor([[0, 1, 2, 3, 0, 1, 0, 2]], device=self.device)
+        cell = torch.eye(3, device=self.device, dtype=self.dtype) * 5.0
+        pbc = torch.tensor([True, True, True], device=self.device)
+        return species, coordinates, cell, pbc
+
+    def _virial(self, aev_computer, species, coordinates, cell, pbc):
+        strain = torch.zeros(3, 3, device=self.device, dtype=self.dtype)
+        strain.requires_grad_(True)
+        deformation = torch.eye(3, device=self.device, dtype=self.dtype) + strain
+        aev = aev_computer(species, coordinates @ deformation, cell @ deformation, pbc)
+        return torch.autograd.grad(self.nn(aev).sum(), strain)[0]
+
+    def _grad_diff_vectors(self, aev_computer, species, coordinates, cell, pbc):
+        neighbors = aev_computer.neighborlist(
+            self.cutoff_1x, species, coordinates, cell, pbc
+        )
+        diff_vectors = neighbors.diff_vectors.detach().requires_grad_(True)
+        neighbors = Neighbors(
+            neighbors.indices, diff_vectors.norm(2, -1), diff_vectors
+        )
+        aev = aev_computer.compute_from_neighbors(species, neighbors)
+        return torch.autograd.grad(self.nn(aev).sum(), diff_vectors)[0]
+
+    def testStressPBC(self):
+        species, coordinates, cell, pbc = self._small_pbc_system()
+        cuaev_computer = AEVComputer.like_1x(
+            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
+        ).to(self.device, self.dtype)
+        virial = self._virial(self.aev_computer_1x, species, coordinates, cell, pbc)
+        cu_virial = self._virial(cuaev_computer, species, coordinates, cell, pbc)
+        self.assertEqual(cu_virial, virial, atol=self.tolerance, rtol=self.tolerance)
+
+        grad = self._grad_diff_vectors(
+            self.aev_computer_1x, species, coordinates, cell, pbc
+        )
+        cu_grad = self._grad_diff_vectors(
+            cuaev_computer, species, coordinates, cell, pbc
+        )
+        self.assertEqual(cu_grad, grad, atol=self.tolerance, rtol=self.tolerance)
+
     def testWithFullNbrList_pbc(self):
         species, coordinates, cell, pbc = read_xyz(
             (Path(__file__).parent / "resources") / "water-0.8nm.xyz",
@@ -796,6 +873,70 @@ class TestCUAEV(TestCase):
         # self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
         # self.assertEqual(cuaev_grad, aev_grad, atol=self.tolerance,
         # rtol=self.tolerance)
+
+
+@skipIfNoCUAEV
+@expand(device="cuda", jit=False)
+class TestCUAEVOpcheck(ANITestCase):
+    def setUp(self) -> None:
+        aev_computer = AEVComputer.like_1x().to(self.device)
+        self.params = (
+            aev_computer.radial.cutoff,
+            aev_computer.angular.cutoff,
+            aev_computer.radial.eta,
+            aev_computer.radial.shifts,
+            aev_computer.angular.eta,
+            aev_computer.angular.zeta,
+            aev_computer.angular.shifts,
+            aev_computer.angular.sections,
+            aev_computer.num_species,
+            True,
+        )
+        self.species = make_tensor(
+            (1, 12), device=self.device, dtype=torch.int32, low=0, high=4
+        )
+        self.coords = make_tensor(
+            (1, 12, 3), device=self.device, dtype=torch.float32, low=0, high=4
+        )
+        self.neighbors = aev_computer.neighborlist(
+            aev_computer.radial.cutoff, self.species.long(), self.coords
+        )
+
+    def testRun(self) -> None:
+        coords = self.coords.clone().requires_grad_(True)
+        opcheck(torch.ops.cuaev.run.default, (coords, self.species, *self.params))
+
+    def testRunWithHalfNbrlist(self) -> None:
+        diff_vectors = self.neighbors.diff_vectors.clone().requires_grad_(True)
+        args = (
+            self.species,
+            self.neighbors.indices.to(torch.int32),
+            diff_vectors,
+            self.neighbors.distances,
+            *self.params,
+        )
+        opcheck(torch.ops.cuaev.run_with_half_nbrlist.default, args)
+
+    def testRunWithFullNbrlist(self) -> None:
+        coords = self.coords.clone().requires_grad_(True)
+        full_nbrlist = AEVComputer._half_to_full_nbrlist(self.neighbors.indices)
+        args = (
+            coords,
+            self.species,
+            *(t.to(torch.int32) for t in full_nbrlist),
+            *self.params,
+        )
+        opcheck(torch.ops.cuaev.run_with_full_nbrlist.default, args)
+
+    def testBackwardAndDoubleBackward(self) -> None:
+        outputs = torch.ops.cuaev.run(self.coords, self.species, *self.params)
+        aev = outputs[0]
+        saved = outputs[1:]
+        grad_aev = torch.rand_like(aev)
+        grad_force = torch.rand_like(self.coords)
+        args = (self.coords, self.species, saved, *self.params)
+        opcheck(torch.ops.cuaev._backward.default, (grad_aev, *args))
+        opcheck(torch.ops.cuaev._double_backward.default, (grad_force, *args))
 
 
 if __name__ == "__main__":

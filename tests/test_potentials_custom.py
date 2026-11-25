@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 import pickle
 from pathlib import Path
-import typing as tp
+from collections.abc import Sequence
 import unittest
 
 from torchani.neighbors import Neighbors
@@ -48,14 +48,20 @@ class TestCustomPotential(ANITestCase):
         self.assertEqual(energies_expect, energies)
         self.assertEqual(forces_expect, forces)
 
-    def _makeCustomPot(self, trainable: tp.Sequence[str] = ()) -> PairPotential:
+    def _makeCustomPot(self, trainable: Sequence[str] = ()) -> PairPotential:
 
         class Square(PairPotential):
             tensors = ["bias"]  # Vectors (all with the same len) or scalars
             elem_tensors = ["pair_bias"]
             pair_elem_tensors = ["k", "eq"]  # shape (num-sym * (num-sym + 1) / 2)
 
-            def pair_energies(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
+            def pair_energies(
+                self,
+                elem_idxs: Tensor,
+                neighbors: Neighbors,
+                features: Tensor | None = None,
+            ) -> Tensor:
+                assert features is None
                 elem_pairs = elem_idxs.view(-1)[neighbors.indices]
 
                 eq = self.to_pair_values(self.eq, elem_pairs)

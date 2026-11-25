@@ -4,6 +4,7 @@ Functions and classes here are subject to change at any point.
 """
 
 import typing as tp
+from collections.abc import Sequence
 import unittest
 from torch import Tensor
 from itertools import product
@@ -17,16 +18,16 @@ from torchani.annotations import Device, DType
 from torchani.neighbors import adaptive_list, Neighbors
 
 
-def _get_cls_name(cls: type, idx: int, params: tp.Dict[str, tp.Any]) -> str:
+def _get_cls_name(cls: type, idx: int, params: dict[str, tp.Any]) -> str:
     return f"{cls.__name__}_{params['_device'].type}{'_jit' if params['_jit'] else ''}"
 
 
 # As an exception, device = None means "both" here
 def expand(
     device: tp.Literal["cpu", "cuda", "both"] = "both",
-    jit: tp.Optional[bool] = None,
+    jit: bool | None = None,
 ):
-    devices: tp.Tuple[torch.device, ...]
+    devices: tuple[torch.device, ...]
     if device == "both":
         devices = (torch.device("cpu"), torch.device("cuda"))
     else:
@@ -87,15 +88,15 @@ class ANITestCase(TestCase):
 class Molecs(tp.NamedTuple):
     coords: Tensor
     atomic_nums: Tensor
-    cell: tp.Optional[Tensor]
-    pbc: tp.Optional[Tensor]
+    cell: Tensor | None
+    pbc: Tensor | None
 
 
 def make_elem_idxs(
     molecs_num: int,
     atoms_num: int,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
+    seed: int | None = None,
     device: Device = None,
 ) -> Tensor:
     rng = torch.Generator(device="cpu")
@@ -117,8 +118,8 @@ def make_molecs(
     atoms_num: int,
     cell_size: float = 10.0,
     pbc: bool = False,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Molecs:
@@ -159,8 +160,8 @@ def make_molec(
     atoms: int,
     cell_size: float = 10.0,
     pbc: bool = False,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Molecs:
@@ -170,8 +171,8 @@ def make_molec(
 def make_neighbors(
     atoms: int,
     cutoff: float = 5.2,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-    seed: tp.Optional[int] = None,
+    symbols: Sequence[str] = ("H", "C", "N", "O"),
+    seed: int | None = None,
     device: Device = None,
     dtype: DType = None,
 ) -> Neighbors:

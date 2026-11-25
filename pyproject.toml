@@ -17,11 +17,10 @@ keywords = [
     "torch",
     "energy",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "torch>=2.0,<=2.13",
     "numpy",
-    "typing_extensions>=4.0.0",
     "h5py",
     "tqdm",
     "ninja",
@@ -62,3 +61,6 @@ exclude = "(build/.*|tests/.*|tools/.*|docs/src/examples_autogen/.*|docs/build/.
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning"
+markers = [
+    "pt2: slow torch.compile tests, skipped unless selected with -m pt2",
+]

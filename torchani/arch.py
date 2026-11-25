@@ -34,21 +34,18 @@ import math
 from dataclasses import dataclass, field
 from collections import OrderedDict
 import typing as tp
+from typing import Self
+from collections.abc import Iterable, Mapping, Sequence
 
 import torch
 from torch import Tensor
-import typing_extensions as tpx
 from huggingface_hub import hf_hub_download
 
 from torchani.tuples import (
     SpeciesEnergies,
     SpeciesEnergiesAtomicCharges,
-    SpeciesEnergiesScalars,
+    SpeciesEnergiesResults,
     SpeciesEnergiesQBC,
-    AtomicStdev,
-    SpeciesForces,
-    ForceStdev,
-    ForceMagnitudes,
 )
 from torchani.annotations import StressKind
 from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg, CutoffSmooth
@@ -84,17 +81,17 @@ from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.potentials import (
     NNPotential,
     SeparateChargesNNPotential,
-    SeparateScalarsNNPotential,
+    SeparateHeadsNNPotential,
     MergedChargesNNPotential,
     Potential,
     RepulsionXTB,
     TwoBodyDispersionD3,
+    Coulomb,
 )
 from torchani.sae import SelfEnergy
 
 
-# Utility function
-def _validate_molecule_idxs_inputs(molecule_idxs, coords) -> None:
+def _validate_molecule_idxs_inputs(molecule_idxs: Tensor, coords: Tensor) -> None:
     if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
         warnings.warn("molecule_idxs is experimental and subject to change")
     if coords.shape[0] != 1:
@@ -110,15 +107,14 @@ class _ANI(torch.nn.Module):
     cutoff: float
     atomic_numbers: Tensor
     periodic_table_index: bool
-    version: int
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
     ):
         super().__init__()
@@ -221,7 +217,7 @@ class _ANI(torch.nn.Module):
         return new_state_dict
 
     @torch.jit.export
-    def set_active_members(self, idxs: tp.List[int]) -> None:
+    def set_active_members(self, idxs: list[int]) -> None:
         # NOTE: Awkward ignore directive and assert required due to pytorch typing not
         # being great
         nn = self.potentials["nnp"].neural_networks
@@ -250,18 +246,16 @@ class _ANI(torch.nn.Module):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-    ) -> tp.Dict[str, Tensor]:
+    ) -> dict[str, Tensor]:
         r"""This entrypoint supports input from TorchANI neighbors
 
-        Returns a tuple:
-
-        - molecular-scalars
-        - atomic-scalars
+        Returns a dict with key ``"energies"``, and one extra key per extra output
+        the model predicts (e.g. ``"atomic_charges"``)
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
@@ -273,16 +267,17 @@ class _ANI(torch.nn.Module):
         coords: Tensor,
         neighbor_idxs: Tensor,  # External neighbors
         shifts: Tensor,  # External neighbors
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
-    ) -> tp.Dict[str, Tensor]:
+        molecule_idxs: Tensor | None = None,
+    ) -> dict[str, Tensor]:
         r"""This entrypoint supports input from an external neighborlist
 
         IMPORTANT: coords input to this function *must be* mapped to the central cell
         """
-        self._check_inputs(species, coords, charge)
+        self._check_inputs(species, coords, charge, spin_mult)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         # Discard dist larger than the cutoff, which may be present if the neighbors
@@ -290,15 +285,14 @@ class _ANI(torch.nn.Module):
         # (Verlet lists in MD engine). Also discard dummy atoms
         neighbors = narrow_down(self.cutoff, species, coords, neighbor_idxs, shifts)
 
-        if _molecule_idxs is not None:
-            _validate_molecule_idxs_inputs(_molecule_idxs, coords)
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
-
+        if molecule_idxs is not None:
+            _validate_molecule_idxs_inputs(molecule_idxs, coords)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
         return self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, charge, atomic, ensemble_values
+            elem_idxs, neighbors, charge, spin_mult, atomic, ensemble_values
         )
 
-    def to_infer_model(self, use_mnp: bool = False) -> tpx.Self:
+    def to_infer_model(self, use_mnp: bool = False) -> Self:
         r"""Convert the neural networks module of the model into a module
         optimized for inference.
 
@@ -335,7 +329,7 @@ class _ANI(torch.nn.Module):
 
     @property
     @torch.jit.unused
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
@@ -343,7 +337,7 @@ class _ANI(torch.nn.Module):
         return self.nnp.neural_networks.get_active_members_num()
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn?
-    def __getitem__(self, idx: int) -> tpx.Self:
+    def __getitem__(self, idx: int) -> Self:
         _nn = self.neural_networks
         if not hasattr(_nn, "members"):
             raise ValueError("Can only fetch submodel from an ensemble")
@@ -354,9 +348,6 @@ class _ANI(torch.nn.Module):
         model.nnp.neural_networks = deepcopy(_nn[idx])  # type: ignore
         return model
 
-    # NOTE: Not typed since JIT can't deal with inheritance or with AEVComputer in
-    # multiple models, so it doesn't understand these if they are typed
-
     # Needed for typing
     @property
     def nnp(self):
@@ -364,16 +355,18 @@ class _ANI(torch.nn.Module):
         return self.potentials["nnp"]
 
     # Needed for client classes that depend on accessing neural_networks directly
+    # NOTE: Not typed since JIT can't deal with inheritance, so it doesn't understand
+    # AtomicContainer
     @property
     def neural_networks(self):  # type: ignore
         r""":meta private:"""
-        return self.potentials["nnp"].neural_networks
+        return self.nnp.neural_networks
 
     # Needed for client classes that depend on accessing aev_computer directly
     @property
-    def aev_computer(self):  # type: ignore
+    def aev_computer(self):
         r""":meta private:"""
-        return self.potentials["nnp"].aev_computer
+        return self.nnp.aev_computer
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
@@ -391,10 +384,29 @@ class _ANI(torch.nn.Module):
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     @staticmethod
-    def _check_inputs(elem_idxs: Tensor, coords: Tensor, charge: int = 0) -> None:
+    def _check_inputs(
+        elem_idxs: Tensor,
+        coords: Tensor | None,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
+    ) -> None:
         assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert charge == 0, "Model only supports neutral molecules"
+        if coords is not None:
+            assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+        molecs_num = elem_idxs.shape[0]
+        if charge is not None:
+            if charge.dim() != 1 or charge.shape[0] != molecs_num:
+                raise ValueError("charge must have shape (molecules,)")
+        if spin_mult is not None:
+            if spin_mult.dim() != 1 or spin_mult.shape[0] != molecs_num:
+                raise ValueError("spin_mult must have shape (molecules,)")
+        # Compiled models don't check the charge or spin_mult values
+        if torch.compiler.is_compiling():
+            return
+        if charge is not None and bool((charge != 0).any()):
+            raise ValueError("Model only supports neutral molecules")
+        if spin_mult is not None and bool((spin_mult != 1).any()):
+            raise ValueError("Model only supports closed-shell molecules")
 
 
 class ANI(_ANI):
@@ -402,20 +414,21 @@ class ANI(_ANI):
 
     def forward(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
+        molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergies:
         r"""Obtain a species-energies tuple from an input species-coords tuple"""
         species, coords = species_coordinates
-        self._check_inputs(species, coords, charge)
+        self._check_inputs(species, coords, charge, spin_mult)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
         # Optimized branch that may bypass the neighborlist through the cuAEV-fused
-        if not self._has_extra_potentials and pbc is None and _molecule_idxs is None:
+        if not self._has_extra_potentials and pbc is None and molecule_idxs is None:
             energies = coords.new_zeros(elem_idxs.shape[0])
             if atomic:
                 energies = energies.unsqueeze(1)
@@ -425,10 +438,16 @@ class ANI(_ANI):
                 # Guaranteed to be an NNPotential. PyTorch typing is not great,
                 # so the ignore directives are required
                 aevs = self.potentials["nnp"].aev_computer(
-                    elem_idxs, coords, cell, pbc
+                    elem_idxs,
+                    coords,
+                    cell,
+                    pbc,
                 )  # type: ignore[operator]
                 energies = energies + self.potentials["nnp"].neural_networks(
-                    elem_idxs, aevs, atomic, ensemble_values
+                    elem_idxs,
+                    aevs,
+                    atomic,
+                    ensemble_values,
                 )  # type: ignore[operator]
             if self.energy_shifter._enabled:
                 energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
@@ -436,13 +455,13 @@ class ANI(_ANI):
         # Branch that goes through the neighborlist
         neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
 
-        # Experimental _molecule_idxs feature
-        if _molecule_idxs is not None:
-            _validate_molecule_idxs_inputs(_molecule_idxs, coords)
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+        # Experimental molecule_idxs feature
+        if molecule_idxs is not None:
+            _validate_molecule_idxs_inputs(molecule_idxs, coords)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
 
         result = self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, charge, atomic, ensemble_values
+            elem_idxs, neighbors, charge, spin_mult, atomic, ensemble_values
         )
         return SpeciesEnergies(elem_idxs, result["energies"])
 
@@ -452,15 +471,15 @@ class ANI(_ANI):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-    ) -> tp.Dict[str, Tensor]:
-        self._check_inputs(elem_idxs, coords, charge)
+    ) -> dict[str, Tensor]:
+        self._check_inputs(elem_idxs, None, charge, spin_mult)
         # Output shape depends on the atomic and ensemble_values flags
-        energies = coords.new_zeros(elem_idxs.shape[0])
+        energies = neighbors.diff_vectors.new_zeros(elem_idxs.shape[0])
         if atomic:
             energies = energies.unsqueeze(1)
         if ensemble_values:
@@ -474,77 +493,30 @@ class ANI(_ANI):
                     first_neighbors,
                     pot.cutoff,  # type: ignore[arg-type]
                 )
-                result = pot.compute_from_neighbors(
-                    elem_idxs, coords, neighbors, charge, atomic, ensemble_values
-                )  # type: ignore[operator]
+                result = pot.compute_from_neighbors(  # type: ignore[operator]
+                    elem_idxs,
+                    neighbors,
+                    None,
+                    charge,
+                    spin_mult,
+                    atomic,
+                    ensemble_values,
+                )
                 energies = energies + result["energies"]
         if self.energy_shifter._enabled:
             energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
         return {"energies": energies}
 
-    # The following functions are superseded by `torchani.single_point`
-    @torch.jit.export
-    def atomic_energies(
-        self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
-        ensemble_values: bool = False,
-    ) -> SpeciesEnergies:
-        r"""Calculate predicted atomic energies of all atoms in a molecule
-
-        Arguments and return value are the same as that of `ANI.forward`, but
-        the returned energies have shape (molecules, atoms)
-
-        :meta private:
-        """
-        return self(species_coordinates, cell, pbc, charge, True, ensemble_values, None)
-
-    @torch.jit.unused
-    def members_forces(
-        self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
-    ) -> SpeciesForces:
-        r"""Calculates predicted forces from ensemble members
-
-        Args:
-            species_coordinates: minibatch of configurations
-            cell: the cell used in PBC computation, set to None if PBC is not
-                enabled
-            pbc: the bool tensor indicating which direction PBC is enabled, set
-                to none if PBC is not enabled
-
-        Returns:
-            species, molecular energies, and atomic forces predicted by an ensemble of
-            neural network models
-
-        :meta private:
-        """
-        species, coords = species_coordinates
-        coords.requires_grad_(True)
-        elem_idxs, energies = self(
-            (species, coords), cell, pbc, charge, False, True, None
-        )
-        _forces = []
-        for energy in energies:
-            _forces.append(
-                -torch.autograd.grad(energy.sum(), coords, retain_graph=True)[0]
-            )
-        forces = torch.stack(_forces, dim=0)
-        return SpeciesForces(elem_idxs, energies, forces)
-
+    # The following function is superseded by `torchani.single_point`
     @torch.jit.export
     def energies_qbcs(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
         unbiased: bool = True,
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
     ) -> SpeciesEnergiesQBC:
         r"""Calculates predicted predicted energies and qbc factors
 
@@ -569,7 +541,7 @@ class ANI(_ANI):
         :meta private:
         """
         elem_idxs, energies = self(
-            species_coordinates, cell, pbc, charge, False, True, None
+            species_coordinates, cell, pbc, charge, spin_mult, False, True, None
         )
 
         if energies.shape[0] == 1:
@@ -586,97 +558,6 @@ class ANI(_ANI):
         assert qbc_factors.shape == energies.shape
         return SpeciesEnergiesQBC(elem_idxs, energies, qbc_factors)
 
-    @torch.jit.export
-    def atomic_stdev(
-        self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
-        ensemble_values: bool = False,
-        unbiased: bool = True,
-    ) -> AtomicStdev:
-        r"""Returns standard deviation of atomic energies across an ensemble
-
-        If the model has only 1 network, a value of 0.0 is output for the stdev
-
-        :meta private:
-        """
-        elem_idxs, energies = self(
-            species_coordinates, cell, pbc, charge, True, True, None
-        )
-
-        if energies.shape[0] == 1:
-            stdev = torch.zeros_like(energies).squeeze(0)
-        else:
-            stdev = energies.std(0, unbiased=unbiased)
-
-        if not ensemble_values:
-            energies = energies.mean(0)
-
-        return AtomicStdev(elem_idxs, energies, stdev)
-
-    @torch.jit.unused
-    def force_magnitudes(
-        self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        ensemble_values: bool = False,
-    ) -> ForceMagnitudes:
-        r"""Computes the L2 norm of predicted atomic force vectors
-
-        Args:
-            species_coordinates: minibatch of configurations
-            ensemble_values: Return force magnitudes of members of the ensemble
-
-        Returns:
-            Force magnitudes, averaged by default.
-
-        :meta private:
-        """
-        species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
-        magnitudes = members_forces.norm(dim=-1)
-        if not ensemble_values:
-            magnitudes = magnitudes.mean(0)
-        return ForceMagnitudes(species, magnitudes)
-
-    @torch.jit.unused
-    def force_qbc(
-        self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        ensemble_values: bool = False,
-        unbiased: bool = True,
-    ) -> ForceStdev:
-        r"""Return the mean force magnitudes, relative range, and std across an ensemble
-
-        Args:
-            species_coordinates: minibatch of configurations
-            ensemble_values: Return magnitudes of each model of the ensemble
-            unbiased: whether or not to use Bessel's correction in computing
-                the standard deviation, True by default
-
-        :meta private:
-        """
-        species, mags = self.force_magnitudes(species_coordinates, cell, pbc, True)
-
-        eps = 1e-8
-        mean_mags = mags.mean(0)
-        if mags.shape[0] == 1:
-            relative_std = torch.zeros_like(mags).squeeze(0)
-            relative_range = torch.ones_like(mags).squeeze(0)
-        else:
-            relative_std = (mags.std(0, unbiased=unbiased) + eps) / (mean_mags + eps)
-            relative_range = (
-                (mags.max(dim=0).values - mags.min(dim=0).values) + eps
-            ) / (mean_mags + eps)
-
-        if not ensemble_values:
-            mags = mean_mags
-        return ForceStdev(species, mags, relative_std, relative_range)
-
 
 class ANIq(_ANI):
     r"""ANI-style model that can calculate both atomic charges and energies
@@ -690,14 +571,14 @@ class ANIq(_ANI):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
-        charge_networks: tp.Optional[AtomicContainer] = None,
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        charge_networks: AtomicContainer | None = None,
+        charge_normalizer: BaseChargeNormalizer | None = None,
     ):
         super().__init__(
             symbols=symbols,
@@ -718,39 +599,51 @@ class ANIq(_ANI):
                 _aev_computer, _nn, charge_networks, charge_normalizer
             )
 
+        # Push coulomb potential to the end if it is present, to ensure
+        # charges are calculated before the potential
+        if "coulomb" in self.potentials:
+            self.potentials["coulomb"] = self.potentials.pop("coulomb")
+
     # Entrypoint that uses neighbors
     # For now this assumes that there is only one potential with ensemble values
     @torch.jit.export
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-    ) -> tp.Dict[str, Tensor]:
-        self._check_inputs(elem_idxs, coords, charge)
+    ) -> dict[str, Tensor]:
+        self._check_inputs(elem_idxs, None, charge, spin_mult)
         # Output shape depends on the atomic and ensemble_values flags
-        qs = coords.new_zeros(elem_idxs.shape)  # Atomic charges
-        energies = coords.new_zeros(elem_idxs.shape[0])
+        qs = neighbors.diff_vectors.new_zeros(elem_idxs.shape)  # Atomic charges
+        energies = neighbors.diff_vectors.new_zeros(elem_idxs.shape[0])
 
         if atomic:
             energies = energies.unsqueeze(1)
         if ensemble_values:
             energies = energies.unsqueeze(0)
-            qs = energies.unsqueeze(0)
 
-        first_neighbors = neighbors
+        fst_neighbors = neighbors
         for k, pot in self.potentials.items():
             if pot._enabled:
                 neighbors = discard_outside_cutoff(
-                    first_neighbors,
-                    pot.cutoff,  # type: ignore[arg-type]
+                    fst_neighbors, pot.cutoff  # type: ignore[arg-type]
                 )
-                result = pot.compute_from_neighbors(
-                    elem_idxs, coords, neighbors, charge, atomic, ensemble_values
-                )  # type: ignore[operator]
+                features: Tensor | None = None
+                if k == "coulomb":
+                    features = qs
+                result = pot.compute_from_neighbors(  # type: ignore[operator]
+                    elem_idxs,
+                    neighbors,
+                    features,
+                    charge,
+                    spin_mult,
+                    atomic,
+                    ensemble_values,
+                )
                 energies = energies + result["energies"]
                 if k == "nnp":
                     qs = qs + result["atomic_charges"]
@@ -761,48 +654,57 @@ class ANIq(_ANI):
     # NOTE: Currently fused-cuAEV is not supported for ANIq
     def forward(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
+        molecule_idxs: Tensor | None = None,
     ) -> SpeciesEnergiesAtomicCharges:
         species, coords = species_coordinates
-        self._check_inputs(species, coords, charge)
+        self._check_inputs(species, coords, charge, spin_mult)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
 
-        # Experimental _molecule_idxs feature
+        # Experimental molecule_idxs feature
         # TODO include inside neighborlist if useful
-        if _molecule_idxs is not None:
-            _validate_molecule_idxs_inputs(_molecule_idxs, coords)
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+        if molecule_idxs is not None:
+            _validate_molecule_idxs_inputs(molecule_idxs, coords)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
 
         result = self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, charge, atomic, ensemble_values
+            elem_idxs, neighbors, charge, spin_mult, atomic, ensemble_values
         )
         return SpeciesEnergiesAtomicCharges(
             elem_idxs, result["energies"], result["atomic_charges"]
         )
 
 
-class ANIscalars(_ANI):
-    r"""ANI-style model that can calculate energies and other atomic scalars"""
+class MultiHeadANI(_ANI):
+    r"""ANI-style model that can calculate energies and other atomic properties
+
+    Each extra atomic property (e.g. atomic charges, atomic volumes) is predicted by its
+    own head of atomic networks, which share the input features with the energy
+    networks. If a ``"coulomb"`` potential is present, it uses the ``"atomic_charges"``
+    output.
+    """
 
     def __init__(
         self,
-        symbols: tp.Sequence[str],
+        symbols: Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        scalar_networks: tp.Dict[str, AtomicContainer],
-        scalar_shifters: tp.Dict[str, SelfEnergy],
-        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
-        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
+        extra_networks: dict[str, AtomicContainer],
+        extra_networks_shifters: dict[str, SelfEnergy],
+        potentials: dict[str, Potential] | None = None,
         periodic_table_index: bool = True,
+        charge_normalizer: BaseChargeNormalizer | None = None,
+        extra_networks_out_activations: dict[str, torch.nn.Module] | None = None,
+        shift_before_out_activation: bool = True,
     ):
         super().__init__(
             symbols=symbols,
@@ -812,23 +714,23 @@ class ANIscalars(_ANI):
             potentials=potentials,
             periodic_table_index=periodic_table_index,
         )
-        _nn = self.potentials["nnp"].neural_networks
-        _aev_computer = self.potentials["nnp"].aev_computer
-        self.potentials["nnp"] = SeparateScalarsNNPotential(
-            _aev_computer,  # type: ignore[arg-type]
-            _nn,  # type: ignore[arg-type]
-            scalar_networks,
-            scalar_shifters,
+        if "coulomb" in self.potentials and "atomic_charges" not in extra_networks:
+            raise ValueError(
+                "A 'coulomb' potential requires 'atomic_charges' extra networks"
+            )
+        self.potentials["nnp"] = SeparateHeadsNNPotential(
+            self.nnp.aev_computer,
+            self.nnp.neural_networks,
+            extra_networks,
+            extra_networks_shifters,
             charge_normalizer,
+            extra_networks_out_activations,
+            shift_before_out_activation,
         )
-        self._scalar_keys = sorted(scalar_networks.keys())
-
-    @property
-    def nnp(self) -> SeparateScalarsNNPotential:  # type: ignore
-        r""":meta private:"""
-        nnp = self.potentials["nnp"]
-        assert isinstance(nnp, SeparateScalarsNNPotential)
-        return nnp
+        # Push coulomb potential to the end if it is present, to ensure
+        # charges are calculated before the potential
+        if "coulomb" in self.potentials:
+            self.potentials["coulomb"] = self.potentials.pop("coulomb")
 
     # Entrypoint that uses neighbors
     # For now this assumes that there is only one potential with ensemble values
@@ -836,78 +738,83 @@ class ANIscalars(_ANI):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
         neighbors: Neighbors,
-        charge: int = 0,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-    ) -> tp.Dict[str, Tensor]:
-        self._check_inputs(elem_idxs, coords, charge)
+    ) -> dict[str, Tensor]:
+        self._check_inputs(elem_idxs, None, charge, spin_mult)
         # Output shape depends on the atomic and ensemble_values flags
-        output = {"energies": coords.new_zeros(elem_idxs.shape[0])}
+        energies = neighbors.diff_vectors.new_zeros(elem_idxs.shape[0])
         if atomic:
-            output["energies"] = output["energies"].unsqueeze(1)
+            energies = energies.unsqueeze(1)
         if ensemble_values:
-            output["energies"] = output["energies"].unsqueeze(0)
-        for k in self._scalar_keys:
-            output[k] = coords.new_zeros(elem_idxs.shape)
-            if ensemble_values:
-                output[k] = output[k].unsqueeze(0)
+            energies = energies.unsqueeze(0)
 
-        first_neighbors = neighbors
+        out: dict[str, Tensor] = {}
+        fst_neighbors = neighbors
         for k, pot in self.potentials.items():
             if pot._enabled:
                 neighbors = discard_outside_cutoff(
-                    first_neighbors,
-                    pot.cutoff,  # type: ignore[arg-type]
+                    fst_neighbors, pot.cutoff  # type: ignore[arg-type]
                 )
-                result = pot.compute_from_neighbors(
-                    elem_idxs, coords, neighbors, charge, atomic, ensemble_values
-                )  # type: ignore[operator]
-                output["energies"] = output["energies"] + result["energies"]
+                features: Tensor | None = None
+                if k == "coulomb":
+                    features = out["atomic_charges"]
+                result = pot.compute_from_neighbors(  # type: ignore[operator]
+                    elem_idxs,
+                    neighbors,
+                    features,
+                    charge,
+                    spin_mult,
+                    atomic,
+                    ensemble_values,
+                )
+                energies = energies + result["energies"]
                 if k == "nnp":
-                    for k in self._scalar_keys:
-                        output[k] = output[k] + result[k]
+                    for out_key, value in result.items():
+                        if out_key != "energies":
+                            out[out_key] = value
         if self.energy_shifter._enabled:
-            output["energies"] = output["energies"] + self.energy_shifter(
-                elem_idxs, atomic=atomic
-            )
-        return output
+            energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
+        out["energies"] = energies
+        return out
 
-    # NOTE: Currently fused-cuAEV is not supported for ANIscalars
+    # NOTE: Currently fused-cuAEV is not supported for MultiHeadANI
     def forward(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        charge: int = 0,
+        species_coordinates: tuple[Tensor, Tensor],
+        cell: Tensor | None = None,
+        pbc: Tensor | None = None,
+        charge: Tensor | None = None,
+        spin_mult: Tensor | None = None,
         atomic: bool = False,
         ensemble_values: bool = False,
-        _molecule_idxs: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergiesScalars:
+        molecule_idxs: Tensor | None = None,
+    ) -> SpeciesEnergiesResults:
         species, coords = species_coordinates
-        self._check_inputs(species, coords, charge)
+        self._check_inputs(species, coords, charge, spin_mult)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         neighbors = self.neighborlist(self.cutoff, elem_idxs, coords, cell, pbc)
 
-        # Experimental _molecule_idxs feature
-        # TODO include inside neighborlist if useful
-        if _molecule_idxs is not None:
-            _validate_molecule_idxs_inputs(_molecule_idxs, coords)
-            neighbors = discard_inter_molecule_pairs(neighbors, _molecule_idxs)
+        # Experimental molecule_idxs feature
+        if molecule_idxs is not None:
+            _validate_molecule_idxs_inputs(molecule_idxs, coords)
+            neighbors = discard_inter_molecule_pairs(neighbors, molecule_idxs)
 
-        result = self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, charge, atomic, ensemble_values
+        out = self.compute_from_neighbors(
+            elem_idxs, neighbors, charge, spin_mult, atomic, ensemble_values
         )
-        energies = result.pop("energies")
-        return SpeciesEnergiesScalars(elem_idxs, energies, result)
+        energies = out.pop("energies")
+        return SpeciesEnergiesResults(elem_idxs, energies, out)
 
 
-AEVComputerCls = tp.Type[AEVComputer]
-PotentialCls = tp.Type[Potential]
-AtomicContainerCls = tp.Type[AtomicContainer]
-ModelCls = tp.Union[tp.Type[ANI], tp.Type[ANIq], tp.Type[ANIscalars]]
+AEVComputerCls = type[AEVComputer]
+PotentialCls = type[Potential]
+AtomicContainerCls = type[AtomicContainer]
+ModelCls = type[ANI] | type[ANIq] | type[MultiHeadANI]
 
 
 # "global" cutoff means the global cutoff_fn will be used
@@ -936,9 +843,9 @@ class _AEVComputerWrapper:
 class _AtomicContainerWrapper:
     cls: AtomicContainerCls
     ctor: str = "separate_networks"
-    kwargs: tp.Dict[str, tp.Any] = field(default_factory=dict)
+    kwargs: dict[str, tp.Any] = field(default_factory=dict)
 
-    def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
+    def make(self, symbols: Sequence[str], in_dim: int) -> AtomicContainer:
         out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
         return tp.cast(AtomicContainer, out)
 
@@ -946,7 +853,7 @@ class _AtomicContainerWrapper:
 @dataclass
 class _PotentialWrapper:
     cls: PotentialCls
-    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
+    kwargs: dict[str, tp.Any] | None = None
     cutoff: float = math.inf
     cutoff_fn: CutoffArg = "global"
 
@@ -956,25 +863,27 @@ class Assembler:
 
     def __init__(
         self,
-        symbols: tp.Sequence[str] = (),
+        symbols: Sequence[str] = (),
         cls: ModelCls = ANI,
         neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
     ) -> None:
-        self._global_cutoff_fn: tp.Optional[Cutoff] = CutoffSmooth(2)
+        self._global_cutoff_fn: Cutoff | None = CutoffSmooth(2)
 
         self._neighborlist = _parse_neighborlist(neighborlist)
-        self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
-        self._potentials: tp.Dict[str, _PotentialWrapper] = {}
+        self._aevcomp: _AEVComputerWrapper | None = None
+        self._potentials: dict[str, _PotentialWrapper] = {}
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
-        self._self_energies: tp.Dict[str, float] = {}
-        self._container: tp.Optional[_AtomicContainerWrapper] = None
-        self._charge_container: tp.Optional[_AtomicContainerWrapper] = None
-        self._scalar_containers: tp.Dict[str, _AtomicContainerWrapper] = {}
-        self._charge_normalizer: tp.Optional[BaseChargeNormalizer] = None
-        self._symbols: tp.Tuple[str, ...] = tuple(symbols)
+        self._self_energies: dict[str, float] = {}
+        self._container: _AtomicContainerWrapper | None = None
+        self._charge_container: _AtomicContainerWrapper | None = None
+        self._extra_containers: dict[str, _AtomicContainerWrapper] = {}
+        self._extra_networks_out_activations: dict[str, torch.nn.Module] = {}
+        self._shift_before_out_activation = True
+        self._charge_normalizer: BaseChargeNormalizer | None = None
+        self._symbols: tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
         self._cls: ModelCls = cls
@@ -983,19 +892,19 @@ class Assembler:
         self.periodic_table_index = periodic_table_index
 
     @property
-    def symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tuple[str, ...]:
         return self._symbols
 
-    def set_symbols(self, symbols: tp.Sequence[str]) -> None:
+    def set_symbols(self, symbols: Sequence[str]) -> None:
         self._symbols = tuple(symbols)
 
     @property
-    def self_energies(self) -> tp.Dict[str, float]:
+    def self_energies(self) -> dict[str, float]:
         if not self._self_energies:
             raise RuntimeError("Self energies have not been set")
         return self._self_energies
 
-    def set_self_energies(self, value: tp.Mapping[str, float]) -> None:
+    def set_self_energies(self, value: Mapping[str, float]) -> None:
         self._check_symbols(value.keys())
         self._self_energies = {k: v for k, v in value.items()}
 
@@ -1023,7 +932,7 @@ class Assembler:
         gsaes = GSAES[lot.lower()]
         self.set_self_energies({s: gsaes[s] for s in self.symbols})
 
-    def _check_symbols(self, symbols: tp.Optional[tp.Iterable[str]] = None) -> None:
+    def _check_symbols(self, symbols: Iterable[str] | None = None) -> None:
         if not self.symbols:
             raise ValueError(
                 "Please set symbols before setting the gsaes as self energies"
@@ -1038,7 +947,7 @@ class Assembler:
         self,
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
-        kwargs: tp.Dict[str, tp.Any] = {},
+        kwargs: dict[str, tp.Any] = {},
     ) -> None:
         ctor = {
             "ani1x": "like_1x",
@@ -1054,40 +963,12 @@ class Assembler:
             raise RuntimeError("Call 'set_atomic_networks(...)' before assembly")
         return self._container
 
-    def add_scalar_networks(
-        self,
-        key: str,
-        cls: AtomicContainerCls = ANINetworks,
-        ctor: str = "ani2x",
-        kwargs: tp.Dict[str, tp.Any] = {},
-    ) -> None:
-        ctor = {
-            "ani1x": "like_1x",
-            "ani2x": "like_2x",
-            "anidr": "like_dr",
-            "aniala": "like_ala",
-        }.get(ctor, ctor)
-        if not issubclass(self._cls, (ANIq, ANIscalars)):
-            raise ValueError(
-                "Model must be a subclass of ANIq or ANIscalars to use charge networks"
-            )
-        self._scalar_containers[key] = _AtomicContainerWrapper(cls, ctor, kwargs)
-
-    def set_charge_normalizer(
-        self, normalizer: tp.Optional[BaseChargeNormalizer] = None
-    ) -> None:
-        if not issubclass(self._cls, (ANIq, ANIscalars)):
-            raise ValueError(
-                "Model must be a subclass of ANIq or ANiscalars to use charge networks"
-            )
-        self._charge_normalizer = normalizer
-
     def set_charge_networks(
         self,
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
-        kwargs: tp.Dict[str, tp.Any] = {},
-        normalizer: tp.Optional[BaseChargeNormalizer] = None,
+        kwargs: dict[str, tp.Any] = {},
+        normalizer: BaseChargeNormalizer | None = None,
     ) -> None:
         ctor = {
             "ani1x": "like_1x",
@@ -1095,12 +976,54 @@ class Assembler:
             "anidr": "like_dr",
             "aniala": "like_ala",
         }.get(ctor, ctor)
-        if not issubclass(self._cls, (ANIq, ANIscalars)):
-            raise ValueError(
-                "Model must be a subclass of ANIq or ANiscalars to use charge networks"
-            )
+        if not issubclass(self._cls, ANIq):
+            raise ValueError("Model must be a subclass of ANIq to use charge networks")
         self._charge_normalizer = normalizer
         self._charge_container = _AtomicContainerWrapper(cls, ctor, kwargs)
+
+    def add_extra_networks(
+        self,
+        key: str,
+        cls: AtomicContainerCls = ANINetworks,
+        ctor: str = "ani2x",
+        kwargs: dict[str, tp.Any] = {},
+        out_activation: str | torch.nn.Module | None = None,
+    ) -> None:
+        r"""Add networks that predict the atomic property ``key`` (MultiHeadANI only)
+
+        If ``out_activation`` is passed, it is applied to the output, by default after
+        its shifter (see ``set_shift_before_out_activation``)
+        """
+        ctor = {
+            "ani1x": "like_1x",
+            "ani2x": "like_2x",
+            "anidr": "like_dr",
+            "aniala": "like_ala",
+        }.get(ctor, ctor)
+        if not issubclass(self._cls, MultiHeadANI):
+            raise ValueError(
+                "Model must be a subclass of MultiHeadANI to use extra networks"
+            )
+        if key in self._extra_containers:
+            raise ValueError(f"Extra networks for {key} were already added")
+        self._extra_containers[key] = _AtomicContainerWrapper(cls, ctor, kwargs)
+        if out_activation is not None:
+            self._extra_networks_out_activations[key] = parse_activation(out_activation)
+
+    def set_shift_before_out_activation(self, value: bool) -> None:
+        r"""Whether extra networks shifters are applied before the output activations"""
+        if not issubclass(self._cls, MultiHeadANI):
+            raise ValueError(
+                "Model must be a subclass of MultiHeadANI to use extra networks"
+            )
+        self._shift_before_out_activation = value
+
+    def set_charge_normalizer(self, normalizer: BaseChargeNormalizer | None) -> None:
+        if not issubclass(self._cls, (ANIq, MultiHeadANI)):
+            raise ValueError(
+                "Model must be a subclass of ANIq or MultiHeadANI to use a normalizer"
+            )
+        self._charge_normalizer = normalizer
 
     def set_aev_computer(
         self,
@@ -1139,7 +1062,7 @@ class Assembler:
         name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
-        kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        kwargs: dict[str, tp.Any] | None = None,
     ) -> None:
         r"""Add a potential to the constructed ANI model"""
         if name in self._potentials:
@@ -1151,7 +1074,7 @@ class Assembler:
             cutoff_fn=cutoff_fn,
         )
 
-    def assemble(self, ensemble_size: int = 1) -> tp.Union[ANI, ANIq, ANIscalars]:
+    def assemble(self, ensemble_size: int = 1) -> ANI | ANIq | MultiHeadANI:
         r"""Construct an `ANI` model from the passed arguments
 
         Args:
@@ -1193,25 +1116,18 @@ class Assembler:
         else:
             neural_networks = Ensemble(containers)
 
-        charge_networks: tp.Optional[AtomicContainer] = None
+        charge_networks: AtomicContainer | None = None
         if self._charge_container is not None:
             charge_networks = self._charge_container.make(self.symbols, aevcomp.out_dim)
-
-        scalar_containers: tp.Dict[str, AtomicContainer] = {}
-        if self._scalar_containers:
-            scalar_containers = {
-                k: v.make(self.symbols, aevcomp.out_dim)
-                for k, v in self._scalar_containers.items()
-            }
 
         self_energies = self.self_energies
         shifter = SelfEnergy(
             symbols=self.symbols,
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )
-        kwargs: tp.Dict[str, tp.Any] = {}
+        kwargs: dict[str, tp.Any] = {}
         if self._potentials:
-            potentials: tp.Dict[str, Potential] = {}
+            potentials: dict[str, Potential] = {}
             for pot_name, pot in self._potentials.items():
                 if pot.kwargs is not None:
                     pot_kwargs = pot.kwargs
@@ -1231,13 +1147,19 @@ class Assembler:
 
         if charge_networks is not None:
             kwargs["charge_networks"] = charge_networks
-        if scalar_containers:
-            kwargs["scalar_networks"] = scalar_containers
-            # TODO: Allow passing scalars to the shifters
-            kwargs["scalar_shifters"] = {
-                k: SelfEnergy(self.symbols, self_energies=[0.0] * len(self.symbols))
-                for k in scalar_containers
-            }
+        if issubclass(self._cls, MultiHeadANI):
+            # TODO: Allow setting values for the extra networks shifters
+            zeros = [0.0] * len(self.symbols)
+            kwargs["extra_networks"] = {}
+            kwargs["extra_networks_shifters"] = {}
+            for k, container in self._extra_containers.items():
+                networks = container.make(self.symbols, aevcomp.out_dim)
+                kwargs["extra_networks"][k] = networks
+                kwargs["extra_networks_shifters"][k] = SelfEnergy(self.symbols, zeros)
+            kwargs["extra_networks_out_activations"] = deepcopy(
+                self._extra_networks_out_activations
+            )
+            kwargs["shift_before_out_activation"] = self._shift_before_out_activation
         if self._charge_normalizer is not None:
             kwargs["charge_normalizer"] = self._charge_normalizer
         return self._cls(
@@ -1251,7 +1173,7 @@ class Assembler:
 
 
 def simple_ani(
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
@@ -1269,16 +1191,14 @@ def simple_ani(
     repulsion: bool = True,
     container_ctor: str = "default",
     container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    activation: str | torch.nn.Module = "gelu",
     bias: bool = False,
     strategy: str = "auto",
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
-    self_energies: tp.Union[
-        tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
-    ] = None,
+    self_energies: dict[str, float] | tp.Literal["zero"] | None = None,
 ) -> ANI:
     r"""Flexible builder to create ANI-style models that predict energies
 
@@ -1339,7 +1259,7 @@ def simple_ani(
 
 
 def simple_aniq(
-    symbols: tp.Sequence[str],
+    symbols: Sequence[str],
     lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
@@ -1359,7 +1279,7 @@ def simple_aniq(
     charge_container_ctor: str = "default",
     container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
     charge_container: str = "ANINetworks",
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    activation: str | torch.nn.Module = "gelu",
     bias: bool = False,
     strategy: str = "auto",
     merge_charge_networks: bool = False,
@@ -1369,11 +1289,11 @@ def simple_aniq(
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
     normalize: bool = True,
+    coulomb: tp.Literal["full", "erf", "tanh"] | None = None,
+    coulomb_cutoff: float | None = None,
     repulsion_cutoff: bool | float = True,
     dispersion_cutoff: float | tp.Literal[False] = 8.0,
-    self_energies: tp.Union[
-        tp.Optional[tp.Dict[str, float]], tp.Literal["zero"]
-    ] = None,
+    self_energies: dict[str, float] | tp.Literal["zero"] | None = None,
 ) -> ANIq:
     r"""Flexible builder to create ANI-style models that output charges and energies
 
@@ -1463,6 +1383,17 @@ def simple_aniq(
             cutoff=math.inf if dispersion_cutoff is False else dispersion_cutoff,
             kwargs=extra_kwargs,
         )
+    if coulomb == "full":
+        if coulomb_cutoff is not None and coulomb_cutoff != math.inf:
+            raise ValueError("coulomb='full' only supports an infinite coulomb_cutoff")
+        asm.add_potential(Coulomb, name="coulomb")
+    elif coulomb in ("erf", "tanh"):
+        coulomb_cutoff = 12.0 if coulomb_cutoff is None else coulomb_cutoff
+        asm.add_potential(
+            Coulomb, name="coulomb", cutoff=coulomb_cutoff, kwargs={"damp_fn": coulomb}
+        )
+    elif coulomb is not None:
+        raise ValueError(f"Unsupported coulomb: {coulomb}")
     return tp.cast(ANIq, asm.assemble(ensemble_size))
 
 
@@ -1470,7 +1401,7 @@ def _fetch_state_dict(
     state_dict_file: str,
     local: bool = False,
     private: bool = False,
-) -> tp.OrderedDict[str, Tensor]:
+) -> OrderedDict[str, Tensor]:
     # NOTE: torch.hub caches remote state_dicts after first download
     if local:
         dict_ = torch.load(
@@ -1501,11 +1432,13 @@ def _fetch_state_dict(
     try:
         # First attempt local file
         path = hf_hub_download(**hf_kw, local_files_only=True)  # type: ignore
+        path = tp.cast(str, path)
         dict_ = torch.load(path, map_location=torch.device("cpu"), weights_only=True)
     except Exception:
         # Try downloading from hf
         try:
             path = hf_hub_download(**hf_kw, force_download=True)  # type: ignore
+            path = tp.cast(str, path)
             dict_ = torch.load(
                 path, map_location=torch.device("cpu"), weights_only=True
             )

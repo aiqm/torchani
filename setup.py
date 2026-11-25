@@ -1,5 +1,6 @@
 from copy import deepcopy
 import typing as tp
+from collections.abc import Iterable
 import textwrap
 import os
 import subprocess
@@ -8,7 +9,7 @@ import sys
 from setuptools import setup
 
 
-def maybe_download_cub(torch_include_dirs: tp.Iterable[str]) -> str:
+def maybe_download_cub(torch_include_dirs: Iterable[str]) -> str:
     import torch
 
     cuda_ver = float(torch.version.cuda) if torch.version.cuda is not None else 0
@@ -41,10 +42,10 @@ def maybe_download_cub(torch_include_dirs: tp.Iterable[str]) -> str:
 
 
 def cuaev_extension_kwargs(
-    sms: tp.Set[str],
+    sms: set[str],
     debug: bool,
     opt: bool,
-) -> tp.Dict[str, tp.Any]:
+) -> dict[str, tp.Any]:
     print("-" * 75)
     print(f"Will build cuAEV with support for SMs: {', '.join(sms)}")
 
@@ -67,25 +68,36 @@ def cuaev_extension_kwargs(
     for arg in nvcc_args:
         print(f"    {arg}")
 
-    cxx_args = ["-std=c++17"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20"]
+    else:
+        cxx_args = ["-std=c++20"]
     print("C++ compiler args:")
     for arg in cxx_args:
         print(f"    {arg}")
     return dict(
         name="torchani.cuaev",
-        sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu"],
+        sources=[
+            "torchani/csrc/cuaev_schema.cpp",
+            "torchani/csrc/cuaev.cpp",
+            "torchani/csrc/aev.cu",
+            "torchani/csrc/aev_cpu.cpp",
+        ],
         include_dirs=[os.path.abspath("torchani/csrc/")],
         extra_compile_args={"cxx": cxx_args, "nvcc": nvcc_args},
     )
 
 
-def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
+def mnp_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("-" * 75)
     print("Will build MNP")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++20", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
@@ -97,13 +109,16 @@ def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     )
 
 
-def clist_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
+def clist_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("-" * 75)
     print("Will build Cell List")
 
-    cxx_args = ["-std=c++17", "-fopenmp"]
+    if os.name == "nt":
+        cxx_args = ["/std:c++20", "/openmp"]
+    else:
+        cxx_args = ["-std=c++20", "-fopenmp"]
     if debug:
-        cxx_args.append("-DTORCHANI_DEBUG")
+        cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
     print("C++ compiler args:")
     for arg in cxx_args:
@@ -119,18 +134,14 @@ def will_not_build_extensions_warning(torch_import_error: bool = False) -> None:
     print("-" * 75)
     if torch_import_error:
         print("Torch could not be imported")
-    print(
-        textwrap.dedent(
-            """
+    print(textwrap.dedent("""
             Will not install TorchANI extensions (cuAEV and MNP)
             To build the extensions with the pip frontend:
             - Make sure Torch binaries compiled with CUDA support are installed
             - Make sure a compatible CUDA Toolkit version is available
             - Add the --no-build-isolation flag to pip
             - Add --config-settings=--global-option=ext (verbatim) flag to pip
-            """
-        ).strip()
-    )
+            """).strip())
     print("-" * 75)
 
 
@@ -140,8 +151,8 @@ TORCHANI_FLAGS = {"ext", "ext-all-sms", "ext-debug", "ext-no-opt"}
 # Turing: 75 (2nd gen TensorCore)
 # Ampere: 80, 86 (3d gen TensorCore)
 # Ada Lovelace, Hopper: 89 (4th gen TensorCore)
-# Blackwell: 100 (5th gen TensorCore)
-SUPPORTED_SMS = {"60", "61", "70", "75", "80", "86", "89", "100"}
+# Blackwell: 100, 120 (5th gen TensorCore)
+SUPPORTED_SMS = {"60", "61", "70", "75", "80", "86", "89", "100", "120"}
 for sm in SUPPORTED_SMS:
     TORCHANI_FLAGS.add(f"ext-sm{sm}")
 
@@ -153,7 +164,7 @@ def strip_argv():
             sys.argv.remove(arg)
 
 
-def setup_kwargs() -> tp.Dict[str, tp.Any]:
+def setup_kwargs() -> dict[str, tp.Any]:
     # setuptools executes this file:
     # - 3 times in case of build-isolation mode
     #   (egg_info, dist_info, (editable|bdist)_wheel)
@@ -175,6 +186,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
         import torch
         from torch.utils.cpp_extension import CUDAExtension
         from torch.utils.cpp_extension import BuildExtension
+        from torch.utils.cpp_extension import TORCH_LIB_PATH
 
         TORCH_AVAILABLE = True
     except ImportError:
@@ -185,7 +197,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
         strip_argv()
         return dict()
 
-    def collect_all_sms() -> tp.Set[str]:
+    def collect_all_sms() -> set[str]:
         print("-" * 75)
         print("Will add all SMs torch supports")
         sms = {"60", "61", "70"}
@@ -201,11 +213,11 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
             sms.add("100")
         return sms
 
-    def collect_compatible_sms() -> tp.Set[str]:
+    def collect_compatible_sms() -> set[str]:
         print("-" * 75)
         print("Will try to find compatible CUDA devices visible to torch")
         devices = torch.cuda.device_count()
-        sms: tp.Set[str] = set()
+        sms: set[str] = set()
         for i in range(devices):
             sm_tuple = torch.cuda.get_device_capability(i)
             if sm_tuple >= (5, 0):
@@ -219,7 +231,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
         return collect_all_sms()
 
     # Flags for requesting specific SMs
-    sms: tp.Set[str] = set()
+    sms: set[str] = set()
     TORCHANI_BUILD_SMS = os.getenv("TORCHANI_SMS", "").split(",")
     for sm in SUPPORTED_SMS:
         if f"ext-sm{sm}" in sys.argv or sm in TORCHANI_BUILD_SMS:
@@ -267,7 +279,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
     clist_kwargs = clist_extension_kwargs(debug=debug)
 
     # CUB needed to build the cuAEV, download it if not found bundled with Torch
-    include_paths_kwargs: tp.Dict[str, tp.Any]
+    include_paths_kwargs: dict[str, tp.Any]
     if tuple(map(int, torch.__version__.split(".")[:2])) >= (2, 7):
         include_paths_kwargs = {"device_type": "cuda"}
     else:
@@ -277,15 +289,40 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
     if cub_include_dir:
         cuaev_kwargs["include_dirs"].append(cub_include_dir)
 
+    # Linking: each extension must depend exactly on the libs it needs to run, also
+    # when loaded by a C++ host without Python (e.g. with torch::jit::load):
+    # - libtorch_python is never needed (ops are registered through the dispatcher,
+    #   no Python bindings), and it can't be loaded without a Python interpreter.
+    #   CUDAExtension always adds it, so it is removed from the libraries.
+    # - libtorch_cuda is needed by cuAEV and MNP (CUDA kernels for aten ops), but
+    #   they don't reference its symbols directly, so "-Wl,--as-needed" (set e.g. in
+    #   conda's LDFLAGS) would drop it, and a C++ host that doesn't load it would
+    #   fail with "Could not run 'aten::...' with arguments from the 'CUDA' backend".
+    #   "--no-as-needed" forces it to be recorded as a dependency.
+    # - The cell list is CPU-only, it only needs libc10 and libtorch_cpu
+    # The same rules are applied in "ani build-extensions" (torchani/cli.py)
+    if os.name != "nt":
+        torch_cuda_link_args = [
+            "-Wl,--no-as-needed",
+            f"-L{TORCH_LIB_PATH}",
+            "-ltorch_cuda",
+            "-Wl,--as-needed",
+        ]
+        cuaev_kwargs["extra_link_args"] = torch_cuda_link_args
+        mnp_kwargs["extra_link_args"] = torch_cuda_link_args
+
     # MNP extension doesn't need nvcc to be compiled, but it still uses torch
     # CUDA libraries, so CUDAExtension is needed
+    extensions = [
+        CUDAExtension(**cuaev_kwargs),
+        CUDAExtension(**mnp_kwargs),
+        CUDAExtension(**clist_kwargs),
+    ]
+    for extension in extensions:
+        extension.libraries.remove("torch_python")
     print("-" * 75)
     return {
-        "ext_modules": [
-            CUDAExtension(**cuaev_kwargs),
-            CUDAExtension(**mnp_kwargs),
-            CUDAExtension(**clist_kwargs),
-        ],
+        "ext_modules": extensions,
         "cmdclass": {
             "build_ext": BuildExtension.with_options(
                 no_python_abi_suffix=True,
