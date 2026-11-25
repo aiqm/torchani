@@ -137,10 +137,10 @@ def run(
                     cutoff, elem_idxs, coords, cell=molecs.cell, pbc=molecs.pbc
                 )
                 if isinstance(aevc, AEVComputer) and aevc._strategy == "cuaev":
-                    _ = aevc.compute_from_neighbors(elem_idxs, coords, neighbors)
+                    _ = aevc.compute_from_neighbors(elem_idxs, neighbors)
                 else:
                     _ = tp.cast(AEVComputer, aevc).compute_from_neighbors(
-                        elem_idxs, coords, neighbors
+                        elem_idxs, neighbors
                     )
                 if cuda:
                     torch.cuda.empty_cache()
@@ -164,12 +164,12 @@ def run(
                     coords = coords.detach().requires_grad_(True)
                     neighbors.distances.detach_().requires_grad_(False)
                     neighbors.diff_vectors.detach_().requires_grad_(False)
-                    aevs = aevc.compute_from_neighbors(elem_idxs, coords, neighbors)
+                    aevs = aevc.compute_from_neighbors(elem_idxs, neighbors)
                 else:
                     neighbors.distances.detach_().requires_grad_(True)
                     neighbors.diff_vectors.detach_().requires_grad_(True)
                     aevs = tp.cast(AEVComputer, aevc).compute_from_neighbors(
-                        elem_idxs, coords, neighbors
+                        elem_idxs, neighbors
                     )
                 aevs.backward(torch.ones_like(aevs))
                 timer.end_range(str(n))

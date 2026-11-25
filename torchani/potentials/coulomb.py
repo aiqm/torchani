@@ -67,14 +67,14 @@ class Coulomb(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
-        assert scalars is not None
-        assert scalars.shape == elem_idxs.shape
+        assert features is not None
+        assert features.shape == elem_idxs.shape
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
-        charges = scalars.view(-1)[neighbors.indices]
+        charges = features.view(-1)[neighbors.indices]
         charge_prod = charges[0] * charges[1]
         charge_prod /= self._dielectric
         return charge_prod / dists * self._damp_fn(dists)
@@ -102,9 +102,9 @@ class FixedCoulomb(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
-        assert scalars is None
+        assert features is None
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
@@ -151,9 +151,9 @@ class FixedMNOK(BasePairPotential):
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
-        assert scalars is None
+        assert features is None
         # No need to clamp as long as inv_eta ** 2 is nonzero
         # All internal calcs use atomic units, so convert to Bohr
         dists = neighbors.distances * self.ANGSTROM_TO_BOHR

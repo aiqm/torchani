@@ -9,7 +9,7 @@ import typing as tp
 from torch import Tensor
 import torch
 
-from torchani.arch import ANI, ANIq, ANIscalars
+from torchani.arch import ANI, ANIq, MultiHeadANI
 from torchani.potentials import Potential
 from torchani.tuples import (
     EnergiesForcesHessians,
@@ -36,7 +36,7 @@ __all__ = [
     "calc_forces_and_hessians",  # alias
 ]
 
-Model = Potential | ANI | ANIq | ANIscalars
+Model = Potential | ANI | ANIq | MultiHeadANI
 
 
 def forces(
@@ -290,21 +290,22 @@ def energies_and_forces(
     return EnergiesForces(energies, _forces)
 
 
-def _atomic_scalar(result: tp.Any, key: str) -> Tensor:
-    if hasattr(result, "scalars") and key in result.scalars:
-        return result.scalars[key]
+def _extra_output(result: tp.Any, key: str) -> Tensor:
+    if hasattr(result, "results") and key in result.results:
+        return result.results[key]
     if hasattr(result, key):
         return getattr(result, key)
     raise ValueError(f"Model doesn't support {key.replace('_', ' ')}")
 
 
 def single_point(
-    model: ANI | ANIq | ANIscalars,
+    model: ANI | ANIq | MultiHeadANI,
     species: Tensor,
     coordinates: Tensor,
     cell: Tensor | None = None,
     pbc: Tensor | None = None,
     charge: Tensor | None = None,
+    spin_mult: Tensor | None = None,
     forces: bool = False,
     hessians: bool = False,
     atomic_energies: bool = False,
@@ -326,6 +327,8 @@ def single_point(
         pbc: |pbc|
         charge: The total charge of the molecules. Shape ``(molecules,)``. Only
             ``None`` or all zeros are currently supported.
+        spin_mult: The spin multiplicity of the molecules. Shape ``(molecules,)``.
+            Only ``None`` or all ones are currently supported.
         forces: Calculate the associated forces. Shape ``(molecules, atoms, 3)``
         hessians: Calculate the hessians. Shape is
             ``(molecules, atoms * 3, atoms * 3)``
@@ -340,7 +343,7 @@ def single_point(
             gradients. Shape ``(molecules, atoms, 3)``.
         ensemble_values: Differentiate values of different models of the ensemble
             Also output ensemble standard deviation and qbc factors
-        keep_vars: The output scalars are detached from the graph unless
+        keep_vars: The output tensors are detached from the graph unless
             ``keep_vars=True``.
     Returns:
         Result of the single point calculation. Dictionary that maps strings to
@@ -354,13 +357,14 @@ def single_point(
         cell=cell,
         pbc=pbc,
         charge=charge,
+        spin_mult=spin_mult,
         atomic=atomic_energies,
         ensemble_values=ensemble_values,
     )
     energies = result.energies
     out: dict[str, Tensor] = {}
     if atomic_charges:
-        charges = _atomic_scalar(result, "atomic_charges")
+        charges = _extra_output(result, "atomic_charges")
         out["atomic_charges"] = charges
         if atomic_charges_grad:
             retain = forces or hessians or (atomic_volumes and atomic_volumes_grad)
@@ -368,7 +372,7 @@ def single_point(
                 charges, coordinates, retain_graph=retain
             )
     if atomic_volumes:
-        volumes = _atomic_scalar(result, "atomic_volumes")
+        volumes = _extra_output(result, "atomic_volumes")
         out["atomic_volumes"] = volumes
         if atomic_volumes_grad:
             retain = forces or hessians

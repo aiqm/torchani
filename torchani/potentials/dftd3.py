@@ -228,9 +228,9 @@ class TwoBodyDispersionD3(BasePairPotential):
         self,
         element_idxs: Tensor,
         neighbors: Neighbors,
-        scalars: Tensor | None = None,
+        features: Tensor | None = None,
     ) -> Tensor:
-        assert scalars is None
+        assert features is None
         # Internally this module works in AU
         distances = self.ANGSTROM_TO_BOHR * neighbors.distances
 

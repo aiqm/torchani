@@ -19,8 +19,8 @@ Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), an
 they output their averaged values. Individual members of these ensembles can be accessed
 by indexing, and ``len(ANI)`` can be used to query the number of networks in it.
 
-The models also have three extra entry points for more specific use cases:
-atomic_energies and energies_qbcs.
+The models also have an extra entry point for a more specific use case:
+energies_qbcs.
 
 All entrypoints expect a tuple of tensors ``(species, coords)`` as input, together
 with two optional tensors, ``cell`` and ``pbc``. ``coords`` and ``cell`` should be in
@@ -42,10 +42,6 @@ For more details consult the examples documentation
     # Average energies over the ensemble, for all molecules
     # Output shape is (molecules,)
     energies = model((atomic_nums, coords)).energies
-
-    # Average atomic energies over the ensemble for the batch
-    # Output shape is (molecules, atoms)
-    atomic_energies = model.atomic_energies((atomic_nums, coords)).energies
 
     # Individual energies of the members of the ensemble
     # Output shape is (ensemble-size, molecules)
