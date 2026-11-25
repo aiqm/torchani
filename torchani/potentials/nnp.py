@@ -179,6 +179,9 @@ class SeparateHeadsNNPotential(NNPotential):
         if self._shift_before_out_activation:
             for k, out_activation in self.extra_networks_out_activations.items():
                 out[k] = out_activation(out[k])
+        is_padding = elem_idxs == -1
+        for k in self.extra_networks_out_activations.keys():
+            out[k] = out[k].masked_fill(is_padding, 0.0)
         if "atomic_charges" in out:
             qs = out["atomic_charges"]
             out["atomic_charges"] = self.charge_normalizer(elem_idxs, qs, charge)

@@ -137,6 +137,22 @@ class TestMultiHeadANI(ANITestCase):
         )
         self.assertTrue((results["atomic_volumes"] > 0).all())
 
+    def testOutActivationPadding(self):
+        asm = _assembler(keys=())
+        asm.add_extra_networks(
+            "atomic_volumes", ctor="ani1x", out_activation="softplus"
+        )
+        model = self._setup(asm.assemble(2).to(self.device))
+        atomic_nums = self.molecs.atomic_nums
+        coords = self.molecs.coords
+        padded_atomic_nums = torch.nn.functional.pad(atomic_nums, (0, 2), value=-1)
+        padded_coords = torch.nn.functional.pad(coords, (0, 0, 0, 2))
+        _, _, results = model((atomic_nums, coords))
+        _, _, padded_results = model((padded_atomic_nums, padded_coords))
+        volumes = padded_results["atomic_volumes"]
+        self.assertEqual(volumes[:, :-2], results["atomic_volumes"])
+        self.assertEqual(volumes[:, -2:], torch.zeros_like(volumes[:, -2:]))
+
     def testShiftAfterOutActivation(self):
         asm = _assembler(keys=())
         asm.add_extra_networks(
