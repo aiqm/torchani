@@ -6,7 +6,7 @@ import torch
 
 from torchani._testing import ANITestCase, expand
 from torchani.utils import pad_atomic_properties
-from torchani.models import ANI1x, ANI2x, ANI2dr
+from torchani.models import ANI1x, ANI2x, ANI2dr, ANImbisv
 from torchani.units import hartree2kcalpermol
 
 
@@ -65,6 +65,100 @@ class TestANI2dr(ANITestCase):
             dtype=torch.float,
         )
         self.assertEqual(e_expect, e)
+
+
+@expand()
+class TestANImbisv(ANITestCase):
+    def setUp(self):
+        self.model = self._setup(ANImbisv())
+
+    def testAgainstOriginalModel(self):
+        # CH2FCl (padded) and H2N-C(=O)-SH
+        species = torch.tensor(
+            [[6, 9, 17, 1, 1, -1, -1], [6, 8, 7, 1, 1, 16, 1]],
+            dtype=torch.long,
+            device=self.device,
+        )
+        coords = torch.tensor(
+            [
+                [
+                    [0.000, 0.000, 0.000],
+                    [1.380, 0.000, 0.000],
+                    [-0.590, 1.650, 0.000],
+                    [-0.360, -0.510, 0.890],
+                    [-0.360, -0.510, -0.890],
+                    [0.000, 0.000, 0.000],
+                    [0.000, 0.000, 0.000],
+                ],
+                [
+                    [0.000, 0.000, 0.000],
+                    [1.210, 0.000, 0.000],
+                    [-0.680, 1.170, 0.000],
+                    [-1.690, 1.170, 0.000],
+                    [-0.170, 2.040, 0.000],
+                    [-0.900, -1.530, 0.000],
+                    [-0.050, -2.560, 0.000],
+                ],
+            ],
+            dtype=torch.float,
+            device=self.device,
+            requires_grad=True,
+        )
+        _, energies, results = self.model((species, coords))
+        forces = -torch.autograd.grad(energies.sum(), coords)[0]
+
+        # compare against values calculated directly from original model
+        energies_expect = torch.tensor(
+            [-599.281433105, -568.010070801], dtype=torch.float, device=self.device
+        )
+        forces_expect = torch.tensor(
+            [
+                [
+                    [0.031957537, -0.012144636, 0.0],
+                    [-0.026019368, -0.002398453, 0.0],
+                    [-0.006510776, 0.010823604, 0.0],
+                    [0.000286304, 0.001859743, 0.007532505],
+                    [0.000286302, 0.001859743, -0.007532501],
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0],
+                ],
+                [
+                    [0.083600380, 0.009646112, 0.0],
+                    [0.024611920, -0.008209614, 0.0],
+                    [-0.056278415, -0.024862716, 0.0],
+                    [0.000436414, 0.010749113, 0.0],
+                    [0.004568741, -0.006140794, 0.0],
+                    [-0.091223456, -0.008092706, 0.0],
+                    [0.034284428, 0.026910603, 0.0],
+                ],
+            ],
+            dtype=torch.float,
+            device=self.device,
+        )
+        atomic_charges_expect = torch.tensor(
+            [
+                [0.144452095, -0.206449732, -0.181856558, 0.121927090, 0.121927112]
+                + [0.0, 0.0],
+                [0.758769035, -0.573841512, -0.903622448, 0.421272844, 0.422852546]
+                + [-0.349366039, 0.223935500],
+            ],
+            dtype=torch.float,
+            device=self.device,
+        )
+        atomic_volumes_expect = torch.tensor(
+            [
+                [30.005834579, 17.939876556, 68.033920288, 2.593828201, 2.593828201]
+                + [0.069314718, 0.069314718],
+                [21.535203934, 25.622909546, 34.980548859, 1.346864820, 1.372277856]
+                + [82.506187439, 2.327467680],
+            ],
+            dtype=torch.float,
+            device=self.device,
+        )
+        self.assertEqual(energies_expect, energies)
+        self.assertEqual(forces_expect, forces)
+        self.assertEqual(atomic_charges_expect, results["atomic_charges"])
+        self.assertEqual(atomic_volumes_expect, results["atomic_volumes"])
 
 
 @expand(device="cpu", jit=False)
