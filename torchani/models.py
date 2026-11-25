@@ -68,6 +68,7 @@ from torchani.arch import (
     Assembler,
     ANI,
     ANIq,
+    MultiHeadANI,
     _fetch_state_dict,
     simple_ani,
 )
@@ -253,6 +254,48 @@ def ANImbis(
     nnp.aev_computer.load_state_dict(aev_state_dict)
     nnp.neural_networks.load_state_dict(energy_nn_state_dict)
     nnp.charge_networks.load_state_dict(charge_nn_state_dict)
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANImbisv(
+    model_index: int | None = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> MultiHeadANI:
+    asm = Assembler(cls=MultiHeadANI, periodic_table_index=periodic_table_index)
+    asm.set_symbols(SYMBOLS_2X)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
+    asm.set_atomic_networks(ctor="ani2x")
+    asm.add_extra_networks(
+        "atomic_charges",
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
+    )
+    asm.add_extra_networks(
+        "atomic_volumes",
+        ctor="ani2x",
+        kwargs={"bias": True, "activation": "gelu"},
+        out_activation="softplus",
+    )
+    asm.set_shift_before_out_activation(False)
+    asm.set_charge_normalizer(
+        ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        )
+    )
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = tp.cast(MultiHeadANI, asm.assemble(8))
+    model.load_state_dict(_fetch_state_dict("animbisv_state_dict.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
