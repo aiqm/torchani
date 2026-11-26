@@ -25,7 +25,7 @@ In the meantime, you can pin torchani to version 2.2.4 (pip install 'torchani==2
 have breaking changes. If you require the old state dicts of ANI models you can access
 them by calling `.legacy_state_dict()` instead of `.state_dict()`
 
-If you find a bug in TorchANI 2, or have some feature request, also feel free to open
+If you find a bug in TorchANI 2, or have a feature request, also feel free to open
 a GitHub issue. TorchANI 2 is currently tested against PyTorch 2.13 and CUDA 13.0
 
 If you find this work useful please cite the following articles:
@@ -50,7 +50,7 @@ We recommend installing `torchani` inside a `conda|mamba` environment, or a `ven
 ⚠️  **Important**: *We recommend you install torchani with `pip``uv`you want the latest version, even
 if using a conda env. The torchani conda package may be out of date.*
 
-We also recommended you first install a specific torch version, with a specific CUDA
+We also recommend you first install a specific torch version, with a specific CUDA
 toolkit backend, for example:
 
 ```bash
