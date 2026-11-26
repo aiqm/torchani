@@ -121,7 +121,7 @@ def _build_extensions(
         "-Wl,--as-needed",
     ]
     print("Building cuAEV extension...")
-    build_dir = torchani.paths.data_dir().parent.parent / "lib" / "Torchani"
+    build_dir = torchani.paths.extensions_dir()
     build_dir.mkdir(exist_ok=True, parents=True)
     _ = load(
         name="cuaev",
@@ -147,7 +147,7 @@ def _build_extensions(
         sources=[f"{this_dir}/csrc/mnp.cpp"],
         extra_include_paths=include_dirs,
         build_directory=str(build_dir),
-        extra_cflags=["-std=c++20", "-fopenmp"],
+        extra_cflags=["-std=c++20"],
         with_cuda=True,
         is_python_module=False,
         extra_ldflags=torch_cuda_ldflags,
@@ -163,7 +163,7 @@ def _build_extensions(
         extra_cflags=["-std=c++20"],
         with_cuda=True,
         is_python_module=False,
-        extra_ldflags=["-Wl,--as-needed"],
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()

@@ -3,7 +3,7 @@ Cpp source files for CUAEV and MNP extensions.
 - CUAEV: CUDA Extension for AEV calculation. Performance improvement is
   expected to be ~3X for AEV computation and ~1.5X for energy training, 2.6X
   for energy+force training.
-- MNP: Multi Net Parallel between different species networks using OpenMP
+- MNP: Multi Net Parallel between different species networks using multithreading
   (Inference Only) to reduce CUDA call overhead.
 
 ## Requirements

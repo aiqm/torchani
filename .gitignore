@@ -71,9 +71,6 @@ Untitled.ipynb
 # Data downloaded with download.sh
 /dev-data/hf-data/
 
-# Dest dir of built conda pkgs
-/conda-pkgs/
-
 # Nvidia Nsight Systems profiling
 *.qdrep
 *.qdstrm
@@ -85,3 +82,4 @@ report*.sqlite
 
 # memory profiler
 mprofile_*
+/torchani/_extensions_build_tag.txt

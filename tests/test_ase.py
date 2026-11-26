@@ -1,5 +1,5 @@
 import torch
-import shutil
+import tempfile
 import typing as tp
 from pathlib import Path
 from itertools import product
@@ -181,11 +181,6 @@ class TestASE(ANITestCase):
 
 @expand(jit=False)
 class TestVibrationsASE(ANITestCase):
-    def tearDown(self) -> None:
-        vib_path = Path(Path(__file__).parent, "vib")
-        if vib_path.is_dir():
-            shutil.rmtree(vib_path)
-
     def testWater(self) -> None:
         model = ANI1x().double()
         data_path = Path(Path(__file__).parent, "resources", "water-vib-expect.npz")
@@ -196,16 +191,16 @@ class TestVibrationsASE(ANITestCase):
             freqs_expect = data["freqs"]
         molecule = Atoms(numbers=species, positions=coordinates, calculator=model.ase())
         # Compute vibrational frequencies with ASE
-        vib = Vibrations(molecule)
-        vib.run()
-        array_freqs = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
-        _modes: list[NDArray[np.float64]] = []
-        for j in range(6, 6 + len(array_freqs)):
-            _modes.append(np.expand_dims(vib.get_mode(j), axis=0))
-        vib.clean()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            vib = Vibrations(molecule, name=str(Path(tmpdir, "vib")))
+            vib.run()
+            array_freqs = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
+            _modes: list[NDArray[np.float64]] = []
+            for j in range(6, 6 + len(array_freqs)):
+                _modes.append(np.expand_dims(vib.get_mode(j), axis=0))
         modes = np.concatenate(_modes, axis=0)
         self.assertEqual(
-            freqs_expect,
+            array_freqs,
             freqs_expect,
             atol=0,
             rtol=0.02,

@@ -8,6 +8,18 @@ import sys
 
 from setuptools import setup
 
+BUILD_TAG_FILE = "_extensions_build_tag.txt"
+
+
+# Must match torchani.paths.extensions_build_tag
+def extensions_build_tag() -> str:
+    import torch
+
+    torch_version = ".".join(torch.__version__.split(".")[:2])
+    if torch.version.cuda is None:
+        return f"{torch_version}-cpu"
+    return f"{torch_version}-cu{torch.version.cuda.split('.')[0]}"
+
 
 def maybe_download_cub(torch_include_dirs: Iterable[str]) -> str:
     import torch
@@ -93,9 +105,9 @@ def mnp_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("Will build MNP")
 
     if os.name == "nt":
-        cxx_args = ["/std:c++20", "/openmp"]
+        cxx_args = ["/std:c++20"]
     else:
-        cxx_args = ["-std=c++20", "-fopenmp"]
+        cxx_args = ["-std=c++20"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
@@ -114,9 +126,9 @@ def clist_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("Will build Cell List")
 
     if os.name == "nt":
-        cxx_args = ["/std:c++20", "/openmp"]
+        cxx_args = ["/std:c++20"]
     else:
-        cxx_args = ["-std=c++20", "-fopenmp"]
+        cxx_args = ["-std=c++20"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
@@ -290,16 +302,13 @@ def setup_kwargs() -> dict[str, tp.Any]:
         cuaev_kwargs["include_dirs"].append(cub_include_dir)
 
     # Linking: each extension must depend exactly on the libs it needs to run, also
-    # when loaded by a C++ host without Python (e.g. with torch::jit::load):
-    # - libtorch_python is never needed (ops are registered through the dispatcher,
-    #   no Python bindings), and it can't be loaded without a Python interpreter.
-    #   CUDAExtension always adds it, so it is removed from the libraries.
-    # - libtorch_cuda is needed by cuAEV and MNP (CUDA kernels for aten ops), but
+    # when loaded by C++ without Python (e.g. with torch::jit::load):
+    # - libtorch_python is not needed, and it can't be loaded without a Python
+    #   interpreter. CUDAExtension always adds it, so remove from link libraries
+    # - libtorch_cuda is needed by the extensions (CUDA kernels for aten ops), but
     #   they don't reference its symbols directly, so "-Wl,--as-needed" (set e.g. in
-    #   conda's LDFLAGS) would drop it, and a C++ host that doesn't load it would
-    #   fail with "Could not run 'aten::...' with arguments from the 'CUDA' backend".
+    #   conda's LDFLAGS) would drop it.
     #   "--no-as-needed" forces it to be recorded as a dependency.
-    # - The cell list is CPU-only, it only needs libc10 and libtorch_cpu
     # The same rules are applied in "ani build-extensions" (torchani/cli.py)
     if os.name != "nt":
         torch_cuda_link_args = [
@@ -310,9 +319,10 @@ def setup_kwargs() -> dict[str, tp.Any]:
         ]
         cuaev_kwargs["extra_link_args"] = torch_cuda_link_args
         mnp_kwargs["extra_link_args"] = torch_cuda_link_args
+        clist_kwargs["extra_link_args"] = torch_cuda_link_args
 
-    # MNP extension doesn't need nvcc to be compiled, but it still uses torch
-    # CUDA libraries, so CUDAExtension is needed
+    # MNP and CellList extensions don't need nvcc to be compiled, but it still uses
+    # torch They still use CUDA libs, so CUDAExtension is needed
     extensions = [
         CUDAExtension(**cuaev_kwargs),
         CUDAExtension(**mnp_kwargs),
@@ -320,9 +330,15 @@ def setup_kwargs() -> dict[str, tp.Any]:
     ]
     for extension in extensions:
         extension.libraries.remove("torch_python")
+
+    # Read when loading the extensions, to detect a torch version mismatch
+    build_tag_path = os.path.join(os.path.dirname(__file__), "torchani", BUILD_TAG_FILE)
+    with open(build_tag_path, mode="wt", encoding="utf-8") as f:
+        f.write(extensions_build_tag())
     print("-" * 75)
     return {
         "ext_modules": extensions,
+        "package_data": {"torchani": [BUILD_TAG_FILE]},
         "cmdclass": {
             "build_ext": BuildExtension.with_options(
                 no_python_abi_suffix=True,

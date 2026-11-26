@@ -23,5 +23,10 @@ or
 See https://github.com/conda-forge/torchani-feedstock for more information about the
 conda package.
 
+.. warning::
+
+    The ``conda`` package is maintained separately and may be out of date. To get the
+    latest version, install with ``pip``, even if you are using a ``conda`` environment.
+
 .. _PyTorch's official site:
     https://pytorch.org/get-started/locally/
