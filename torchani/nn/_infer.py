@@ -1,5 +1,4 @@
 import warnings
-import os
 import itertools
 from collections.abc import Sequence
 from itertools import accumulate
@@ -19,21 +18,6 @@ def jit_unused_if_no_mnp():
         return torch.jit.unused(func)
 
     return decorator
-
-
-def _check_openmp_threads() -> None:
-    if "OMP_NUM_THREADS" not in os.environ:
-        warnings.warn(
-            "OMP_NUM_THREADS not set."
-            " MNP works best if OMP_NUM_THREADS >= 2."
-            " You can set this variable by running 'export OMP_NUM_THREADS=4')"
-            " or 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK' if using slurm"
-        )
-        return
-
-    num_threads = int(os.environ["OMP_NUM_THREADS"])
-    if num_threads <= 0:
-        raise RuntimeError(f"OMP_NUM_THREADS set to an incorrect value: {num_threads}")
 
 
 def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
@@ -327,9 +311,6 @@ class MNPNetworks(AtomicContainer):
             if not self._MNP_IS_INSTALLED:
                 raise RuntimeError("The MNP C++ extension is not installed")
 
-            # Check that the OpenMP environment variable is correctly set
-            _check_openmp_threads()
-
             # Copy params from networks (reshape & transpose if from BmmEnsemble)
             weights, biases, self._num_layers = self._copy_weights_and_biases()
 
@@ -421,7 +402,6 @@ class MNPNetworks(AtomicContainer):
             self._idx_list,
             weights,
             biases,
-            self._stream_list,
             self._is_bmm,
             0.1,
         )

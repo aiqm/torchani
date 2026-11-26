@@ -9,6 +9,19 @@ import sys
 from setuptools import setup
 
 
+BUILD_TAG_FILE = "_extensions_build_tag.txt"
+
+
+# Must match torchani.paths.extensions_build_tag
+def extensions_build_tag() -> str:
+    import torch
+
+    torch_version = ".".join(torch.__version__.split(".")[:2])
+    if torch.version.cuda is None:
+        return f"{torch_version}-cpu"
+    return f"{torch_version}-cu{torch.version.cuda.split('.')[0]}"
+
+
 def maybe_download_cub(torch_include_dirs: Iterable[str]) -> str:
     import torch
 
@@ -93,9 +106,9 @@ def mnp_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("Will build MNP")
 
     if os.name == "nt":
-        cxx_args = ["/std:c++20", "/openmp"]
+        cxx_args = ["/std:c++20"]
     else:
-        cxx_args = ["-std=c++20", "-fopenmp"]
+        cxx_args = ["-std=c++20"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
@@ -114,9 +127,9 @@ def clist_extension_kwargs(debug: bool) -> dict[str, tp.Any]:
     print("Will build Cell List")
 
     if os.name == "nt":
-        cxx_args = ["/std:c++20", "/openmp"]
+        cxx_args = ["/std:c++20"]
     else:
-        cxx_args = ["-std=c++20", "-fopenmp"]
+        cxx_args = ["-std=c++20"]
     if debug:
         cxx_args.append("/DTORCHANI_DEBUG" if os.name == "nt" else "-DTORCHANI_DEBUG")
 
@@ -320,9 +333,15 @@ def setup_kwargs() -> dict[str, tp.Any]:
     ]
     for extension in extensions:
         extension.libraries.remove("torch_python")
+
+    # Read when loading the extensions, to detect a torch version mismatch
+    build_tag_path = os.path.join(os.path.dirname(__file__), "torchani", BUILD_TAG_FILE)
+    with open(build_tag_path, mode="wt", encoding="utf-8") as f:
+        f.write(extensions_build_tag())
     print("-" * 75)
     return {
         "ext_modules": extensions,
+        "package_data": {"torchani": [BUILD_TAG_FILE]},
         "cmdclass": {
             "build_ext": BuildExtension.with_options(
                 no_python_abi_suffix=True,

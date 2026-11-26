@@ -2,6 +2,9 @@ r"""Locations used by TorchANI to cache various resources"""
 
 import os
 from pathlib import Path
+
+import torch
+
 from torchani.annotations import StrPath
 
 _RESOURCES = Path(__file__).resolve().parent / "resources"
@@ -49,6 +52,19 @@ def data_dir() -> Path:
     if ENV_DATA_DIR:
         return Path(ENV_DATA_DIR)
     return Path(Path.home(), ".local", "share", "Torchani")
+
+
+def extensions_build_tag() -> str:
+    r"""Torch major.minor version and CUDA major version (or cpu) of the extensions"""
+    torch_version = ".".join(torch.__version__.split(".")[:2])
+    if torch.version.cuda is None:
+        return f"{torch_version}-cpu"
+    return f"{torch_version}-cu{torch.version.cuda.split('.')[0]}"
+
+
+def extensions_dir() -> Path:
+    r"""Directory where extensions built with ``ani build-extensions`` are stored"""
+    return Path(Path.home(), ".local", "lib", "Torchani", extensions_build_tag())
 
 
 def _resources_dir() -> Path:

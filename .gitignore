@@ -82,3 +82,4 @@ report*.sqlite
 
 # memory profiler
 mprofile_*
+/torchani/_extensions_build_tag.txt
