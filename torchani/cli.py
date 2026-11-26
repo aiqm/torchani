@@ -163,7 +163,7 @@ def _build_extensions(
         extra_cflags=["-std=c++20"],
         with_cuda=True,
         is_python_module=False,
-        extra_ldflags=["-Wl,--as-needed"],
+        extra_ldflags=torch_cuda_ldflags,
     )
     print("Done!")
     print()

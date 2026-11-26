@@ -8,7 +8,6 @@ import sys
 
 from setuptools import setup
 
-
 BUILD_TAG_FILE = "_extensions_build_tag.txt"
 
 
@@ -303,16 +302,13 @@ def setup_kwargs() -> dict[str, tp.Any]:
         cuaev_kwargs["include_dirs"].append(cub_include_dir)
 
     # Linking: each extension must depend exactly on the libs it needs to run, also
-    # when loaded by a C++ host without Python (e.g. with torch::jit::load):
-    # - libtorch_python is never needed (ops are registered through the dispatcher,
-    #   no Python bindings), and it can't be loaded without a Python interpreter.
-    #   CUDAExtension always adds it, so it is removed from the libraries.
-    # - libtorch_cuda is needed by cuAEV and MNP (CUDA kernels for aten ops), but
+    # when loaded by C++ without Python (e.g. with torch::jit::load):
+    # - libtorch_python is not needed, and it can't be loaded without a Python interpreter.
+    #   CUDAExtension always adds it, so remove from link libraries
+    # - libtorch_cuda is needed by the extensions (CUDA kernels for aten ops), but
     #   they don't reference its symbols directly, so "-Wl,--as-needed" (set e.g. in
-    #   conda's LDFLAGS) would drop it, and a C++ host that doesn't load it would
-    #   fail with "Could not run 'aten::...' with arguments from the 'CUDA' backend".
+    #   conda's LDFLAGS) would drop it.
     #   "--no-as-needed" forces it to be recorded as a dependency.
-    # - The cell list is CPU-only, it only needs libc10 and libtorch_cpu
     # The same rules are applied in "ani build-extensions" (torchani/cli.py)
     if os.name != "nt":
         torch_cuda_link_args = [
@@ -323,9 +319,10 @@ def setup_kwargs() -> dict[str, tp.Any]:
         ]
         cuaev_kwargs["extra_link_args"] = torch_cuda_link_args
         mnp_kwargs["extra_link_args"] = torch_cuda_link_args
+        clist_kwargs["extra_link_args"] = torch_cuda_link_args
 
-    # MNP extension doesn't need nvcc to be compiled, but it still uses torch
-    # CUDA libraries, so CUDAExtension is needed
+    # MNP and CellList extensions don't need nvcc to be compiled, but it still uses torch
+    # They still use CUDA libs, so CUDAExtension is needed
     extensions = [
         CUDAExtension(**cuaev_kwargs),
         CUDAExtension(**mnp_kwargs),
