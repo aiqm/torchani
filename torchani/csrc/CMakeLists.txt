@@ -29,18 +29,33 @@ else()
 endif()
 list(APPEND CMAKE_PREFIX_PATH ${INSTALLED_TORCH_ROOT})
 
+option(TORCHANI_BUILD_CUDA "Build with CUDA support. If OFF, a CPU-only PyTorch is required" ON)
+if(TORCHANI_BUILD_CUDA)
+    enable_language(CUDA)
+    if(NOT "$ENV{CONDA_PREFIX}" STREQUAL "")
+        # Workaround since torch can't find cuda installed in a conda env otherwise
+        set(ENV{CUDA_INC_PATH} $ENV{CONDA_PREFIX}/targets/x86_64-linux/include)
+    endif()
+endif()
+
 find_package(Torch REQUIRED)
 
 add_library(
     cuaev
     SHARED
-    aev.h
     cuaev_schema.cpp
-    cuaev.cpp
-    aev.cu
     aev_cpu.cpp
-    cuaev_cub.cuh
 )
+if(TORCHANI_BUILD_CUDA)
+    target_sources(
+        cuaev
+        PRIVATE
+            cuaev.cpp
+            aev.cu
+            aev.h
+            cuaev_cub.cuh
+    )
+endif()
 set_property(TARGET cuaev PROPERTY PREFIX "")
 target_compile_features(cuaev PRIVATE cxx_std_20)
 target_link_libraries(cuaev PRIVATE ${TORCH_LIBRARIES})
@@ -48,7 +63,6 @@ set(CUAEV_CUB_NAMESPACE_DEFS "CUB_NS_QUALIFIER=::cuaev::cub" "CUB_NS_PREFIX=name
 target_compile_definitions(
     cuaev
         PRIVATE
-            ${TORCH_CXX_FLAGS}
             $<$<COMPILE_LANGUAGE:CUDA>:TORCHANI_OPT>
             $<$<COMPILE_LANGUAGE:CUDA>:${CUAEV_CUB_NAMESPACE_DEFS}>
 )
@@ -69,7 +83,6 @@ add_library(
 set_property(TARGET mnp PROPERTY PREFIX "")
 target_compile_features(mnp PRIVATE cxx_std_20)
 target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} OpenMP::OpenMP_CXX)
-target_compile_definitions(mnp PRIVATE  ${TORCH_CXX_FLAGS})
 
 add_library(
     cell_list
@@ -79,7 +92,6 @@ add_library(
 set_property(TARGET cell_list PROPERTY PREFIX "")
 target_compile_features(cell_list PRIVATE cxx_std_20)
 target_link_libraries(cell_list PRIVATE ${TORCH_LIBRARIES})
-target_compile_definitions(cell_list PRIVATE  ${TORCH_CXX_FLAGS})
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
 
