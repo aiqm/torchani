@@ -61,5 +61,4 @@ report*.sqlite
 *.png
 
 # Dockerfiles
-conda.Dockerfile
 Dockerfile
