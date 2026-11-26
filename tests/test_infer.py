@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 import warnings
 import unittest
 
@@ -23,9 +22,9 @@ class TestInfer(ANITestCase):
             self.skipTest("MNPNetworks models need CUDA even when running on CPU")
         # MNPNetworks emits warnings due to its complexity, filter those here
         warnings.filterwarnings("ignore", message=".* MNP .*")
-        self._saved_omp_num_threads = os.environ.get("OMP_NUM_THREADS", "")
+        self._saved_num_threads = torch.get_num_threads()
         # set num threads for MNP
-        os.environ["OMP_NUM_THREADS"] = "2"
+        torch.set_num_threads(2)
         # Disable TensorFloat32, errors between two run of same model for large system
         # could reach 1e-3. However note that this error for large system is not that
         # big actually.
@@ -34,7 +33,7 @@ class TestInfer(ANITestCase):
 
     def tearDown(self) -> None:
         torch.backends.cuda.matmul.allow_tf32 = self._saved_tf32
-        os.environ["OMP_NUM_THREADS"] = self._saved_omp_num_threads
+        torch.set_num_threads(self._saved_num_threads)
         warnings.resetwarnings()
 
     def _build_ani2x(
