@@ -6,31 +6,37 @@ Cpp source files for CUAEV and MNP extensions.
 - MNP: Multi Net Parallel between different species networks using OpenMP
   (Inference Only) to reduce CUDA call overhead.
 
-## Requirement
-Following [pytorch.org](https://pytorch.org/) to install PyTorch.
-On linux, for example:
-```
-conda install pytorch pytorch-cuda=11.8 cuda-toolkit=11.8 cuda-compiler=11.8 -c pytorch -c nvidia
+## Requirements
+
+Install a PyTorch version with CUDA support, and a CUDA Toolkit appropriate for that
+PyTorch version, for example:
+
+```bash
+pip install torch==2.13 --index-url https://download.pytorch.org/whl/cu130
+conda install nvidia::cuda-toolkit=13.0
 ```
 
 ## Build from source
 
-In most cases, if `gcc` and `cuda` environment are well configured, runing the
-following command at `torchani` directory will install torchani and all
-extensions together.
-
 ```bash
-git clone git@github.com:roitberg-group/torchani_sandbox.git
-cd torchani_sandbox
-# choose one option below
-# ============== install ==============
-python setup.py install --ext          # only build for detected gpus
-python setup.py install --ext-all-sms  # build for all gpus
-# ============== development ==============
+# Clone the repo and cd to the directory
+git clone https://github.com/aiqm/torchani.git
+cd ./torchani
 
-# `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
-pip install -e . && pip install -v -e . --global-option="--ext"          # only build for detected gpus
-pip install -e . && pip install -v -e . --global-option="--ext-all-sms"  # build for all gpus
+# Create a conda (or mamba) environment with the optional dependencies
+# (alternatively use a venv and run 'pip install -r dev_requirements.txt')
+conda env create -f ./environment.yaml
+conda activate ani
+
+# Install torchani
+pip install --no-deps -v -e .
+
+# Build the extensions, for all detected SMs
+ani build-extensions
+# Or for specific SMs
+ani build-extensions --sm 8.0 --sm 8.9
+# Or for all SMs supported by PyTorch
+ani build-extensions --all-sms
 ```
 
 ## Update
@@ -38,10 +44,11 @@ pip install -e . && pip install -v -e . --global-option="--ext-all-sms"  # build
 ```bash
 cd torchani
 git pull
-pip install -v -e . --global-option="--ext"
+pip install --no-deps -v -e .
+ani build-extensions
 ```
 
-To build the extension in a HPC cluster (access to conda/mamba either
+To build the extensions in an HPC cluster (access to conda/mamba either
 by local install or a "module" is needed):
 
 ```bash
@@ -56,14 +63,14 @@ srun -p gpu-shared --ntasks=1 --account=cwr109 --cpus-per-task=1 --gpus=1 --time
 # Moria
 srun --ntasks=1 --cpus-per-task=2 --gres=gpu:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
 # Create env and install torchani with the extensions.
-# Installing with --ext-all-sms  guarantees that the extension will run correctly
+# Building with --all-sms guarantees that the extensions will run correctly
 # whatever the GPU is you select during runs, as long as pytorch supports that GPU
-conda create -f ./environment.yml
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani_sandbox
-pip install  -v --no-deps --no-build-isolation --editable .
-pip install -v --no-deps --no-build-isolation --editable . --global-option="--ext-all-sms"
-
+git clone https://github.com/aiqm/torchani.git
+cd ./torchani
+conda env create -f ./environment.yaml
+conda activate ani
+pip install --no-deps -v -e .
+ani build-extensions --all-sms
 ```
 
 ## Test
