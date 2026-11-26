@@ -73,8 +73,6 @@ target_compile_options(
         )
 target_include_directories(cuaev PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
-# Required for MNP only
-find_package(OpenMP REQUIRED COMPONENTS CXX)
 add_library(
     mnp
     SHARED
@@ -82,7 +80,7 @@ add_library(
 )
 set_property(TARGET mnp PROPERTY PREFIX "")
 target_compile_features(mnp PRIVATE cxx_std_20)
-target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} OpenMP::OpenMP_CXX)
+target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES})
 
 add_library(
     cell_list

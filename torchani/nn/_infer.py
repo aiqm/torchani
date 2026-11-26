@@ -412,7 +412,7 @@ class MNPNetworks(AtomicContainer):
 # which is supposed to parallelize multiple networks across distinct CUDA streams.
 # The python implementation is meant as a proof of concept and is not performant,
 # in fact it is slower than a straightforward loop.
-# This implementation has no multiprocessing, but OpenMP is used for the C++
+# This implementation has no multiprocessing, but at::parallel_for is used for the C++
 # Implementation in torchani.csrc
 # ######################################################################################
 class PythonMNP(torch.autograd.Function):
