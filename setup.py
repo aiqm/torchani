@@ -303,8 +303,8 @@ def setup_kwargs() -> dict[str, tp.Any]:
 
     # Linking: each extension must depend exactly on the libs it needs to run, also
     # when loaded by C++ without Python (e.g. with torch::jit::load):
-    # - libtorch_python is not needed, and it can't be loaded without a Python interpreter.
-    #   CUDAExtension always adds it, so remove from link libraries
+    # - libtorch_python is not needed, and it can't be loaded without a Python
+    #   interpreter. CUDAExtension always adds it, so remove from link libraries
     # - libtorch_cuda is needed by the extensions (CUDA kernels for aten ops), but
     #   they don't reference its symbols directly, so "-Wl,--as-needed" (set e.g. in
     #   conda's LDFLAGS) would drop it.
@@ -321,8 +321,8 @@ def setup_kwargs() -> dict[str, tp.Any]:
         mnp_kwargs["extra_link_args"] = torch_cuda_link_args
         clist_kwargs["extra_link_args"] = torch_cuda_link_args
 
-    # MNP and CellList extensions don't need nvcc to be compiled, but it still uses torch
-    # They still use CUDA libs, so CUDAExtension is needed
+    # MNP and CellList extensions don't need nvcc to be compiled, but it still uses
+    # torch They still use CUDA libs, so CUDAExtension is needed
     extensions = [
         CUDAExtension(**cuaev_kwargs),
         CUDAExtension(**mnp_kwargs),
