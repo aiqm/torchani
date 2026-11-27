@@ -6,18 +6,18 @@ files with the constants needed for dispersion D3 calculations.
 
 The pickle files are loaded directly by the DispersionD3 module through the
 "constants" module, which parses the raw pickle lists into manageable
-structures. the C6 coefs are dump into a h5 file instead
+structures. the C6 coefs are dump into a npz file instead
 
 The actual calculation of the dispersion interaction is handled in
 potentials/dispersion.
 """
 
 import math
-import h5py
 import pickle
 from pathlib import Path
 
 import torch
+import numpy as np
 from torch import Tensor
 
 
@@ -32997,10 +32997,12 @@ def _dump_c6_constants() -> tuple[Tensor, Tensor, Tensor]:
         c6_coordination_a[b, a, b_ref, a_ref] = cn_b
         c6_coordination_b[b, a, b_ref, a_ref] = cn_a
     # shape (elements, elements, 5, 5) for the 3 of them
-    with h5py.File("c6.h5", "w") as f:
-        f.create_dataset("all/constants", data=c6_constants.numpy())
-        f.create_dataset("all/coordnums_a", data=c6_coordination_a.numpy())
-        f.create_dataset("all/coordnums_b", data=c6_coordination_b.numpy())
+    np.savez(
+        "c6.npz",
+        constants=c6_constants.numpy(),
+        coordnums_a=c6_coordination_a.numpy(),
+        coordnums_b=c6_coordination_b.numpy(),
+    )
     return c6_constants, c6_coordination_a, c6_coordination_b
 
 

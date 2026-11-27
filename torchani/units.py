@@ -22,7 +22,6 @@ this module, and convenience functions to convert between different units are pr
 """
 
 import math
-from ase.units import Hartree as HARTREE_TO_ASE_EV
 
 # Comments on ASE:
 
@@ -118,11 +117,6 @@ def hartree2ev(x):
     return x * HARTREE_TO_EV
 
 
-def hartree2aseev(x):
-    r"""Hartree to eV conversion factor, directly from ASE"""
-    return x * HARTREE_TO_ASE_EV
-
-
 def ev2kjoulepermol(x):
     r"""Electronvolt to kJ/mol conversion factor from CODATA 2014"""
     return x * EV_TO_KJOULEPERMOL
@@ -156,9 +150,6 @@ bohr2angstrom.__doc__ = (
     str(bohr2angstrom.__doc__) + f"\n\n1 Bohr = {bohr2angstrom(1)} Angstrom"
 )
 hartree2ev.__doc__ = str(hartree2ev.__doc__) + f"\n\n1 Hartree = {hartree2ev(1)} eV"
-hartree2aseev.__doc__ = (
-    str(hartree2aseev.__doc__) + f"\n\n1 Hartree = {hartree2aseev(1)} eV"
-)
 hartree2kcalpermol.__doc__ = (
     str(hartree2kcalpermol.__doc__)
     + f"\n\n1 Hartree = {hartree2kcalpermol(1)} kcal/mol"

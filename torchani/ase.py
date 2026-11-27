@@ -16,10 +16,10 @@ from ase.calculators.calculator import (
     Calculator as AseCalculator,
     all_changes as _ALL_CHANGES,
 )
+from ase.units import Hartree as HARTREE_TO_ASE_EV
 
 from torchani.annotations import StressKind, Device, DType
 from torchani.neighbors import Neighbors
-from torchani.units import HARTREE_TO_ASE_EV
 from torchani.utils import map_to_central
 from torchani._numerical import numerical_virial
 
