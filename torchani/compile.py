@@ -20,25 +20,23 @@ entrypoints and their signatures are:
   ``(species, coords, neighbor_idxs, shifts, net_charge, spin_mult)
   -> (energies, forces, atomic_charges)``
 - ``"custom_mlmm"``:
-  ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff,
-  pairs_12, pairs_13, pairs_14) -> (energies, forces, mm_forces, atomic_charges)``
+  ``(species, coords, mm_coords, mm_charges, net_charge, spin_mult, mm_cutoff)
+  -> (energies, forces, mm_forces, atomic_charges)``
 - ``"multipole_mlmm"``:
   ``(species, coords, mm_coords, mm_charges, mm_dipoles, mm_quads, net_charge,
-  spin_mult, mm_cutoff, pairs_12, pairs_13, pairs_14)
-  -> (energies, forces, mm_forces, atomic_charges)``
+  spin_mult, mm_cutoff) -> (energies, forces, mm_forces, atomic_charges)``
 
 with input shapes ``species: (1, A)``, ``coords: (1, A, 3)``, ``cell: (3, 3)``,
 ``pbc: (3,)``, ``net_charge: (1,)``, ``spin_mult: (1,)``, ``neighbor_idxs: (2, P)``,
 ``shifts: (P, 3)``, ``mm_coords: (1, M, 3)``, ``mm_charges: (1, M)``,
-``mm_dipoles: (1, M, 3)``, ``mm_quads: (1, M, 3, 3)``, ``mm_cutoff: (1,)``,
-``pairs_12: (2, P12)``, ``pairs_13: (2, P13)`` and ``pairs_14: (2, P14)``, and
+``mm_dipoles: (1, M, 3)``, ``mm_quads: (1, M, 3, 3)`` and ``mm_cutoff: (1,)``, and
 output shapes ``(1,)``, ``(1, A, 3)``, ``(1, M, 3)`` (``mm_forces``) and ``(1, A)``.
 If the model doesn't predict atomic charges, they are an empty tensor of shape
 ``(1, 0)``. The ``"custom_mlmm"`` entrypoint requires a model that exports a
-``compute_mlmm`` method, which accepts ``spin_mult``, ``mm_cutoff``, ``pairs_12``,
-``pairs_13`` and ``pairs_14`` keyword arguments and returns either the energies or a
-tuple ``(energies, atomic_charges)``. Models may also output a dict with the
-``"energies"`` key and, optionally, ``"atomic_charges"``.
+``compute_mlmm`` method, which accepts ``spin_mult`` and ``mm_cutoff`` keyword
+arguments and returns either the energies or a tuple ``(energies, atomic_charges)``.
+Models may also output a dict with the ``"energies"`` key and, optionally,
+``"atomic_charges"``.
 
 The ``"multipole_mlmm"`` entrypoint is the same, but it requires a
 ``compute_multipole_mlmm`` method, which also takes ``mm_dipoles`` and ``mm_quads``
@@ -187,9 +185,6 @@ class _CustomMLMM(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        pairs_12: Tensor,
-        pairs_13: Tensor,
-        pairs_14: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_mlmm(
             (species, coords),
@@ -198,9 +193,6 @@ class _CustomMLMM(torch.nn.Module):
             charge=net_charge,
             spin_mult=spin_mult,
             mm_cutoff=mm_cutoff,
-            pairs_12=pairs_12,
-            pairs_13=pairs_13,
-            pairs_14=pairs_14,
         )
         return _mlmm_energies_atomic_charges(result, coords)
 
@@ -222,9 +214,6 @@ class _MultipoleMLMM(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        pairs_12: Tensor,
-        pairs_13: Tensor,
-        pairs_14: Tensor,
     ) -> tuple[Tensor, Tensor]:
         result = self._model.compute_multipole_mlmm(
             (species, coords),
@@ -235,9 +224,6 @@ class _MultipoleMLMM(torch.nn.Module):
             charge=net_charge,
             spin_mult=spin_mult,
             mm_cutoff=mm_cutoff,
-            pairs_12=pairs_12,
-            pairs_13=pairs_13,
-            pairs_14=pairs_14,
         )
         return _mlmm_energies_atomic_charges(result, coords)
 
@@ -271,9 +257,6 @@ class _EnergiesMLMMForcesAtomicCharges(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        pairs_12: Tensor,
-        pairs_13: Tensor,
-        pairs_14: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         with torch.enable_grad():
             coords = coords.detach().requires_grad_(True)
@@ -286,9 +269,6 @@ class _EnergiesMLMMForcesAtomicCharges(torch.nn.Module):
                 net_charge,
                 spin_mult,
                 mm_cutoff,
-                pairs_12,
-                pairs_13,
-                pairs_14,
             )
             grads = torch.autograd.grad(energies.sum(), (coords, mm_coords))
         forces = -grads[0]
@@ -312,9 +292,6 @@ class _EnergiesMultipoleMLMMForcesAtomicCharges(torch.nn.Module):
         net_charge: Tensor,
         spin_mult: Tensor,
         mm_cutoff: Tensor,
-        pairs_12: Tensor,
-        pairs_13: Tensor,
-        pairs_14: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         with torch.enable_grad():
             coords = coords.detach().requires_grad_(True)
@@ -329,9 +306,6 @@ class _EnergiesMultipoleMLMMForcesAtomicCharges(torch.nn.Module):
                 net_charge,
                 spin_mult,
                 mm_cutoff,
-                pairs_12,
-                pairs_13,
-                pairs_14,
             )
             grads = torch.autograd.grad(energies.sum(), (coords, mm_coords))
         forces = -grads[0]
@@ -383,14 +357,6 @@ def _export_energies_forces(
     atoms = Dim("atoms", min=2)
     pairs = Dim("pairs", min=2)
     mm_atoms = Dim("mm_atoms", min=2)
-    pairs_12_dim = Dim("pairs_12", min=0)
-    pairs_13_dim = Dim("pairs_13", min=0)
-    pairs_14_dim = Dim("pairs_14", min=0)
-    pairs_shapes: tp.List[tp.Tuple[tp.Any, ...]] = [
-        (static, pairs_12_dim),
-        (static, pairs_13_dim),
-        (static, pairs_14_dim),
-    ]
     species_coords_shapes: tp.List[tp.Tuple[tp.Any, ...]] = [
         (static, atoms),
         (static, atoms, static),
@@ -408,9 +374,6 @@ def _export_energies_forces(
     mm_quads = mm_quads.to(coords.device)
     spin_mult = torch.tensor([1], device=coords.device)
     mm_cutoff = coords.new_zeros(1)
-    pairs_12 = torch.tensor([[0, 1, 2], [1, 2, 3]], device=coords.device)
-    pairs_13 = pairs_12.clone()
-    pairs_14 = pairs_12.clone()
     module: torch.nn.Module
     forces_wrapper: type[torch.nn.Module] = _EnergiesForcesAtomicCharges
     if entrypoint == "single_point":
@@ -446,9 +409,6 @@ def _export_energies_forces(
             net_charge,
             spin_mult,
             mm_cutoff,
-            pairs_12,
-            pairs_13,
-            pairs_14,
         )
         dynamic_shapes = species_coords_shapes + [
             (static, mm_atoms, static),
@@ -456,7 +416,7 @@ def _export_energies_forces(
             (static,),
             (static,),
             (static,),
-        ] + pairs_shapes
+        ]
     else:
         module = _MultipoleMLMM(model)
         forces_wrapper = _EnergiesMultipoleMLMMForcesAtomicCharges
@@ -470,9 +430,6 @@ def _export_energies_forces(
             net_charge,
             spin_mult,
             mm_cutoff,
-            pairs_12,
-            pairs_13,
-            pairs_14,
         )
         dynamic_shapes = species_coords_shapes + [
             (static, mm_atoms, static),
@@ -482,7 +439,7 @@ def _export_energies_forces(
             (static,),
             (static,),
             (static,),
-        ] + pairs_shapes
+        ]
     # Neighborlist and triple sizes are data-dependent (nonzero, unique, .item())
     with torch._dynamo.config.patch(
         capture_dynamic_output_shape_ops=True, capture_scalar_outputs=True
