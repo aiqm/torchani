@@ -323,9 +323,6 @@ class _CoulombMLMM(torch.nn.Module):
         charge: Tensor | None = None,
         spin_mult: Tensor | None = None,
         mm_cutoff: Tensor | None = None,
-        pairs_12: Tensor | None = None,
-        pairs_13: Tensor | None = None,
-        pairs_14: Tensor | None = None,
     ) -> tuple[Tensor, Tensor]:
         coords = species_coordinates[1]
         output = self.model(species_coordinates, charge=charge)
@@ -347,9 +344,6 @@ class _CoulombMLMM(torch.nn.Module):
         charge: Tensor | None = None,
         spin_mult: Tensor | None = None,
         mm_cutoff: Tensor | None = None,
-        pairs_12: Tensor | None = None,
-        pairs_13: Tensor | None = None,
-        pairs_14: Tensor | None = None,
     ) -> tuple[Tensor, Tensor]:
         energies, atomic_charges = self.compute_mlmm(
             species_coordinates, mm_coords, mm_charges, charge
@@ -493,13 +487,10 @@ class TestCompileModel(ANITestCasePT2):
         net_charge = torch.tensor([0])
         spin_mult = torch.tensor([1])
         mm_cutoff = torch.tensor([0.0], dtype=torch.double)
-        # Different sizes check that the number of ML and MM atoms, and pairs is dynamic
-        for atoms, mm_atoms, pairs_num in ((20, 7, 0), (31, 25, 5)):
+        # Different sizes check that the number of ML and MM atoms is dynamic
+        for atoms, mm_atoms in ((20, 7), (31, 25)):
             species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
             gen = torch.Generator().manual_seed(atoms)
-            pairs_12 = torch.randint(0, atoms, (2, pairs_num), generator=gen)
-            pairs_13 = torch.randint(0, atoms, (2, pairs_num + 1), generator=gen)
-            pairs_14 = torch.randint(0, atoms, (2, pairs_num + 2), generator=gen)
             mm_coords = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
             mm_coords = (mm_coords + 1.0) * cell.diagonal()
             mm_charges = torch.rand(1, mm_atoms, generator=gen, dtype=torch.double)
@@ -517,9 +508,6 @@ class TestCompileModel(ANITestCasePT2):
                 net_charge,
                 spin_mult,
                 mm_cutoff,
-                pairs_12,
-                pairs_13,
-                pairs_14,
             )
             self.assertEqual(output[0], energies.detach())
             self.assertEqual(output[1], -grads[0])
@@ -545,13 +533,10 @@ class TestCompileModel(ANITestCasePT2):
         net_charge = torch.tensor([0])
         spin_mult = torch.tensor([1])
         mm_cutoff = torch.tensor([0.0], dtype=torch.double)
-        # Different sizes check that the number of ML and MM atoms, and pairs is dynamic
-        for atoms, mm_atoms, pairs_num in ((20, 7, 0), (31, 25, 5)):
+        # Different sizes check that the number of ML and MM atoms is dynamic
+        for atoms, mm_atoms in ((20, 7), (31, 25)):
             species, coords, cell, _, _ = _example_inputs(model.model, atoms=atoms)
             gen = torch.Generator().manual_seed(atoms)
-            pairs_12 = torch.randint(0, atoms, (2, pairs_num), generator=gen)
-            pairs_13 = torch.randint(0, atoms, (2, pairs_num + 1), generator=gen)
-            pairs_14 = torch.randint(0, atoms, (2, pairs_num + 2), generator=gen)
             mm_coords = torch.rand(1, mm_atoms, 3, generator=gen, dtype=torch.double)
             mm_coords = (mm_coords + 1.0) * cell.diagonal()
             mm_charges = torch.rand(1, mm_atoms, generator=gen, dtype=torch.double)
@@ -573,9 +558,6 @@ class TestCompileModel(ANITestCasePT2):
                 net_charge,
                 spin_mult,
                 mm_cutoff,
-                pairs_12,
-                pairs_13,
-                pairs_14,
             )
             self.assertEqual(output[0], energies.detach())
             self.assertEqual(output[1], -grads[0])
