@@ -5,7 +5,7 @@ import math
 from collections.abc import Sequence
 
 import torch
-import h5py
+import numpy as np
 from torch import Tensor
 from torch.jit import Final
 
@@ -35,10 +35,10 @@ from torchani.paths import _resources_dir
 # This means for each pair of elements and reference indices there is an
 # associated coordination number for the first and second items.
 def _load_c6_constants() -> tuple[Tensor, Tensor, Tensor]:
-    with h5py.File(str(_resources_dir() / "c6.h5"), "r") as f:
-        c6_constants = torch.from_numpy(f["all/constants"][:])
-        c6_coordnums_a = torch.from_numpy(f["all/coordnums_a"][:])
-        c6_coordnums_b = torch.from_numpy(f["all/coordnums_b"][:])
+    with np.load(_resources_dir() / "c6.npz") as f:
+        c6_constants = torch.from_numpy(f["constants"])
+        c6_coordnums_a = torch.from_numpy(f["coordnums_a"])
+        c6_coordnums_b = torch.from_numpy(f["coordnums_b"])
     return c6_constants, c6_coordnums_a, c6_coordnums_b
 
 
